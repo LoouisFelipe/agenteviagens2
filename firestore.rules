@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Funções de Validação Auxiliares
+    function isValidViagem(data) {
+      return data.usuario_id is string
+        && data.origem is string && data.origem.size() > 0 && data.origem.size() <= 100
+        && data.destino is string && data.destino.size() > 0 && data.destino.size() <= 100
+        && data.data_inicio is string && data.data_inicio.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.data_fim is string && data.data_fim.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && (data.orcamento_maximo is int || data.orcamento_maximo is float) && data.orcamento_maximo >= 0;
+    }
+
+    function isValidRoteiro(data) {
+      return (data.hospedagem == null || (
+          data.hospedagem.nome is string 
+          && (data.hospedagem.preco_diario is int || data.hospedagem.preco_diario is float)
+          && data.hospedagem.preco_diario >= 0
+          && data.hospedagem.link is string
+        ))
+        && data.atividades is list;
+    }
+
+    // Coleção principal: viagens e subcoleção: roteiro_diario
+    match /viagens/{viagemId} {
+      allow read: if true;
+      allow create, update: if isValidViagem(request.resource.data);
+      allow delete: if true;
+
+      match /roteiro_diario/{diaId} {
+        allow read: if true;
+        allow create, update: if diaId.matches('^\\d{4}-\\d{2}-\\d{2}$') 
+          && isValidRoteiro(request.resource.data);
+        allow delete: if true;
+      }
+    }
+    
+    // Coleção para buscas em cache do Scraper
+    match /pesquisas_online/{pesquisaId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['destino', 'timestamp'])
+        && request.resource.data.destino is string
+        && request.resource.data.destino.size() > 0;
+      allow delete: if true;
+    }
+    
+  }
+}
