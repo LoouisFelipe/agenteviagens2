@@ -10,6 +10,8 @@ import {
   adicionarAtividadeDia,
   removerHospedagemDia,
   removerAtividadeDia,
+  adicionarDespesaDia,
+  removerDespesaDia,
   atualizarCotacoesOnDemand,
   atualizarCronogramaHorario,
   deletarViagem,
@@ -54,6 +56,7 @@ export default function Home() {
   // Estados para o Workspace Focado (Redesenho UX Premium)
   const [diaAtivoWorkspace, setDiaAtivoWorkspace] = useState<string | null>(null);
   const [isModoFoco, setIsModoFoco] = useState(true);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
 
   // Salva o cronograma horário inline diretamente do Sidebar sem modal
   const handleSalvarCronogramaInline = async (dataDia: string, cronograma: Record<string, string>) => {
@@ -292,6 +295,64 @@ export default function Home() {
       emitLog("OPTIMISTIC ERROR: Falha ao remover atividade do banco. Ação revertida.");
     }
   };
+  
+  // Lado A/B ➔ Injetar Despesa (Otimista)
+  const handleInjetarDespesa = async (dataDia: string, despesa: { nome: string; valor: number; categoria: string }) => {
+    if (!viagemAtiva) return;
+    
+    const backupRoteiro = { ...roteiroDiario };
+    
+    const otimistaRoteiro = { ...roteiroDiario };
+    if (!otimistaRoteiro[dataDia]) {
+      otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [], despesas: [] };
+    }
+    if (!otimistaRoteiro[dataDia].despesas) {
+      otimistaRoteiro[dataDia].despesas = [];
+    }
+    
+    const tempId = "exp_" + Math.random().toString(36).substring(2, 9);
+    otimistaRoteiro[dataDia] = {
+      ...otimistaRoteiro[dataDia],
+      despesas: [...(otimistaRoteiro[dataDia].despesas || []), { id: tempId, diaId: dataDia, ...despesa }],
+    };
+    setRoteiroDiario(otimistaRoteiro);
+    emitLog(`OPTIMISTIC: Despesa [${despesa.nome}] injetada na interface no dia ${dataDia}.`);
+
+    try {
+      await adicionarDespesaDia(viagemAtiva.id, dataDia, despesa);
+      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
+      setRoteiroDiario(confirmado);
+    } catch {
+      setRoteiroDiario(backupRoteiro);
+      emitLog("OPTIMISTIC ERROR: Falha ao sincronizar despesa no banco. Ação revertida.");
+    }
+  };
+
+  // Lado B ➔ Remover Despesa (Otimista)
+  const handleRemoverDespesa = async (dataDia: string, despesaId: string) => {
+    if (!viagemAtiva) return;
+    
+    const backupRoteiro = { ...roteiroDiario };
+    
+    const otimistaRoteiro = { ...roteiroDiario };
+    if (otimistaRoteiro[dataDia] && otimistaRoteiro[dataDia].despesas) {
+      otimistaRoteiro[dataDia] = {
+        ...otimistaRoteiro[dataDia],
+        despesas: otimistaRoteiro[dataDia].despesas.filter(d => d.id !== despesaId),
+      };
+    }
+    setRoteiroDiario(otimistaRoteiro);
+    emitLog(`OPTIMISTIC: Despesa ID ${despesaId} removida da interface no dia ${dataDia}.`);
+
+    try {
+      await removerDespesaDia(viagemAtiva.id, dataDia, despesaId);
+      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
+      setRoteiroDiario(confirmado);
+    } catch {
+      setRoteiroDiario(backupRoteiro);
+      emitLog("OPTIMISTIC ERROR: Falha ao remover despesa do banco. Ação revertida.");
+    }
+  };
 
   // Dispara o JOB transacional de atualização de preços sob demanda
   const handleAtualizarCotacoes = async () => {
@@ -410,7 +471,8 @@ export default function Home() {
           if (!diario) return 0;
           const custoHospedagem = diario.hospedagem?.preco_diario || 0;
           const custoAtividades = diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
-          return custoHospedagem + custoAtividades;
+          const custoDespesas = diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
+          return custoHospedagem + custoAtividades + custoDespesas;
         };
 
         const custoTotal = datasViagem.reduce((acc, dia) => acc + calcularTotalDiaLocal(roteiroDiario[dia]), 0);
@@ -422,10 +484,10 @@ export default function Home() {
         const percentualDiasCompletos = datasViagem.length > 0 ? Math.round((diasCompletos / datasViagem.length) * 100) : 0;
 
         const financialGlowClass = ultrapassou 
-          ? "border-rose-500/50 shadow-lg shadow-rose-500/10" 
+          ? "border-rose-500/50 shadow-lg shadow-rose-500/10 hover:shadow-rose-500/20" 
           : percentualConsumido > 80 
-            ? "border-amber-500/50 shadow-lg shadow-amber-500/10" 
-            : "border-indigo-500/35 shadow-lg shadow-indigo-500/5";
+            ? "border-amber-500/50 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20" 
+            : "border-indigo-500/35 shadow-lg shadow-indigo-500/5 hover:shadow-indigo-500/10";
 
         return (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
@@ -445,11 +507,17 @@ export default function Home() {
             </div>
 
             {/* Card 2: Orçamento */}
-            <div className={`glass-panel-light p-4 rounded-2xl border flex items-center gap-4 relative overflow-hidden transition-all duration-300 ${financialGlowClass}`}>
+            <div 
+              onClick={() => setIsBudgetModalOpen(true)}
+              className={`glass-panel-light p-4 rounded-2xl border flex items-center gap-4 relative overflow-hidden transition-all duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.99] ${financialGlowClass}`}
+            >
               <div className={`absolute top-0 left-0 w-[4px] h-full ${ultrapassou ? "bg-rose-500" : percentualConsumido > 80 ? "bg-amber-500" : "bg-emerald-500"}`} />
               <div className="text-3xl">📊</div>
               <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Orçamento Operacional</div>
+                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                  <span>Orçamento Operacional</span>
+                  <span className="text-[8px] bg-indigo-500/20 text-indigo-400 font-bold px-1 py-0.2 rounded hover:bg-indigo-500/30">DETALHES ↗</span>
+                </div>
                 <div className="text-sm font-black text-slate-100 mt-0.5 flex items-baseline gap-1.5 font-mono-tech">
                   <span className={ultrapassou ? "text-rose-400" : "text-[#10b981]"}>
                     R$ {custoTotal.toLocaleString("pt-BR")}
@@ -535,6 +603,7 @@ export default function Home() {
             datasViagem={datasViagem}
             onInjetarHospedagem={handleInjetarHospedagem}
             onInjetarAtividade={handleInjetarAtividade}
+            onInjetarDespesa={handleInjetarDespesa}
             viagemDestino={viagemAtiva?.destino || "SANTIAGO"}
           />
         </div>
@@ -546,6 +615,8 @@ export default function Home() {
             roteiroDiario={roteiroDiario}
             onRemoverHospedagem={handleRemoverHospedagem}
             onRemoverAtividade={handleRemoverAtividade}
+            onAdicionarDespesa={handleInjetarDespesa}
+            onRemoverDespesa={handleRemoverDespesa}
             destino={viagemAtiva?.destino || "SANTIAGO (SCL)"}
             viagemAtiva={viagemAtiva}
             diaAtivoWorkspace={diaAtivoWorkspace}
@@ -559,6 +630,377 @@ export default function Home() {
       <footer className="w-full">
         <IndustrialLog />
       </footer>
+
+      {/* Modal de Dashboard de Orçamento Analítico Premium */}
+      {isBudgetModalOpen && viagemAtiva && (() => {
+        // 1. Cálculos de verba/categoria
+        let totalHospedagem = 0;
+        let totalPasseios = 0;
+        let totalDespesas = 0;
+        
+        datasViagem.forEach((dia) => {
+          const diario = roteiroDiario[dia];
+          if (diario) {
+            totalHospedagem += diario.hospedagem?.preco_diario || 0;
+            totalPasseios += diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
+            totalDespesas += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
+          }
+        });
+        
+        const custoTotal = totalHospedagem + totalPasseios + totalDespesas;
+        const orcamento = viagemAtiva.orcamento_maximo || 0;
+        const saldo = orcamento - custoTotal;
+        const ultrapassou = orcamento > 0 && custoTotal > orcamento;
+        
+        const percentualHospedagem = custoTotal > 0 ? Math.round((totalHospedagem / custoTotal) * 100) : 0;
+        const percentualPasseios = custoTotal > 0 ? Math.round((totalPasseios / custoTotal) * 100) : 0;
+        const percentualDespesas = custoTotal > 0 ? Math.round((totalDespesas / custoTotal) * 100) : 0;
+        
+        // 2. Acumulados por dia para o gráfico
+        const dadosGráfico: { diaLabel: string; diaData: string; custoDia: number; acumulado: number }[] = [];
+        let somaAcumulada = 0;
+        datasViagem.forEach((dia, idx) => {
+          const diario = roteiroDiario[dia];
+          let custoDia = 0;
+          if (diario) {
+            custoDia += diario.hospedagem?.preco_diario || 0;
+            custoDia += diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
+            custoDia += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
+          }
+          somaAcumulada += custoDia;
+          dadosGráfico.push({
+            diaLabel: `DIA ${String(idx + 1).padStart(2, "0")}`,
+            diaData: dia,
+            custoDia,
+            acumulado: somaAcumulada
+          });
+        });
+        
+        // 3. Extrato Consolidado
+        const statementItems: {
+          key: string;
+          diaIdx: number;
+          diaData: string;
+          tipo: "hospedagem" | "passeio" | "despesa";
+          nome: string;
+          valor: number;
+          detalhe?: string;
+          onDelete: () => Promise<void>;
+        }[] = [];
+        
+        datasViagem.forEach((dia, idx) => {
+          const diario = roteiroDiario[dia];
+          if (diario) {
+            if (diario.hospedagem) {
+              const hotel = diario.hospedagem;
+              statementItems.push({
+                key: `h-${dia}`,
+                diaIdx: idx,
+                diaData: dia,
+                tipo: "hospedagem",
+                nome: hotel.nome,
+                valor: hotel.preco_diario,
+                detalhe: "Diária de Hotel",
+                onDelete: () => handleRemoverHospedagem(dia)
+              });
+            }
+            if (diario.atividades) {
+              diario.atividades.forEach((atv, atvIdx) => {
+                statementItems.push({
+                  key: `a-${dia}-${atvIdx}`,
+                  diaIdx: idx,
+                  diaData: dia,
+                  tipo: "passeio",
+                  nome: atv.nome,
+                  valor: atv.valor,
+                  detalhe: "Atividade/Passeio",
+                  onDelete: () => handleRemoverAtividade(dia, atvIdx)
+                });
+              });
+            }
+            if (diario.despesas) {
+              diario.despesas.forEach((exp) => {
+                statementItems.push({
+                  key: `e-${dia}-${exp.id}`,
+                  diaIdx: idx,
+                  diaData: dia,
+                  tipo: "despesa",
+                  nome: exp.nome,
+                  valor: exp.valor,
+                  detalhe: `Despesa (${exp.categoria})`,
+                  onDelete: () => handleRemoverDespesa(dia, exp.id || "")
+                });
+              });
+            }
+          }
+        });
+        
+        return (
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-fade-in select-none">
+            {/* Modal Box */}
+            <div className="bg-slate-900/95 border border-slate-800 rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl relative flex flex-col h-[90vh] md:h-[80vh]">
+              {/* Top Warning stripes */}
+              <div className="h-[4px] w-full hazard-stripes" />
+              
+              {/* Header */}
+              <div className="p-5 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📊</span>
+                  <div>
+                    <h2 className="text-sm font-black tracking-widest text-slate-100 uppercase font-sans">
+                      DASHBOARD ANALÍTICO DE CUSTOS
+                    </h2>
+                    <p className="text-[9.5px] text-indigo-400 font-mono-tech uppercase">
+                      ROTA: {viagemAtiva.destino} | ORÇAMENTO MÁXIMO DO PROJETO
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsBudgetModalOpen(false)}
+                  className="px-3.5 py-1.5 bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors uppercase font-bold text-[10px] rounded-lg border-0 cursor-pointer shadow-md active:scale-95"
+                >
+                  FECHAR [✕]
+                </button>
+              </div>
+              
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                
+                {/* Left Panel: Financial Overview & CSS Charts (col-span-7) */}
+                <div className="lg:col-span-7 space-y-6">
+                  
+                  {/* Row 1: KPI Balances */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {/* KPI Orçamento */}
+                    <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl relative overflow-hidden shadow-inner">
+                      <div className="absolute top-0 left-0 w-[3px] h-full bg-slate-700" />
+                      <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Orçado</div>
+                      <div className="text-xs md:text-sm font-black text-slate-200 mt-1 font-mono-tech truncate">
+                        R$ {orcamento.toLocaleString("pt-BR")}
+                      </div>
+                    </div>
+                    {/* KPI Consumido */}
+                    <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl relative overflow-hidden shadow-inner">
+                      <div className="absolute top-0 left-0 w-[3px] h-full bg-indigo-600" />
+                      <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Consumido</div>
+                      <div className={`text-xs md:text-sm font-black mt-1 font-mono-tech truncate ${ultrapassou ? "text-rose-400" : "text-[#10b981]"}`}>
+                        R$ {custoTotal.toLocaleString("pt-BR")}
+                      </div>
+                    </div>
+                    {/* KPI Saldo */}
+                    <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl relative overflow-hidden shadow-inner">
+                      <div className={`absolute top-0 left-0 w-[3px] h-full ${saldo < 0 ? "bg-rose-500" : "bg-emerald-500"}`} />
+                      <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Saldo Restante</div>
+                      <div className={`text-xs md:text-sm font-black mt-1 font-mono-tech truncate ${saldo < 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                        R$ {saldo.toLocaleString("pt-BR")}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Category Division breakdown */}
+                  <div className="bg-slate-950/20 border border-slate-850 p-5 rounded-2xl space-y-4">
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
+                      <span>🏷️ DISTRIBUIÇÃO OPERACIONAL POR CATEGORIA</span>
+                      <span className="text-[8px] text-slate-500 lowercase italic">divisão percentual</span>
+                    </h3>
+                    
+                    {/* Single Combined Segmented Bar */}
+                    <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-850 shadow-inner">
+                      {totalHospedagem > 0 && (
+                        <div 
+                          style={{ width: `${percentualHospedagem}%` }} 
+                          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all" 
+                          title={`Hospedagem: ${percentualHospedagem}%`} 
+                        />
+                      )}
+                      {totalPasseios > 0 && (
+                        <div 
+                          style={{ width: `${percentualPasseios}%` }} 
+                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950 transition-all" 
+                          title={`Passeios: ${percentualPasseios}%`} 
+                        />
+                      )}
+                      {totalDespesas > 0 && (
+                        <div 
+                          style={{ width: `${percentualDespesas}%` }} 
+                          className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950 transition-all" 
+                          title={`Despesas: ${percentualDespesas}%`} 
+                        />
+                      )}
+                      {custoTotal === 0 && (
+                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[8px] text-slate-600 font-bold uppercase tracking-wider">
+                          Nenhum gasto registrado
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Grid labels */}
+                    <div className="grid grid-cols-3 gap-3 text-[9.5px]">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-indigo-400 font-bold">
+                          <span className="w-2 h-2 rounded-full bg-indigo-500" />
+                          <span>HOSPEDAGEM: {percentualHospedagem}%</span>
+                        </div>
+                        <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span>PASSEIOS: {percentualPasseios}%</span>
+                        </div>
+                        <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-amber-400 font-bold">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span>DESPESAS: {percentualDespesas}%</span>
+                        </div>
+                        <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Progression Graph */}
+                  <div className="bg-slate-950/20 border border-slate-850 p-5 rounded-2xl space-y-4 relative">
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider select-none flex items-center justify-between">
+                      <span>📈 PROGRESSÃO CUMULATIVA DE GASTOS</span>
+                      <span className="text-[8px] text-slate-500 lowercase italic">passe o mouse nas barras</span>
+                    </h3>
+                    
+                    {/* Graph Container */}
+                    <div className="flex items-end gap-1.5 md:gap-2.5 h-44 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none">
+                      
+                      {/* Budget Limit Line */}
+                      {orcamento > 0 && (
+                        <div className="absolute left-0 right-0 border-t border-dashed border-rose-500/30 text-[7.5px] font-black text-rose-500/60 uppercase tracking-widest pl-2 pt-0.5 pointer-events-none z-10" style={{ bottom: "80%" }}>
+                          [ TETO ORÇAMENTO ]
+                        </div>
+                      )}
+                      
+                      {dadosGráfico.map((d) => {
+                        const heightPercent = orcamento > 0 ? Math.min(100, Math.round((d.acumulado / orcamento) * 80)) : 0;
+                        const isOver = orcamento > 0 && d.acumulado > orcamento;
+                        
+                        return (
+                          <div key={d.diaData} className="flex-1 flex flex-col items-center group/bar relative">
+                            {/* Hover tooltip */}
+                            <div className="absolute bottom-full mb-2 bg-slate-950 border border-indigo-500/50 text-[8.5px] p-2 rounded shadow-2xl hidden group-hover/bar:flex flex-col text-center w-24 pointer-events-none z-50 transition-all font-sans font-semibold">
+                              <span className="text-amber-500 uppercase tracking-wider">{d.diaLabel}</span>
+                              <span className="text-slate-400 font-mono-tech mt-0.5 text-[8px]">{d.diaData.slice(5)}</span>
+                              <span className="text-indigo-400 font-mono-tech mt-1">Dia: R$ {d.custoDia}</span>
+                              <span className="text-[#10b981] font-mono-tech">Cum: R$ {d.acumulado}</span>
+                            </div>
+                            
+                            {/* Bar Graph */}
+                            <div className="w-full bg-slate-950/50 rounded-t h-32 flex flex-col justify-end relative shadow-inner overflow-hidden border border-slate-900">
+                              <div 
+                                style={{ height: `${heightPercent}%` }} 
+                                className={`w-full rounded-t transition-all duration-300 ${
+                                  isOver 
+                                    ? "bg-gradient-to-t from-rose-600 to-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.3)]" 
+                                    : d.acumulado > orcamento * 0.8
+                                      ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.3)]"
+                                      : "bg-gradient-to-t from-indigo-600 to-indigo-400 shadow-[0_0_6px_rgba(99,102,241,0.3)]"
+                                }`}
+                              />
+                            </div>
+                            
+                            {/* Label */}
+                            <span className="text-[8.5px] font-mono-tech font-bold text-slate-500 mt-1.5 uppercase select-none">{d.diaLabel.replace("DIA ", "D")}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                </div>
+                
+                {/* Right Panel: Detailed Extrato Consolidado Statement (col-span-5) */}
+                <div className="lg:col-span-5 flex flex-col h-full bg-slate-950/20 border border-slate-850 p-5 rounded-2xl relative space-y-4">
+                  <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
+                    <span>🧾 EXTRATO CONSOLIDADO DA VIAGEM</span>
+                    <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2 py-0.5 rounded text-[8px] leading-none uppercase">
+                      {statementItems.length} itens
+                    </span>
+                  </h3>
+                  
+                  {/* Scrollable list of statement items */}
+                  <div className="flex-1 overflow-y-auto max-h-[360px] pr-1.5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                    {statementItems.length === 0 ? (
+                      <div className="py-24 text-center text-slate-600 font-bold uppercase tracking-wider text-[9px] select-none">
+                        [ NENHUM LANÇAMENTO REGISTRADO ]
+                      </div>
+                    ) : (
+                      statementItems.map((item) => {
+                        let colorBadge = "bg-slate-900 border-slate-800 text-slate-400";
+                        if (item.tipo === "hospedagem") {
+                          colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
+                        } else if (item.tipo === "passeio") {
+                          colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
+                        } else if (item.tipo === "despesa") {
+                          colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-400";
+                        }
+                        
+                        return (
+                          <div 
+                            key={item.key} 
+                            className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
+                                  D{String(item.diaIdx + 1).padStart(2, "0")}
+                                </span>
+                                <span className="text-slate-500 text-[9px]">|</span>
+                                <span className={`text-[8.5px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
+                                  {item.tipo}
+                                </span>
+                                <span className="text-[8.5px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
+                                  {item.detalhe}
+                                </span>
+                              </div>
+                              
+                              <div className="font-bold text-slate-200 truncate uppercase text-[10.5px] mt-1 tracking-wide">
+                                {item.nome}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 select-none">
+                              <span className="text-[#10b981] font-mono-tech font-bold text-[10px]">
+                                R$ {item.valor.toLocaleString("pt-BR")}
+                              </span>
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`DESEJA EXCLUIR O LANÇAMENTO "${item.nome.toUpperCase()}" DEFINITIVAMENTE?`)) {
+                                    await item.onDelete();
+                                  }
+                                }}
+                                className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[11px] cursor-pointer"
+                                title="Excluir Lançamento"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  
+                  {/* Dashboard Totalizer Footer */}
+                  <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[10px] font-mono-tech">
+                    <span className="text-slate-450 uppercase font-sans font-bold">Total Consolidado:</span>
+                    <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -3,11 +3,113 @@
 import React from "react";
 import { RoteiroDiario, Viagem } from "@/services/travelService";
 
+interface InlineAddExpenseFormProps {
+  onAddExpense: (nome: string, valor: number, categoria: string) => Promise<void>;
+}
+
+function InlineAddExpenseForm({
+  onAddExpense,
+}: InlineAddExpenseFormProps) {
+  const [nome, setNome] = React.useState("");
+  const [valor, setValor] = React.useState("");
+  const [categoria, setCategoria] = React.useState("Alimentação");
+  const [estaAberto, setEstaAberto] = React.useState(false);
+  const [erro, setErro] = React.useState("");
+
+  const handleSubmeter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro("");
+    if (!nome.trim() || !valor.trim()) {
+      setErro("Preencha todos os campos.");
+      return;
+    }
+    const val = Number(valor);
+    if (isNaN(val) || val <= 0) {
+      setErro("Valor inválido.");
+      return;
+    }
+    try {
+      await onAddExpense(nome.trim(), val, categoria);
+      setNome("");
+      setValor("");
+      setEstaAberto(false);
+    } catch {
+      setErro("Falha ao salvar.");
+    }
+  };
+
+  if (!estaAberto) {
+    return (
+      <button
+        type="button"
+        onClick={() => setEstaAberto(true)}
+        className="w-full py-1.5 bg-slate-900/50 border border-slate-850 hover:border-slate-700 text-slate-400 hover:text-slate-200 transition-all rounded-lg uppercase text-[9px] font-bold cursor-pointer mt-1.5 shadow-sm"
+      >
+        ➕ [ REGISTRAR DESPESA RÁPIDA ]
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmeter} className="p-3 bg-slate-950/75 border border-slate-850 rounded-xl space-y-2 mt-1.5 animate-fade-in text-[10px] shadow-inner select-none">
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          type="text"
+          placeholder="Item (ex: Almoço)"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#f59e0b] uppercase font-semibold w-full"
+          autoComplete="off"
+        />
+        <input
+          type="number"
+          placeholder="Valor (R$)"
+          value={valor}
+          onChange={(e) => setValor(e.target.value)}
+          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#f59e0b] font-mono-tech w-full"
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <select
+          value={categoria}
+          onChange={(e) => setCategoria(e.target.value)}
+          className="flex-1 bg-slate-900 border border-slate-800 text-slate-300 px-2 py-1 text-[9px] rounded focus:outline-none cursor-pointer uppercase font-bold"
+        >
+          <option value="Alimentação">Alimentação 🍽️</option>
+          <option value="Transporte">Transporte 🚗</option>
+          <option value="Lazer">Lazer 🪁</option>
+          <option value="Compras">Compras 🛍️</option>
+          <option value="Outros">Outros 💰</option>
+        </select>
+        <button
+          type="submit"
+          className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold text-[9px] rounded-lg uppercase cursor-pointer border-0 shadow-md transition-all active:scale-95"
+        >
+          SALVAR
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEstaAberto(false);
+            setErro("");
+          }}
+          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-[9px] rounded-lg uppercase cursor-pointer border-0 transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+      {erro && <div className="text-[8.5px] text-rose-400 font-mono-tech leading-none">⚠️ {erro}</div>}
+    </form>
+  );
+}
+
 interface SideBItineraryProps {
   datasViagem: string[];
   roteiroDiario: Record<string, RoteiroDiario>;
   onRemoverHospedagem: (dataDia: string) => Promise<void>;
   onRemoverAtividade: (dataDia: string, index: number) => Promise<void>;
+  onAdicionarDespesa: (dataDia: string, despesa: { nome: string; valor: number; categoria: string }) => Promise<void>;
+  onRemoverDespesa: (dataDia: string, despesaId: string) => Promise<void>;
   destino: string;
   viagemAtiva: Viagem | null;
   diaAtivoWorkspace?: string | null;
@@ -20,6 +122,8 @@ export default function SideBItinerary({
   roteiroDiario,
   onRemoverHospedagem,
   onRemoverAtividade,
+  onAdicionarDespesa,
+  onRemoverDespesa,
   destino,
   viagemAtiva,
   diaAtivoWorkspace,
@@ -95,12 +199,13 @@ export default function SideBItinerary({
     }
   }, [datasViagem]);
   
-  // Calcula o orçamento diário total (Hospedagem + Soma das atividades)
+  // Calcula o orçamento diário total (Hospedagem + Soma das atividades + Despesas)
   const calcularTotalDia = (diario: RoteiroDiario | undefined): number => {
     if (!diario) return 0;
     const custoHospedagem = diario.hospedagem?.preco_diario || 0;
     const custoAtividades = diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
-    return custoHospedagem + custoAtividades;
+    const custoDespesas = diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
+    return custoHospedagem + custoAtividades + custoDespesas;
   };
 
   // Calcula o orçamento total da viagem inteira
@@ -388,6 +493,59 @@ export default function SideBItinerary({
                               SEM PASSEIOS DIÁRIOS
                             </div>
                           )}
+                        </div>
+
+                        {/* Seção 3: Despesas Diárias (Gastos Extras) */}
+                        <div className="space-y-1.5 pt-1.5">
+                          <div className="text-[9.5px] uppercase font-bold text-slate-455 tracking-wider flex items-center justify-between">
+                            <span>🛍️ DESPESAS E GASTOS DIÁRIOS</span>
+                            <span className="text-amber-500 font-mono-tech text-[8.5px] font-black bg-amber-500/10 px-1.5 py-0.5 rounded leading-none">
+                              R$ {diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0).toLocaleString("pt-BR") || 0}
+                            </span>
+                          </div>
+
+                          {diario.despesas && diario.despesas.length > 0 ? (
+                            <div className="border border-slate-850 divide-y divide-slate-850/60 bg-slate-950/40 rounded-lg overflow-hidden shadow-sm">
+                              {diario.despesas.map((exp) => (
+                                <div
+                                  key={exp.id}
+                                  className="p-2.5 flex items-center justify-between gap-3 hover:bg-slate-900/20 transition-colors"
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-bold text-slate-300 uppercase text-[10px] tracking-wide truncate">
+                                        {exp.nome}
+                                      </span>
+                                      <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono-tech select-none leading-none rounded">
+                                        {exp.categoria}
+                                      </span>
+                                    </div>
+                                    <div className="text-[9px] text-[#10b981] font-mono-tech mt-0.5 font-bold">
+                                      R$ {exp.valor.toLocaleString("pt-BR")}
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => onRemoverDespesa(dataDia, exp.id || "")}
+                                    className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[11px] cursor-pointer"
+                                    title="Remover Despesa"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="border border-dashed border-slate-850 p-2.5 text-center text-slate-500 font-bold uppercase text-[9px] rounded-lg bg-slate-950/5 select-none shadow-inner">
+                              SEM DESPESAS ADICIONADAS
+                            </div>
+                          )}
+
+                          {/* Formulário Inline Compacto para Inclusão Rápida de Despesa */}
+                          <InlineAddExpenseForm
+                            onAddExpense={async (nome, valor, categoria) => {
+                              await onAdicionarDespesa(dataDia, { nome, valor, categoria });
+                            }}
+                          />
                         </div>
                       </div>
 

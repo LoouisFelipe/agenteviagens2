@@ -8,10 +8,11 @@ interface SideAListProps {
   datasViagem: string[]; // Lista de datas do roteiro gerado
   onInjetarHospedagem: (dataDia: string, hospedagem: Hospedagem) => Promise<void>;
   onInjetarAtividade: (dataDia: string, atividade: Atividade) => Promise<void>;
+  onInjetarDespesa: (dataDia: string, despesa: { nome: string; valor: number; categoria: string }) => Promise<void>;
   viagemDestino: string;
 }
 
-function obterCategoriaItem(nome: string, tipo: "hospedagem" | "atividade") {
+function obterCategoriaItem(nome: string, tipo: "hospedagem" | "atividade" | "despesa") {
   const n = nome.toLowerCase();
   if (tipo === "hospedagem") {
     if (n.includes("luxury") || n.includes("singular") || n.includes("bristol") || n.includes("palace") || n.includes("alvear") || n.includes("faena") || n.includes("grand") || n.includes("w santiago")) {
@@ -21,7 +22,7 @@ function obterCategoriaItem(nome: string, tipo: "hospedagem" | "atividade") {
       return { label: "Econômico ⚡", style: "bg-teal-500/10 text-[#10b981] border-teal-500/20", glow: "glow-card-emerald" };
     }
     return { label: "Boutique 🏨", style: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20", glow: "glow-card-indigo" };
-  } else {
+  } else if (tipo === "atividade") {
     if (n.includes("cajón") || n.includes("neve") || n.includes("ski") || n.includes("trekking") || n.includes("trilhas") || n.includes("aventura") || n.includes("el yeso")) {
       return { label: "Aventura 🧭", style: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", glow: "glow-card-emerald" };
     }
@@ -32,6 +33,18 @@ function obterCategoriaItem(nome: string, tipo: "hospedagem" | "atividade") {
       return { label: "Gastronomia 🍽️", style: "bg-rose-500/10 text-rose-400 border-rose-500/20", glow: "glow-card-rose" };
     }
     return { label: "Lazer 🪁", style: "bg-slate-500/10 text-slate-400 border-slate-500/20", glow: "glow-card-indigo" };
+  } else {
+    // Despesas
+    if (n.includes("restaurante") || n.includes("almoço") || n.includes("janta") || n.includes("lanche") || n.includes("café")) {
+      return { label: "Alimentação 🍽️", style: "bg-rose-500/10 text-rose-400 border-rose-500/20", glow: "glow-card-rose" };
+    }
+    if (n.includes("táxi") || n.includes("taxi") || n.includes("uber") || n.includes("metrô") || n.includes("passagem") || n.includes("combustível")) {
+      return { label: "Transporte 🚗", style: "bg-cyan-500/10 text-cyan-405 border-cyan-500/20", glow: "glow-card-indigo" };
+    }
+    if (n.includes("suvenir") || n.includes("lembrança") || n.includes("compra") || n.includes("shopping")) {
+      return { label: "Compras 🛍️", style: "bg-amber-500/10 text-amber-450 border-amber-500/20", glow: "glow-card-amber" };
+    }
+    return { label: "Outros 💰", style: "bg-slate-500/10 text-slate-400 border-slate-500/20", glow: "glow-card-indigo" };
   }
 }
 
@@ -39,9 +52,10 @@ export default function SideAList({
   datasViagem,
   onInjetarHospedagem,
   onInjetarAtividade,
+  onInjetarDespesa,
   viagemDestino,
 }: SideAListProps) {
-  const [tabAtiva, setTabAtiva] = useState<"hospedagem" | "atividade">("hospedagem");
+  const [tabAtiva, setTabAtiva] = useState<"hospedagem" | "atividade" | "despesa">("hospedagem");
   const [filtro, setFiltro] = useState("");
   const [menuAbertoIndex, setMenuAbertoIndex] = useState<number | null>(null);
 
@@ -69,6 +83,27 @@ export default function SideAList({
 
   const limparCustomDias = () => {
     setCustomDiasSelecionados([]);
+  };
+
+  // Estados para despesas customizadas
+  const [despesaNome, setDespesaNome] = useState("");
+  const [despesaPreco, setDespesaPreco] = useState("");
+  const [despesaCategoria, setDespesaCategoria] = useState("Alimentação");
+  const [despesaDiasSelecionados, setDespesaDiasSelecionados] = useState<string[]>([]);
+  const [despesaFormError, setDespesaFormError] = useState("");
+
+  const toggleDespesaDiaSelecionado = (dia: string) => {
+    setDespesaDiasSelecionados((prev) =>
+      prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia]
+    );
+  };
+
+  const selecionarTodosDespesaDias = () => {
+    setDespesaDiasSelecionados([...datasViagem]);
+  };
+
+  const limparDespesaDias = () => {
+    setDespesaDiasSelecionados([]);
   };
 
   // Estados para alocação avançada de passeios (pessoas e dias consecutivos)
@@ -132,7 +167,7 @@ export default function SideAList({
     return () => { active = false; };
   }, [viagemDestino]);
 
-  const listaAtual = tabAtiva === "hospedagem" ? hospedagens : atividades;
+  const listaAtual = tabAtiva === "hospedagem" ? hospedagens : tabAtiva === "atividade" ? atividades : [];
   const itensFiltrados = listaAtual.filter((item) =>
     item.nome.toLowerCase().includes(filtro.toLowerCase())
   );
@@ -141,7 +176,7 @@ export default function SideAList({
     setMenuAbertoIndex(null);
     if (tabAtiva === "hospedagem") {
       await onInjetarHospedagem(dataDia, item as Hospedagem);
-    } else {
+    } else if (tabAtiva === "atividade") {
       await onInjetarAtividade(dataDia, item as Atividade);
     }
   };
@@ -157,7 +192,7 @@ export default function SideAList({
             setFiltro("");
             setMenuAbertoIndex(null);
           }}
-          className={`flex-1 py-2.5 font-bold tracking-wide text-center transition-all duration-200 cursor-pointer rounded-lg ${
+          className={`flex-1 py-2.5 font-bold tracking-wide text-center transition-all duration-200 cursor-pointer rounded-lg text-[10px] ${
             tabAtiva === "hospedagem"
               ? "bg-slate-900 text-indigo-400 shadow-md shadow-black/20"
               : "text-slate-400 hover:text-slate-200"
@@ -171,13 +206,27 @@ export default function SideAList({
             setFiltro("");
             setMenuAbertoIndex(null);
           }}
-          className={`flex-1 py-2.5 font-bold tracking-wide text-center transition-all duration-200 cursor-pointer rounded-lg ${
+          className={`flex-1 py-2.5 font-bold tracking-wide text-center transition-all duration-200 cursor-pointer rounded-lg text-[10px] ${
             tabAtiva === "atividade"
               ? "bg-slate-900 text-emerald-400 shadow-md shadow-black/20"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
           [ 02. PASSEIOS ]
+        </button>
+        <button
+          onClick={() => {
+            setTabAtiva("despesa");
+            setFiltro("");
+            setMenuAbertoIndex(null);
+          }}
+          className={`flex-1 py-2.5 font-bold tracking-wide text-center transition-all duration-200 cursor-pointer rounded-lg text-[10px] ${
+            tabAtiva === "despesa"
+              ? "bg-slate-900 text-[#f59e0b] shadow-md shadow-black/20"
+              : "text-slate-400 hover:text-slate-200"
+          }`}
+        >
+          [ 03. DESPESAS ]
         </button>
       </div>
 
@@ -350,6 +399,145 @@ export default function SideAList({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {tabAtiva === "despesa" && (
+        <div className="px-3.5 py-3 bg-slate-950/20 border-b border-slate-800/40 select-none space-y-3">
+          <div className="p-3.5 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3.5 shadow-inner">
+            <div className="text-[10px] uppercase font-black text-[#f59e0b] tracking-wider flex items-center gap-1">
+              <span>💰 REGISTRO DE NOVA DESPESA / GASTO DIÁRIO</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="flex flex-col">
+                <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Nome da Despesa</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Almoço no Chile"
+                  value={despesaNome}
+                  onChange={(e) => setDespesaNome(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none uppercase text-[10px] rounded-lg shadow-inner font-medium"
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Valor Unitário (R$)</label>
+                <input
+                  type="number"
+                  placeholder="Ex: 50"
+                  value={despesaPreco}
+                  onChange={(e) => setDespesaPreco(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col">
+              <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Categoria do Gasto</label>
+              <select
+                value={despesaCategoria}
+                onChange={(e) => setDespesaCategoria(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg cursor-pointer font-bold uppercase"
+              >
+                <option value="Alimentação">Alimentação 🍽️</option>
+                <option value="Transporte">Transporte 🚗</option>
+                <option value="Lazer">Lazer 🪁</option>
+                <option value="Compras">Compras 🛍️</option>
+                <option value="Outros">Outros 💰</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[9px] uppercase font-bold text-slate-500">Dias de Lançamento ({despesaDiasSelecionados.length} selecionados)</label>
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={selecionarTodosDespesaDias}
+                    className="text-[8.5px] font-bold text-indigo-400 hover:text-indigo-300 uppercase cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    [ SELECIONAR TODOS ]
+                  </button>
+                  <button
+                    type="button"
+                    onClick={limparDespesaDias}
+                    className="text-[8.5px] font-bold text-slate-500 hover:text-slate-400 uppercase cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    [ LIMPAR ]
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/60 rounded-xl border border-slate-800/60 max-h-36 overflow-y-auto">
+                {datasViagem.map((dia, dIdx) => {
+                  const isSelected = despesaDiasSelecionados.includes(dia);
+                  const dateObj = new Date(dia + "T12:00:00");
+                  return (
+                    <button
+                      key={dia}
+                      type="button"
+                      onClick={() => toggleDespesaDiaSelecionado(dia)}
+                      className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-bold uppercase transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
+                        isSelected
+                          ? "bg-amber-600 border-amber-400 text-white shadow-md shadow-amber-500/10 scale-[1.02]"
+                          : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-white animate-pulse" : "bg-slate-600"}`} />
+                      <span>D{String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {despesaFormError && (
+              <div className="text-[9.5px] text-rose-400 font-mono-tech leading-none">
+                ⚠️ {despesaFormError}
+              </div>
+            )}
+
+            <button
+              onClick={async () => {
+                setDespesaFormError("");
+                if (!despesaNome.trim() || !despesaPreco.trim() || despesaDiasSelecionados.length === 0) {
+                  setDespesaFormError("PREENCHA TODOS OS CAMPOS E SELECIONE PELO MENOS UM DIA.");
+                  return;
+                }
+                const precoVal = Number(despesaPreco);
+                if (isNaN(precoVal) || precoVal <= 0) {
+                  setDespesaFormError("VALOR DIÁRIO EXCEDIDO OU INVÁLIDO.");
+                  return;
+                }
+
+                try {
+                  emitLog(`SYSTEM: Sincronizando despesa [${despesaNome.trim()}] nos dias [${despesaDiasSelecionados.join(", ")}]...`);
+                  
+                  await Promise.all(
+                    despesaDiasSelecionados.map((dia) =>
+                      onInjetarDespesa(dia, {
+                        nome: despesaNome.trim(),
+                        valor: precoVal,
+                        categoria: despesaCategoria
+                      })
+                    )
+                  );
+
+                  // Limpar
+                  setDespesaNome("");
+                  setDespesaPreco("");
+                  setDespesaCategoria("Alimentação");
+                  setDespesaDiasSelecionados([]);
+                  emitLog(`SYSTEM: Despesa vinculada com sucesso para ${despesaDiasSelecionados.length} dias.`);
+                } catch (e) {
+                  console.error(e);
+                  setDespesaFormError("ERRO AO REGISTRAR GASTO.");
+                }
+              }}
+              className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-[#f59e0b] hover:from-amber-400 hover:to-amber-500 text-white font-bold text-[10.5px] uppercase transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1 shadow-md hover:scale-[1.01] border-0"
+            >
+              [ 💰 LANÇAR E SALVAR DESPESA ]
+            </button>
+          </div>
         </div>
       )}
 
