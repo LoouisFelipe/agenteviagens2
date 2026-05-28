@@ -50,10 +50,14 @@ export default function Home() {
   const [isFormEdicaoAberto, setIsFormEdicaoAberto] = useState(false);
   const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
 
-  // Estados para o Modal "Visão dia-a-dia"
+  // Estados para o Modal "Visão dia-a-dia" (mantidos para compatibilidade retrospectiva, mas migrados para inline)
   const [diaSelecionadoModal, setDiaSelecionadoModal] = useState<string | null>(null);
   const [modalCronograma, setModalCronograma] = useState<Record<string, string>>({});
   const [isSalvandoCronograma, setIsSalvandoCronograma] = useState(false);
+
+  // Estados para o Workspace Focado (Redesenho UX Premium)
+  const [diaAtivoWorkspace, setDiaAtivoWorkspace] = useState<string | null>(null);
+  const [isModoFoco, setIsModoFoco] = useState(true);
 
   // Preenche as informações do cronograma do dia selecionado
   const handleSelecionarDia = (dataDia: string) => {
@@ -88,6 +92,20 @@ export default function Home() {
     }
   };
 
+  // Salva o cronograma horário inline diretamente do Sidebar sem modal
+  const handleSalvarCronogramaInline = async (dataDia: string, cronograma: Record<string, string>) => {
+    if (!viagemAtiva) return;
+    try {
+      await atualizarCronogramaHorario(viagemAtiva.id, dataDia, cronograma);
+      const roteiro = await obterRoteiroDiario(viagemAtiva.id);
+      setRoteiroDiario(roteiro);
+      emitLog(`SYSTEM: Cronograma do dia ${dataDia} atualizado com sucesso.`);
+    } catch (err) {
+      console.error("Erro ao salvar cronograma inline:", err);
+      emitLog("SYSTEM ERROR: Falha ao sincronizar o cronograma de horários.");
+    }
+  };
+
   // Carrega todas as viagens salvas
   const carregarDadosViagens = useCallback(async (activeIdToSet?: string) => {
     try {
@@ -101,12 +119,16 @@ export default function Home() {
         
         const dias = gerarDiasPeriodo(selecionada.data_inicio, selecionada.data_fim);
         setDatasViagem(dias);
+        if (dias.length > 0) {
+          setDiaAtivoWorkspace(dias[0]);
+        }
         
         const roteiro = await obterRoteiroDiario(selecionada.id);
         setRoteiroDiario(roteiro);
       } else {
         setViagemAtiva(null);
         setDatasViagem([]);
+        setDiaAtivoWorkspace(null);
         setRoteiroDiario({});
       }
     } catch (err) {
@@ -128,6 +150,9 @@ export default function Home() {
       setViagemAtiva(selecionada);
       const dias = gerarDiasPeriodo(selecionada.data_inicio, selecionada.data_fim);
       setDatasViagem(dias);
+      if (dias.length > 0) {
+        setDiaAtivoWorkspace(dias[0]);
+      }
       const roteiro = await obterRoteiroDiario(selecionada.id);
       setRoteiroDiario(roteiro);
     }
@@ -402,35 +427,127 @@ export default function Home() {
         )}
       </section>
 
-      {/* Status da Rota Ativa */}
-      {viagemAtiva && (
-        <section className="glass-panel-light shadow-md px-4 py-2.5 flex flex-wrap gap-x-6 gap-y-1.5 font-mono-tech text-[10px] text-slate-400 uppercase select-none rounded-xl border border-slate-850">
-          <div>
-            ROTA ATIVA: <span className="text-indigo-400 font-bold">{viagemAtiva.origem} ➔ {viagemAtiva.destino}</span>
-          </div>
-          <div className="hidden sm:block text-slate-800">|</div>
-          <div>
-            PERÍODO: <span className="text-slate-200 font-semibold">{viagemAtiva.data_inicio} até {viagemAtiva.data_fim}</span>
-          </div>
-          <div className="hidden md:block text-slate-800">|</div>
-          <div>
-            VERBA TETO: <span className="text-[#f59e0b] font-bold">R$ {viagemAtiva.orcamento_maximo.toLocaleString("pt-BR")}</span>
-          </div>
-          <div className="hidden md:block text-slate-800">|</div>
-          <div className="hidden md:block">
-            CALENDÁRIO: <span className="text-slate-200 font-bold">{datasViagem.length} DIAS ESCALADOS</span>
-          </div>
-        </section>
-      )}
+      {/* Grade de KPIs Premium (Micro/Macro Cards) */}
+      {viagemAtiva && (() => {
+        const calcularTotalDiaLocal = (diario: RoteiroDiario | undefined): number => {
+          if (!diario) return 0;
+          const custoHospedagem = diario.hospedagem?.preco_diario || 0;
+          const custoAtividades = diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
+          return custoHospedagem + custoAtividades;
+        };
 
-      {/* Timeline de Custos Diários */}
+        const custoTotal = datasViagem.reduce((acc, dia) => acc + calcularTotalDiaLocal(roteiroDiario[dia]), 0);
+        const orcamento = viagemAtiva.orcamento_maximo || 0;
+        const ultrapassou = orcamento > 0 && custoTotal > orcamento;
+        const percentualConsumido = orcamento > 0 ? Math.min(100, Math.round((custoTotal / orcamento) * 100)) : 0;
+
+        const diasCompletos = datasViagem.filter(dia => !!roteiroDiario[dia]?.hospedagem).length;
+        const percentualDiasCompletos = datasViagem.length > 0 ? Math.round((diasCompletos / datasViagem.length) * 100) : 0;
+
+        const financialGlowClass = ultrapassou 
+          ? "border-rose-500/50 shadow-lg shadow-rose-500/10" 
+          : percentualConsumido > 80 
+            ? "border-amber-500/50 shadow-lg shadow-amber-500/10" 
+            : "border-indigo-500/35 shadow-lg shadow-indigo-500/5";
+
+        return (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
+            {/* Card 1: Rota */}
+            <div className="glass-panel-light p-4 rounded-2xl border border-slate-800 flex items-center gap-4 glow-card-indigo relative overflow-hidden transition-all duration-300">
+              <div className="absolute top-0 left-0 w-[4px] h-full bg-indigo-600" />
+              <div className="text-3xl">✈️</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Conexão de Tráfego</div>
+                <div className="text-sm font-black text-slate-100 uppercase tracking-wide truncate mt-0.5">
+                  {viagemAtiva.origem.replace(/ \(.*\)/, "")} ➔ {viagemAtiva.destino.replace(/ \(.*\)/, "")}
+                </div>
+                <div className="text-[9.5px] font-mono-tech text-indigo-400 mt-1 uppercase">
+                  {viagemAtiva.data_inicio} a {viagemAtiva.data_fim}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Orçamento */}
+            <div className={`glass-panel-light p-4 rounded-2xl border flex items-center gap-4 relative overflow-hidden transition-all duration-300 ${financialGlowClass}`}>
+              <div className={`absolute top-0 left-0 w-[4px] h-full ${ultrapassou ? "bg-rose-500" : percentualConsumido > 80 ? "bg-amber-500" : "bg-emerald-500"}`} />
+              <div className="text-3xl">📊</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Orçamento Operacional</div>
+                <div className="text-sm font-black text-slate-100 mt-0.5 flex items-baseline gap-1.5 font-mono-tech">
+                  <span className={ultrapassou ? "text-rose-400" : "text-[#10b981]"}>
+                    R$ {custoTotal.toLocaleString("pt-BR")}
+                  </span>
+                  <span className="text-slate-650 text-xs">/</span>
+                  <span className="text-slate-400 text-xs">
+                    R$ {orcamento.toLocaleString("pt-BR")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 select-none">
+                  <span className={`text-[9.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#10b981]"}`}>
+                    {percentualConsumido}% CONSUMIDO
+                  </span>
+                  {ultrapassou && (
+                    <span className="text-[8px] bg-rose-500/20 text-rose-500 font-bold px-1.5 py-0.5 rounded uppercase led-red tracking-widest font-sans scale-90">
+                      OVER_BUDGET
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Eficiência */}
+            <div className="glass-panel-light p-4 rounded-2xl border border-slate-800 flex items-center gap-4 glow-card-emerald relative overflow-hidden transition-all duration-300">
+              <div className="absolute top-0 left-0 w-[4px] h-full bg-[#10b981]" />
+              <div className="text-3xl">⚙️</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Cobertura de Alocação</div>
+                <div className="text-sm font-black text-slate-100 uppercase tracking-wide truncate mt-0.5 font-mono-tech">
+                  {diasCompletos} / {datasViagem.length} dias prontos
+                </div>
+                <div className="text-[9.5px] font-mono-tech text-[#10b981] mt-1 uppercase">
+                  {percentualDiasCompletos}% de dias planejados
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Timeline de Custos Diários (Micro-Cards Grid) */}
       {viagemAtiva && (
         <TimelineCompact
           datasViagem={datasViagem}
           roteiroDiario={roteiroDiario}
           orcamentoMaximo={viagemAtiva.orcamento_maximo}
-          onSelecionarDia={handleSelecionarDia}
+          onSelecionarDia={(dia) => setDiaAtivoWorkspace(dia)}
+          diaAtivoWorkspace={diaAtivoWorkspace}
         />
+      )}
+
+      {/* Workspace Header & Modo Toggle */}
+      {viagemAtiva && diaAtivoWorkspace && (
+        <div className="w-full flex items-center justify-between border-b border-slate-850 pb-2.5 mt-1 select-none">
+          <div className="flex items-center space-x-3">
+            <span className="text-[#f59e0b] font-black text-[10.5px] uppercase tracking-wider font-sans flex items-center gap-2">
+              <span>⚡ WORKSPACE OPERACIONAL DE FOCO:</span>
+              <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2.5 py-0.5 rounded-lg text-[10px]">
+                DIA {datasViagem.indexOf(diaAtivoWorkspace) + 1} ➔ {new Date(diaAtivoWorkspace + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ({diaAtivoWorkspace})
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsModoFoco(!isModoFoco)}
+              className={`px-4.5 py-1.5 font-mono-tech text-[9px] font-bold rounded-lg border transition-all duration-200 uppercase cursor-pointer ${
+                isModoFoco
+                  ? "bg-indigo-600/10 border-indigo-500/40 text-indigo-400 hover:bg-indigo-600/25"
+                  : "bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-350"
+              }`}
+            >
+              {isModoFoco ? "[ ⚡ MODO: FOCO DIÁRIO ]" : "[ 🌐 MODO: VISÃO COMPLETA ]"}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Painel Dividido Principal (Lado A e Lado B) */}
@@ -445,7 +562,7 @@ export default function Home() {
           />
         </div>
 
-        {/* Lado B: Roteiro Diário */}
+        {/* Lado B: Roteiro Diário (Macro-View) */}
         <div className="lg:col-span-7 flex flex-col h-full">
           <SideBItinerary
             datasViagem={datasViagem}
@@ -454,6 +571,9 @@ export default function Home() {
             onRemoverAtividade={handleRemoverAtividade}
             destino={viagemAtiva?.destino || "SANTIAGO (SCL)"}
             viagemAtiva={viagemAtiva}
+            diaAtivoWorkspace={diaAtivoWorkspace}
+            isModoFoco={isModoFoco}
+            onSalvarCronogramaInline={handleSalvarCronogramaInline}
           />
         </div>
       </main>
@@ -462,149 +582,6 @@ export default function Home() {
       <footer className="w-full">
         <IndustrialLog />
       </footer>
-
-      {/* MODAL: ROTEIRO DIA-A-DIA POR HORAS */}
-      {diaSelecionadoModal && viagemAtiva && (() => {
-        const dIdx = datasViagem.indexOf(diaSelecionadoModal);
-        const dateObj = new Date(diaSelecionadoModal + "T12:00:00");
-        const labelCabecalho = `DIA ${String(dIdx + 1).padStart(2, "0")} - ${dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
-        const diario = roteiroDiario[diaSelecionadoModal] || { hospedagem: null, atividades: [] };
-        
-        return (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-50 p-4 font-sans select-none animate-fade-in">
-            <div className="w-full max-w-3xl glass-panel shadow-2xl overflow-hidden rounded-2xl relative border border-slate-800">
-              {/* Listras decorativas no topo */}
-              <div className="absolute top-0 left-0 w-full h-[3.5px] hazard-stripes" />
-              
-              {/* Header do Modal */}
-              <div className="p-4 bg-slate-950/40 border-b border-slate-850 flex items-center justify-between">
-                <div>
-                  <h2 className="text-[#f59e0b] font-black uppercase tracking-wider text-xs flex items-center gap-1.5">
-                    <span>🗓️ VISÃO DIA-A-DIA OPERACIONAL</span>
-                    <span className="text-slate-500 font-mono-tech font-normal text-[10px]">|</span>
-                    <span className="text-slate-200">{labelCabecalho}</span>
-                  </h2>
-                  <p className="text-[9.5px] text-slate-400 uppercase font-semibold tracking-wide mt-0.5 font-mono-tech">
-                    DESTINO: {viagemAtiva.destino}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setDiaSelecionadoModal(null)}
-                  className="px-3.5 py-1.5 bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-250 transition-colors uppercase font-bold text-[10px] rounded-lg cursor-pointer border-0 shadow"
-                >
-                  [ FECHAR ]
-                </button>
-              </div>
-
-              {/* Corpo em Duas Colunas */}
-              <div className="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-slate-850 max-h-[70vh] overflow-y-auto">
-                
-                {/* Coluna Esquerda - Resumo Alocações do Dia */}
-                <div className="md:col-span-5 p-4 space-y-4 bg-slate-950/15">
-                  <div className="space-y-1.5">
-                    <div className="text-[9.5px] uppercase font-bold text-slate-450 tracking-wider">
-                      🏨 HOSPEDAGEM ALOCADA
-                    </div>
-                    {diario.hospedagem ? (
-                      <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-lg space-y-1 shadow-sm">
-                        <div className="font-bold text-slate-200 uppercase text-[10.5px] tracking-wide">
-                          {diario.hospedagem.nome}
-                        </div>
-                        <div className="text-[10px] font-mono-tech text-[#10b981] font-bold">
-                          R$ {diario.hospedagem.preco_diario}/dia
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="border border-dashed border-slate-850 hover:bg-slate-900/5 p-3.5 text-center text-slate-500 font-bold uppercase text-[9.5px] rounded-lg tracking-wider transition-colors cursor-default">
-                        SEM HOSPEDAGEM ALOCADA
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="text-[9.5px] uppercase font-bold text-slate-455 tracking-wider">
-                      🧭 ATIVIDADES DO DIA
-                    </div>
-                    {diario.atividades && diario.atividades.length > 0 ? (
-                      <div className="border border-slate-850 divide-y divide-slate-850/60 bg-slate-950/40 rounded-lg overflow-hidden shadow-sm">
-                        {diario.atividades.map((atv, index) => (
-                          <div key={index} className="p-2.5 flex items-start gap-2 hover:bg-slate-900/10 transition-colors">
-                            <span className="text-slate-500 font-mono-tech text-[9.5px] font-bold mt-0.5">#{String(index + 1).padStart(2, "0")}</span>
-                            <div className="min-w-0 flex-1">
-                              <div className="font-bold text-slate-300 uppercase text-[10px] truncate leading-tight">
-                                {atv.nome}
-                              </div>
-                              <div className="text-[9.5px] font-mono-tech text-cyan-400 font-semibold mt-0.5">
-                                R$ {atv.valor}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="border border-dashed border-slate-850 hover:bg-slate-900/5 p-3.5 text-center text-slate-500 font-bold uppercase text-[9.5px] rounded-lg tracking-wider transition-colors cursor-default">
-                        SEM PASSEIOS CADASTRADOS
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Coluna Direita - Agenda Horária Editável */}
-                <div className="md:col-span-7 p-4 space-y-3.5">
-                  <div className="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider flex items-center justify-between border-b border-slate-850 pb-1.5">
-                    <span>🕒 CRONOGRAMA DE HORÁRIOS DO DIA</span>
-                    <span className="text-slate-500 text-[8.5px] lowercase font-normal italic">campo digitável</span>
-                  </div>
-
-                  <div className="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                    {Object.keys(modalCronograma).sort().map((hora) => (
-                      <div key={hora} className="flex items-center gap-3 group">
-                        <span className="w-12 text-center py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold font-mono-tech text-[10px] rounded-lg shadow-sm select-none">
-                          {hora}
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="Inserir atividade para este horário..."
-                          value={modalCronograma[hora]}
-                          onChange={(e) => {
-                            setModalCronograma({
-                              ...modalCronograma,
-                              [hora]: e.target.value,
-                            });
-                          }}
-                          className="flex-1 bg-slate-950 border border-slate-850 text-slate-100 px-3 py-1.5 focus:border-indigo-500 focus:outline-none placeholder-slate-700 text-[10.5px] font-medium rounded-lg shadow-inner uppercase tracking-wide transition-all duration-150"
-                          autoComplete="off"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Rodapé do Modal */}
-              <div className="p-3 bg-slate-950/40 border-t border-slate-850 flex justify-end gap-3 select-none">
-                <button
-                  type="button"
-                  onClick={() => setDiaSelecionadoModal(null)}
-                  disabled={isSalvandoCronograma}
-                  className="px-4.5 py-2 border border-slate-700 hover:border-slate-500 text-slate-350 hover:text-slate-200 transition-all rounded-lg cursor-pointer uppercase text-[10px] font-bold"
-                >
-                  [ DISMISS ]
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSalvarCronograma}
-                  disabled={isSalvandoCronograma}
-                  className="px-5 py-2 bg-gradient-to-r from-[#f59e0b] to-amber-600 hover:from-amber-500 hover:to-amber-600 text-white font-bold transition-all uppercase cursor-pointer rounded-lg text-[10px] shadow-lg shadow-amber-500/10 hover:scale-[1.01] active:scale-[0.99] border-0"
-                >
-                  {isSalvandoCronograma ? "SALVANDO..." : "[ ✔️ SALVAR CRONOGRAMA DO DIA ]"}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }

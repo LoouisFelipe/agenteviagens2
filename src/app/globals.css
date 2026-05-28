@@ -250,3 +250,53 @@ body::after {
   }
 }
 
+/* Efeito de Card 3D com Neon Glow */
+.glow-card-3d {
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+              border-color 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+              box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform, box-shadow;
+}
+.glow-card-3d:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 
+              0 8px 10px -6px rgba(99, 102, 241, 0.2);
+}
+
+/* Estado de Dia Focado (Neon Indigo Glow) */
+.active-focused-day-card {
+  border-color: rgba(99, 102, 241, 0.9) !important;
+  background: rgba(99, 102, 241, 0.08) !important;
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.3), 
+              inset 0 0 12px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Transição de Workspace */
+.workspace-fade-in {
+  animation: workspaceFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes workspaceFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom Scrollbar Thin para o Workspace */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.2);
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.4);
+}
+
+
