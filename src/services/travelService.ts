@@ -295,6 +295,7 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         roteiro[docSnap.id] = {
           hospedagem: data.hospedagem || null,
           atividades: data.atividades || [],
+          cronograma_horario: data.cronograma_horario || {},
         };
       });
       emitLog(`FIRESTORE: Roteiro carregado contendo ${Object.keys(roteiro).length} dias preenchidos.`);
