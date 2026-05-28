@@ -5,7 +5,6 @@ import {
   getDocs,
   setDoc,
   updateDoc,
-  arrayUnion,
   query,
   orderBy,
   Timestamp,
@@ -22,6 +21,7 @@ export interface Hospedagem {
 }
 
 export interface Atividade {
+  id?: string;
   nome: string;
   valor: number;
   link: string;
@@ -207,15 +207,14 @@ export async function criarNovaViagem(
       
       // Gera as datas do intervalo
       const dias = gerarDiasPeriodo(dataInicio, dataFim);
-      emitLog(`FIRESTORE: Inicializando ${dias.length} documentos vazios na subcoleção 'roteiro_diario'...`);
+      emitLog(`FIRESTORE: Inicializando ${dias.length} documentos de cronograma vazios na subcoleção 'roteiros'...`);
       
-      // Cria cada documento diário como vazio
+      // Cria cada documento de cronograma diário como vazio
       for (const dia of dias) {
-        const diaDocRef = doc(db, "viagens", docRef.id, "roteiro_diario", dia);
+        const roteiroDocRef = doc(db, "viagens", docRef.id, "roteiros", dia);
         await withTimeout(
-          setDoc(diaDocRef, {
-            hospedagem: null,
-            atividades: [],
+          setDoc(roteiroDocRef, {
+            cronograma_horario: {},
           }),
           3000,
           "Erro ao inicializar dias do roteiro no Firestore (Timeout)."
@@ -285,26 +284,95 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
 
   if (isFirebaseConfigured && db) {
     try {
-      emitLog(`FIRESTORE: getDocs(collection('viagens/${viagemId}/roteiro_diario'))`);
-      const snapshot = await withTimeout(
-        getDocs(collection(db, "viagens", viagemId, "roteiro_diario")),
-        4000,
-        "Tempo limite esgotado ao buscar roteiro diário."
+      emitLog(`FIRESTORE: Iniciando carregamento paralelo das subcoleções (hoteis, passeios, roteiros)...`);
+      const [hoteisSnap, passeiosSnap, roteirosSnap] = await withTimeout(
+        Promise.all([
+          getDocs(collection(db, "viagens", viagemId, "hoteis")),
+          getDocs(collection(db, "viagens", viagemId, "passeios")),
+          getDocs(collection(db, "viagens", viagemId, "roteiros"))
+        ]),
+        5000,
+        "Tempo limite esgotado ao buscar subcoleções do roteiro diário."
       );
+
       const roteiro: Record<string, RoteiroDiario> = {};
-      snapshot.docs.forEach((docSnap) => {
+
+      // 1. Processar roteiros diários (cronogramas)
+      roteirosSnap.docs.forEach((docSnap) => {
         const data = docSnap.data();
-        roteiro[docSnap.id] = {
-          hospedagem: data.hospedagem || null,
-          atividades: data.atividades || [],
-          cronograma_horario: data.cronograma_horario || {},
+        const diaId = docSnap.id;
+        if (!roteiro[diaId]) {
+          roteiro[diaId] = { hospedagem: null, atividades: [], cronograma_horario: {} };
+        }
+        roteiro[diaId].cronograma_horario = data.cronograma_horario || {};
+      });
+
+      // 2. Processar hospedagem/hotéis
+      hoteisSnap.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        const diaId = docSnap.id;
+        if (!roteiro[diaId]) {
+          roteiro[diaId] = { hospedagem: null, atividades: [], cronograma_horario: {} };
+        }
+        roteiro[diaId].hospedagem = {
+          nome: data.nome || "",
+          preco_diario: Number(data.preco_diario) || 0,
+          link: data.link || ""
         };
       });
-      emitLog(`FIRESTORE: Roteiro carregado contendo ${Object.keys(roteiro).length} dias preenchidos.`);
+
+      // 3. Processar passeios/atividades
+      interface TempPasseio {
+        id: string;
+        nome: string;
+        valor: number;
+        link: string;
+        criado_em?: { seconds: number; nanoseconds: number } | null;
+      }
+      
+      const passeiosPorDia: Record<string, Array<TempPasseio>> = {};
+      
+      passeiosSnap.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        const diaId = data.diaId;
+        if (!diaId) return;
+
+        if (!passeiosPorDia[diaId]) {
+          passeiosPorDia[diaId] = [];
+        }
+        passeiosPorDia[diaId].push({
+          id: docSnap.id,
+          nome: data.nome || "",
+          valor: Number(data.valor) || 0,
+          link: data.link || "",
+          criado_em: data.criado_em || null
+        });
+      });
+
+      // Ordenar passeios de cada dia por data de criação para consistência visual
+      Object.keys(passeiosPorDia).forEach((diaId) => {
+        const passeiosOrdenados = passeiosPorDia[diaId].sort((a, b) => {
+          const tA = a.criado_em?.seconds || 0;
+          const tB = b.criado_em?.seconds || 0;
+          return tA - tB;
+        });
+
+        if (!roteiro[diaId]) {
+          roteiro[diaId] = { hospedagem: null, atividades: [], cronograma_horario: {} };
+        }
+        roteiro[diaId].atividades = passeiosOrdenados.map((p) => ({
+          id: p.id,
+          nome: p.nome,
+          valor: p.valor,
+          link: p.link
+        }));
+      });
+
+      emitLog(`FIRESTORE: Roteiro carregado contendo ${Object.keys(roteiro).length} dias ativos a partir das subcoleções.`);
       return roteiro;
     } catch (error) {
       const err = error as { code?: string; message?: string };
-      emitLog(`FIRESTORE ERROR: Falha ao recuperar subcoleção roteiro_diario. Detalhe: ${err?.message || error}`);
+      emitLog(`FIRESTORE ERROR: Falha ao recuperar subcoleções estruturadas. Detalhe: ${err?.message || error}`);
       console.error(error);
     }
   }
@@ -338,19 +406,29 @@ export async function injetarItemNoRoteiro(
 
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, "viagens", viagemId, "roteiro_diario", dataDia);
       if (tipo === "hotel") {
-        emitLog(`FIRESTORE: updateDoc(docRef, { hospedagem: {...} }) no dia ${dataDia}...`);
+        const docRef = doc(db, "viagens", viagemId, "hoteis", dataDia);
+        emitLog(`FIRESTORE: setDoc(docRef, hospedagem) no dia ${dataDia}...`);
         await withTimeout(
-          updateDoc(docRef, { hospedagem: item }),
+          setDoc(docRef, {
+            nome: item.nome,
+            preco_diario: (item as Hospedagem).preco_diario,
+            link: item.link
+          }),
           4000,
           "Tempo limite esgotado ao salvar hospedagem no Firestore."
         );
       } else {
-        emitLog(`FIRESTORE: updateDoc(docRef, { atividades: arrayUnion({...}) }) no dia ${dataDia}...`);
+        const colRef = collection(db, "viagens", viagemId, "passeios");
+        const docRef = doc(colRef);
+        emitLog(`FIRESTORE: setDoc(docRef, passeio) no dia ${dataDia}...`);
         await withTimeout(
-          updateDoc(docRef, {
-            atividades: arrayUnion(item),
+          setDoc(docRef, {
+            diaId: dataDia,
+            nome: item.nome,
+            valor: (item as Atividade).valor,
+            link: item.link,
+            criado_em: Timestamp.now()
           }),
           4000,
           "Tempo limite esgotado ao salvar atividade no Firestore."
@@ -422,26 +500,51 @@ export async function removerAtividadeDia(
 
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, "viagens", viagemId, "roteiro_diario", dataDia);
-      emitLog(`FIRESTORE: Lendo documento para remover item no índice ${atividadeIndex}...`);
-      const docSnap = await withTimeout(
-        getDoc(docRef),
+      emitLog(`FIRESTORE: Carregando todos os passeios da viagem para localizar o índice...`);
+      const snapshot = await withTimeout(
+        getDocs(collection(db, "viagens", viagemId, "passeios")),
         4000,
         "Tempo limite esgotado ao ler atividades para remoção."
       );
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const atividades = [...(data.atividades || [])];
-        if (atividadeIndex >= 0 && atividadeIndex < atividades.length) {
-          const removida = atividades.splice(atividadeIndex, 1);
-          emitLog(`FIRESTORE: updateDoc(docRef, { atividades }) após remover '${removida[0]?.nome}'...`);
-          await withTimeout(
-            updateDoc(docRef, { atividades }),
-            4000,
-            "Tempo limite esgotado ao remover atividade do Firestore."
-          );
-          emitLog(`FIRESTORE: Atividade removida com sucesso no dia ${dataDia}.`);
-        }
+      
+      interface PasseioDoc {
+        id: string;
+        diaId: string;
+        nome: string;
+        valor: number;
+        link: string;
+        criado_em?: { seconds: number; nanoseconds: number } | null;
+      }
+      
+      const diaPasseios = snapshot.docs
+        .map((docSnap) => {
+          const data = docSnap.data();
+          return {
+            id: docSnap.id,
+            diaId: data.diaId || "",
+            nome: data.nome || "",
+            valor: Number(data.valor) || 0,
+            link: data.link || "",
+            criado_em: data.criado_em || null
+          } as PasseioDoc;
+        })
+        .filter((p) => p.diaId === dataDia)
+        .sort((a, b) => {
+          const tA = a.criado_em?.seconds || 0;
+          const tB = b.criado_em?.seconds || 0;
+          return tA - tB;
+        });
+
+      if (atividadeIndex >= 0 && atividadeIndex < diaPasseios.length) {
+        const passeioParaDeletar = diaPasseios[atividadeIndex];
+        const docRef = doc(db, "viagens", viagemId, "passeios", passeioParaDeletar.id);
+        emitLog(`FIRESTORE: deletando passeio ID ${passeioParaDeletar.id} ('${passeioParaDeletar.nome}') no dia ${dataDia}...`);
+        await withTimeout(
+          deleteDoc(docRef),
+          4500,
+          "Tempo limite esgotado ao remover atividade do Firestore."
+        );
+        emitLog(`FIRESTORE: Atividade removida com sucesso no dia ${dataDia}.`);
       }
       return;
     } catch (error) {
@@ -475,10 +578,10 @@ export async function removerHospedagemDia(viagemId: string, dataDia: string): P
 
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, "viagens", viagemId, "roteiro_diario", dataDia);
-      emitLog(`FIRESTORE: updateDoc(docRef, { hospedagem: null }) no dia ${dataDia}...`);
+      const docRef = doc(db, "viagens", viagemId, "hoteis", dataDia);
+      emitLog(`FIRESTORE: deleteDoc(docRef) no dia ${dataDia}...`);
       await withTimeout(
-        updateDoc(docRef, { hospedagem: null }),
+        deleteDoc(docRef),
         4000,
         "Tempo limite esgotado ao remover hospedagem do Firestore."
       );
@@ -572,12 +675,30 @@ export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void>
       alterouAlgum = true;
       if (isFirebaseConfigured && db) {
         try {
-          const docRef = doc(db, "viagens", viagemId, "roteiro_diario", dia);
-          await withTimeout(
-            updateDoc(docRef, updates),
-            4000,
-            "Tempo limite esgotado ao sincronizar recotação de preços."
-          );
+          if (updates.hospedagem) {
+            const docRef = doc(db, "viagens", viagemId, "hoteis", dia);
+            await withTimeout(
+              setDoc(docRef, {
+                nome: updates.hospedagem.nome,
+                preco_diario: updates.hospedagem.preco_diario,
+                link: updates.hospedagem.link
+              }),
+              4000,
+              "Tempo limite esgotado ao atualizar cotação de hospedagem."
+            );
+          }
+          if (updates.atividades) {
+            for (const atv of updates.atividades) {
+              if (atv.id) {
+                const docRef = doc(db, "viagens", viagemId, "passeios", atv.id);
+                await withTimeout(
+                  updateDoc(docRef, { valor: atv.valor }),
+                  4000,
+                  "Tempo limite esgotado ao atualizar cotação de atividade."
+                );
+              }
+            }
+          }
         } catch (error) {
           console.error("Erro no JOB Firestore:", error);
         }
@@ -653,17 +774,16 @@ export async function editarViagem(
       // Garante que novos dias sejam inicializados se as datas expandiram
       const dias = gerarDiasPeriodo(dataInicio, dataFim);
       for (const dia of dias) {
-        const diaDocRef = doc(db, "viagens", id, "roteiro_diario", dia);
-        const diaSnap = await withTimeout(
-          getDoc(diaDocRef),
+        const roteiroDocRef = doc(db, "viagens", id, "roteiros", dia);
+        const roteiroSnap = await withTimeout(
+          getDoc(roteiroDocRef),
           3000,
           "Erro ao verificar dia do roteiro (Timeout)."
         );
-        if (!diaSnap.exists()) {
+        if (!roteiroSnap.exists()) {
           await withTimeout(
-            setDoc(diaDocRef, {
-              hospedagem: null,
-              atividades: [],
+            setDoc(roteiroDocRef, {
+              cronograma_horario: {},
             }),
             3000,
             "Erro ao inicializar novos dias expandidos do roteiro (Timeout)."
@@ -775,9 +895,9 @@ export async function atualizarCronogramaHorario(
 
   if (isFirebaseConfigured && db) {
     try {
-      const docRef = doc(db, "viagens", viagemId, "roteiro_diario", dataDia);
+      const docRef = doc(db, "viagens", viagemId, "roteiros", dataDia);
       await withTimeout(
-        updateDoc(docRef, { cronograma_horario: cronograma }),
+        setDoc(docRef, { cronograma_horario: cronograma }, { merge: true }),
         4000,
         "Tempo limite esgotado ao salvar cronograma horário no Firestore."
       );

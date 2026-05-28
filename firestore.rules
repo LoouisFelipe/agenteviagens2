@@ -12,26 +12,45 @@ service cloud.firestore {
         && (data.orcamento_maximo is int || data.orcamento_maximo is float) && data.orcamento_maximo >= 0;
     }
 
-    function isValidRoteiro(data) {
-      return (data.hospedagem == null || (
-          data.hospedagem.nome is string 
-          && (data.hospedagem.preco_diario is int || data.hospedagem.preco_diario is float)
-          && data.hospedagem.preco_diario >= 0
-          && data.hospedagem.link is string
-        ))
-        && data.atividades is list;
+    function isValidHotel(data) {
+      return data.nome is string && data.nome.size() > 0
+        && (data.preco_diario is int || data.preco_diario is float) && data.preco_diario >= 0
+        && data.link is string;
     }
 
-    // Coleção principal: viagens e subcoleção: roteiro_diario
+    function isValidPasseio(data) {
+      return data.diaId is string && data.diaId.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && data.nome is string && data.nome.size() > 0
+        && (data.valor is int || data.valor is float) && data.valor >= 0
+        && data.link is string;
+    }
+
+    // Coleção principal: viagens e subcoleções: hoteis, passeios, roteiros
     match /viagens/{viagemId} {
       allow read: if true;
       allow create, update: if isValidViagem(request.resource.data);
       allow delete: if true;
 
-      match /roteiro_diario/{diaId} {
+      // Subcoleção para Hotéis
+      match /hoteis/{diaId} {
         allow read: if true;
         allow create, update: if diaId.matches('^\\d{4}-\\d{2}-\\d{2}$') 
-          && isValidRoteiro(request.resource.data);
+          && isValidHotel(request.resource.data);
+        allow delete: if true;
+      }
+
+      // Subcoleção para Passeios/Atividades
+      match /passeios/{passeioId} {
+        allow read: if true;
+        allow create, update: if isValidPasseio(request.resource.data);
+        allow delete: if true;
+      }
+
+      // Subcoleção para Cronogramas/Roteiros
+      match /roteiros/{diaId} {
+        allow read: if true;
+        allow create, update: if diaId.matches('^\\d{4}-\\d{2}-\\d{2}$') 
+          && request.resource.data.cronograma_horario is map;
         allow delete: if true;
       }
     }
