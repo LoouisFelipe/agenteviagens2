@@ -50,47 +50,9 @@ export default function Home() {
   const [isFormEdicaoAberto, setIsFormEdicaoAberto] = useState(false);
   const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
 
-  // Estados para o Modal "Visão dia-a-dia" (mantidos para compatibilidade retrospectiva, mas migrados para inline)
-  const [diaSelecionadoModal, setDiaSelecionadoModal] = useState<string | null>(null);
-  const [modalCronograma, setModalCronograma] = useState<Record<string, string>>({});
-  const [isSalvandoCronograma, setIsSalvandoCronograma] = useState(false);
-
   // Estados para o Workspace Focado (Redesenho UX Premium)
   const [diaAtivoWorkspace, setDiaAtivoWorkspace] = useState<string | null>(null);
   const [isModoFoco, setIsModoFoco] = useState(true);
-
-  // Preenche as informações do cronograma do dia selecionado
-  const handleSelecionarDia = (dataDia: string) => {
-    setDiaSelecionadoModal(dataDia);
-    const diario = roteiroDiario[dataDia];
-    const cronogramaExistente = diario?.cronograma_horario || {};
-    
-    // Horários padrão de planejamento diário
-    const horasPadrao = ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"];
-    const inicial: Record<string, string> = {};
-    horasPadrao.forEach((h) => {
-      inicial[h] = cronogramaExistente[h] || "";
-    });
-    setModalCronograma(inicial);
-  };
-
-  // Salva o cronograma horário no Firestore/LocalStorage
-  const handleSalvarCronograma = async () => {
-    if (!viagemAtiva || !diaSelecionadoModal) return;
-    setIsSalvandoCronograma(true);
-    try {
-      await atualizarCronogramaHorario(viagemAtiva.id, diaSelecionadoModal, modalCronograma);
-      // Recarrega cotações e roteiro para atualizar o estado global da página
-      const roteiro = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(roteiro);
-      setDiaSelecionadoModal(null);
-    } catch (err) {
-      console.error("Erro ao salvar cronograma:", err);
-      emitLog("SYSTEM ERROR: Falha ao sincronizar o cronograma de horários.");
-    } finally {
-      setIsSalvandoCronograma(false);
-    }
-  };
 
   // Salva o cronograma horário inline diretamente do Sidebar sem modal
   const handleSalvarCronogramaInline = async (dataDia: string, cronograma: Record<string, string>) => {
