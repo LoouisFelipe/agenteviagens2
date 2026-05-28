@@ -294,8 +294,46 @@ export async function criarViagem(viagemData: Omit<Viagem, "id" | "criado_em">):
 /**
  * Retorna todo o roteiro diário agrupado por data do dia.
  */
+async function garantirViagemNoFirestore(viagemId: string): Promise<void> {
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(db, "viagens", viagemId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists() && typeof window !== "undefined") {
+        const rawTrips = localStorage.getItem(MOCK_TRIPS_KEY);
+        if (rawTrips) {
+          const trips = JSON.parse(rawTrips) as Viagem[];
+          const localTrip = trips.find(v => v.id === viagemId);
+          if (localTrip) {
+            emitLog(`FIRESTORE: Auto-sincronizando viagem principal '${localTrip.destino}' no Firestore...`);
+            await setDoc(docRef, {
+              usuario_id: localTrip.usuario_id || "operator-01",
+              origem: localTrip.origem,
+              destino: localTrip.destino,
+              data_inicio: localTrip.data_inicio,
+              data_fim: localTrip.data_fim,
+              criado_em: Timestamp.now(),
+              orcamento_maximo: localTrip.orcamento_maximo
+            });
+            emitLog(`FIRESTORE: Viagem pai criada com sucesso no banco de dados.`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao sincronizar viagem pai:", e);
+    }
+  }
+}
+
+/**
+ * Retorna todo o roteiro diário agrupado por data do dia.
+ */
 export async function obterRoteiroDiario(viagemId: string): Promise<Record<string, RoteiroDiario>> {
   emitLog(`REQUEST: Solicitando itinerário diário para a viagem ID: ${viagemId}...`);
+  
+  // Garante a existência do documento pai da viagem antes da leitura
+  await garantirViagemNoFirestore(viagemId);
+
   const roteiro: Record<string, RoteiroDiario> = {};
 
   // 1. Sempre ler do LocalStorage primeiro para ter a resposta instantânea e persistente localmente
@@ -418,6 +456,9 @@ export async function injetarItemNoRoteiro(
 ): Promise<void> {
   emitLog(`REQUEST: Injetando item [${item.nome}] (${tipo}) no dia ${dataDia}...`);
 
+  // Garante a existência do documento pai da viagem antes de qualquer escrita de subcoleção
+  await garantirViagemNoFirestore(viagemId);
+
   // 1. Sempre persistir localmente no LocalStorage primeiro para resposta imediata e resiliência total
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
@@ -515,6 +556,9 @@ export async function removerAtividadeDia(
 ): Promise<void> {
   emitLog(`REQUEST: Removendo atividade no índice ${atividadeIndex} do dia ${dataDia}...`);
 
+  // Garante a existência do documento pai da viagem
+  await garantirViagemNoFirestore(viagemId);
+
   // 1. Sempre remover do LocalStorage primeiro para resposta visual instantânea e garantida
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
@@ -591,6 +635,9 @@ export async function removerAtividadeDia(
  */
 export async function removerHospedagemDia(viagemId: string, dataDia: string): Promise<void> {
   emitLog(`REQUEST: Excluindo hospedagem vinculada ao dia ${dataDia}...`);
+
+  // Garante a existência do documento pai da viagem
+  await garantirViagemNoFirestore(viagemId);
 
   // 1. Sempre remover localmente do LocalStorage primeiro para resposta imediata
   if (typeof window !== "undefined") {
@@ -907,6 +954,9 @@ export async function atualizarCronogramaHorario(
   cronograma: Record<string, string>
 ): Promise<void> {
   emitLog(`REQUEST: Sincronizando cronograma horário do dia ${dataDia}...`);
+
+  // Garante a existência do documento pai da viagem
+  await garantirViagemNoFirestore(viagemId);
 
   // 1. Sempre persistir localmente no LocalStorage primeiro para resposta imediata
   if (typeof window !== "undefined") {
