@@ -410,6 +410,7 @@ export default function SideBItinerary({
                                 placeholder="Inserir atividade..."
                                 value={agendaDia[hora] || ""}
                                 onChange={(e) => handleInputChange(dataDia, hora, e.target.value)}
+                                onBlur={() => handleSalvarDia(dataDia)}
                                 className="flex-1 bg-slate-950 border border-slate-850/80 text-slate-100 px-2.5 py-1 focus:border-indigo-500 focus:outline-none placeholder-slate-800 text-[10px] font-medium rounded-lg shadow-inner uppercase tracking-wide transition-all"
                                 autoComplete="off"
                               />
@@ -423,9 +424,9 @@ export default function SideBItinerary({
                             type="button"
                             onClick={() => handleSalvarDia(dataDia)}
                             disabled={salvandoDia[dataDia]}
-                            className="w-full sm:w-auto px-4.5 py-1.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold transition-all uppercase cursor-pointer rounded-lg text-[9px] shadow-md border-0 disabled:opacity-40"
+                            className="w-full sm:w-auto px-4.5 py-1.5 bg-indigo-600/10 border border-indigo-500/35 hover:bg-indigo-650/20 text-indigo-400 font-bold transition-all uppercase cursor-pointer rounded-lg text-[9px] shadow-sm disabled:opacity-40"
                           >
-                            {salvandoDia[dataDia] ? "SALVANDO..." : "[ ✔️ SALVAR AGENDA DO DIA ]"}
+                            {salvandoDia[dataDia] ? "⚡ AUTO-SALVANDO..." : "[ ⚡ AUTO-SALVAR ATIVO (SALVA AO SAIR DO CAMPO) ]"}
                           </button>
                         </div>
                       </div>
