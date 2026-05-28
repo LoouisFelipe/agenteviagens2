@@ -397,13 +397,17 @@ export default function SideAList({
                     </span>
                     {tabAtiva === "hospedagem" ? (
                       <a
-                        href={`https://www.google.com.br/travel/search?q=${encodeURIComponent(
-                          `${item.nome} ${viagemDestino}`
-                        )}${
-                          datasViagem && datasViagem.length > 0
-                            ? `&checkin=${datasViagem[0]}&checkout=${datasViagem[datasViagem.length - 1]}`
-                            : ""
-                        }`}
+                        href={
+                          item.link && item.link.startsWith("http")
+                            ? item.link
+                            : `https://www.google.com.br/travel/search?q=${encodeURIComponent(
+                                `${item.nome} ${viagemDestino}`
+                              )}${
+                                datasViagem && datasViagem.length > 0
+                                  ? `&checkin=${datasViagem[0]}&checkout=${datasViagem[datasViagem.length - 1]}`
+                                  : ""
+                              }`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline transition-colors font-sans"

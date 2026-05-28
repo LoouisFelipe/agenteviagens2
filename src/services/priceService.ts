@@ -18,11 +18,31 @@ export interface PrecosResultado {
 const DATABASE: Record<string, { hospedagens: Hospedagem[]; atividades: Atividade[] }> = {
   santiago: {
     hospedagens: [
-      { nome: "Hotel Plaza San Francisco", preco_diario: 480, link: "https://plazasanfrancisco.cl" },
-      { nome: "Solace Hotel Providencia", preco_diario: 560, link: "https://solacehotel.cl" },
-      { nome: "The Singular Hotel Santiago", preco_diario: 920, link: "https://thesingular.com" },
-      { nome: "Hostal Forestal Eco Lodge", preco_diario: 180, link: "https://hostalforestal.cl" },
-      { nome: "W Santiago Luxury Suites", preco_diario: 850, link: "https://marriott.com" },
+      { 
+        nome: "Solace Hotel Providencia", 
+        preco_diario: 560, 
+        link: "https://www.google.com/travel/search?q=Solace%20Hotel%20Providencia%20Santiago&ts=CAESCgoCCAMKAggDEAAqCQoFOgNCUkwaAA&ved=0CAAQ5JsGahgKEwioj5bI49uUAxUAAAAAHQAAAAAQkwI&ictx=3&hl=pt-BR&gl=BR&tcfs=UgRgAXgB&qs=CAAgACgA&ap=MAA" 
+      },
+      { 
+        nome: "Novotel Santiago Providencia", 
+        preco_diario: 430, 
+        link: "https://www.google.com/travel/search?q=Novotel%20Santiago%20Providencia&ts=CAESCgoCCAMKAggDEAAqCQoFOgNCUkwaAA&ved=0CAAQ5JsGahgKEwioj5bI49uUAxUAAAAAHQAAAAAQkwI&ictx=3&hl=pt-BR&gl=BR&tcfs=UgRgAXgB&qs=CAAgACgA&ap=MAA" 
+      },
+      { 
+        nome: "AC Hotel by Marriott Cenco Costanera", 
+        preco_diario: 890, 
+        link: "https://www.google.com/travel/search?q=AC%20Hotel%20by%20Marriott%20Santiago%20Cenco%20Costanera&ts=CAESCgoCCAMKAggDEAAqCQoFOgNCUkwaAA&ved=0CAAQ5JsGahgKEwioj5bI49uUAxUAAAAAHQAAAAAQkwI&ictx=3&hl=pt-BR&gl=BR&tcfs=UgRgAXgB&qs=CAAgACgA&ap=MAA" 
+      },
+      { 
+        nome: "Ola Santiago Providencia Tapestry Tapestry Hilton", 
+        preco_diario: 680, 
+        link: "https://www.google.com/travel/search?q=Ola%20Santiago%20Providencia%20Tapestry%20Collection%20Hilton&ts=CAESCgoCCAMKAggDEAAqCQoFOgNCUkwaAA&ved=0CAAQ5JsGahgKEwioj5bI49uUAxUAAAAAHQAAAAAQkwI&ictx=3&hl=pt-BR&gl=BR&tcfs=UgRgAXgB&qs=CAAgACgA&ap=MAA" 
+      },
+      { 
+        nome: "Hostal Providencia", 
+        preco_diario: 150, 
+        link: "https://www.google.com/travel/search?q=Hostal%20Providencia%20Santiago&ts=CAESCgoCCAMKAggDEAAqCQoFOgNCUkwaAA&ved=0CAAQ5JsGahgKEwioj5bI49uUAxUAAAAAHQAAAAAQkwI&ictx=3&hl=pt-BR&gl=BR&tcfs=UgRgAXgB&qs=CAAgACgA&ap=MAA" 
+      },
     ],
     atividades: [
       { nome: "Tour Premium Concha y Toro", valor: 250, link: "https://conchaytoro.com" },
