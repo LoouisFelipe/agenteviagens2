@@ -54,8 +54,22 @@ export default function SideAList({
   const [customNome, setCustomNome] = useState("");
   const [customPreco, setCustomPreco] = useState("");
   const [customLink, setCustomLink] = useState("");
-  const [customDia, setCustomDia] = useState("");
+  const [customDiasSelecionados, setCustomDiasSelecionados] = useState<string[]>([]);
   const [customFormError, setCustomFormError] = useState("");
+
+  const toggleCustomDiaSelecionado = (dia: string) => {
+    setCustomDiasSelecionados((prev) =>
+      prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia]
+    );
+  };
+
+  const selecionarTodosCustomDias = () => {
+    setCustomDiasSelecionados([...datasViagem]);
+  };
+
+  const limparCustomDias = () => {
+    setCustomDiasSelecionados([]);
+  };
 
   // Estados para alocação avançada de passeios (pessoas e dias consecutivos)
   const [pessoasAtividade, setPessoasAtividade] = useState(2);
@@ -230,34 +244,57 @@ export default function SideAList({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <div className="flex flex-col">
-                  <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Link / URL de Acompanhamento (Opcional)</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: https://airbnb.com.br/rooms/..."
-                    value={customLink}
-                    onChange={(e) => setCustomLink(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner"
-                  />
+              <div className="flex flex-col">
+                <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Link / URL de Acompanhamento (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: https://airbnb.com.br/rooms/..."
+                  value={customLink}
+                  onChange={(e) => setCustomLink(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner w-full"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[9px] uppercase font-bold text-slate-500">Dias de Alocação no Roteiro ({customDiasSelecionados.length} selecionados)</label>
+                  <div className="flex gap-2.5">
+                    <button
+                      type="button"
+                      onClick={selecionarTodosCustomDias}
+                      className="text-[8.5px] font-bold text-indigo-400 hover:text-indigo-300 uppercase cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      [ SELECIONAR TODOS ]
+                    </button>
+                    <button
+                      type="button"
+                      onClick={limparCustomDias}
+                      className="text-[8.5px] font-bold text-slate-500 hover:text-slate-400 uppercase cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      [ LIMPAR ]
+                    </button>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Dia de Alocação no Roteiro</label>
-                  <select
-                    value={customDia}
-                    onChange={(e) => setCustomDia(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg cursor-pointer"
-                  >
-                    <option value="">-- SELECIONE O DIA --</option>
-                    {datasViagem.map((dia, dIdx) => {
-                      const dateObj = new Date(dia + "T12:00:00");
-                      return (
-                        <option key={dia} value={dia}>
-                          DIA {String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ({dia})
-                        </option>
-                      );
-                    })}
-                  </select>
+                <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/60 rounded-xl border border-slate-800/60 max-h-36 overflow-y-auto">
+                  {datasViagem.map((dia, dIdx) => {
+                    const isSelected = customDiasSelecionados.includes(dia);
+                    const dateObj = new Date(dia + "T12:00:00");
+                    return (
+                      <button
+                        key={dia}
+                        type="button"
+                        onClick={() => toggleCustomDiaSelecionado(dia)}
+                        className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-bold uppercase transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
+                          isSelected
+                            ? "bg-indigo-600 border-indigo-400 text-white shadow-md shadow-indigo-500/10 scale-[1.02]"
+                            : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-white animate-pulse" : "bg-slate-600"}`} />
+                        <span>D{String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -270,8 +307,8 @@ export default function SideAList({
               <button
                 onClick={async () => {
                   setCustomFormError("");
-                  if (!customNome.trim() || !customPreco.trim() || !customDia) {
-                    setCustomFormError("PREENCHA TODOS OS CAMPOS PARA EFETUAR A VINCULAÇÃO.");
+                  if (!customNome.trim() || !customPreco.trim() || customDiasSelecionados.length === 0) {
+                    setCustomFormError("PREENCHA TODOS OS CAMPOS E SELECIONE PELO MENOS UM DIA.");
                     return;
                   }
                   const precoVal = Number(customPreco);
@@ -281,23 +318,27 @@ export default function SideAList({
                   }
                   
                   try {
-                    emitLog(`SYSTEM: Vinculando hospedagem customizada [${customNome.trim()}] no dia ${customDia}...`);
+                    emitLog(`SYSTEM: Vinculando hospedagem customizada [${customNome.trim()}] nos dias [${customDiasSelecionados.join(", ")}]...`);
                     
                     const finalLink = customLink.trim() || `https://www.google.com.br/travel/search?q=${encodeURIComponent(`${customNome.trim()} ${viagemDestino}`)}`;
                     
-                    await onInjetarHospedagem(customDia, {
-                      nome: `${customNome.trim()} [FECHADO]`,
-                      preco_diario: precoVal,
-                      link: finalLink
-                    });
+                    await Promise.all(
+                      customDiasSelecionados.map((dia) =>
+                        onInjetarHospedagem(dia, {
+                          nome: `${customNome.trim()} [FECHADO]`,
+                          preco_diario: precoVal,
+                          link: finalLink
+                        })
+                      )
+                    );
                     
                     // Limpar form e fechar
                     setCustomNome("");
                     setCustomPreco("");
                     setCustomLink("");
-                    setCustomDia("");
+                    setCustomDiasSelecionados([]);
                     setIsCustomFormOpen(false);
-                    emitLog(`SYSTEM: Hospedagem customizada vinculada com sucesso.`);
+                    emitLog(`SYSTEM: Hospedagem customizada vinculada com sucesso para ${customDiasSelecionados.length} dias.`);
                   } catch (error) {
                     console.error(error);
                     setCustomFormError("FALHA AO SALVAR HOSPEDAGEM.");

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { subscribeToLogs } from "@/services/travelService";
-import { isFirebaseConfigured } from "@/services/firebase";
+import { isFirebaseConfigured } from "@/lib/firebase";
 
 export default function IndustrialLog() {
   const [logs, setLogs] = useState<string[]>([]);
