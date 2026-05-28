@@ -9,8 +9,10 @@ import {
   query,
   orderBy,
   Timestamp,
-  getDoc
+  getDoc,
+  deleteDoc
 } from "firebase/firestore";
+
 
 // --- INTERFACES ---
 export interface Hospedagem {
@@ -719,6 +721,47 @@ export async function editarViagem(
     }
   }
 }
+
+/**
+ * Exclui uma viagem do Firestore ou LocalStorage.
+ */
+export async function deletarViagem(viagemId: string): Promise<void> {
+  emitLog(`REQUEST: Excluindo viagem ID: ${viagemId} do banco de dados...`);
+
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(db, "viagens", viagemId);
+      await withTimeout(
+        deleteDoc(docRef),
+        4000,
+        "Tempo limite esgotado ao deletar viagem do Firestore."
+      );
+      emitLog(`FIRESTORE: Viagem ID ${viagemId} excluída com sucesso.`);
+      return;
+    } catch (error) {
+      const err = error as { code?: string; message?: string };
+      emitLog(`FIRESTORE ERROR: Falha ao deletar viagem. Detalhe: ${err?.message || error}`);
+      console.error(error);
+      throw error;
+    }
+  }
+
+  // Fallback para LocalStorage
+  emitLog(`SIMULATOR: Deletando viagem ID ${viagemId} no localStorage...`);
+  if (typeof window !== "undefined") {
+    const raw = localStorage.getItem(MOCK_TRIPS_KEY);
+    if (raw) {
+      const viagens: Viagem[] = JSON.parse(raw);
+      const filtradas = viagens.filter((v) => v.id !== viagemId);
+      localStorage.setItem(MOCK_TRIPS_KEY, JSON.stringify(filtradas));
+      
+      // Remove também o roteiro diário local
+      localStorage.removeItem(`${MOCK_ITINERARY_PREFIX}${viagemId}`);
+      emitLog(`SIMULATOR: Viagem ID ${viagemId} removida localmente.`);
+    }
+  }
+}
+
 
 /**
  * Atualiza o cronograma horário (agenda de horas do dia) de um dia específico.

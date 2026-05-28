@@ -12,6 +12,7 @@ import {
   removerAtividadeDia,
   atualizarCotacoesOnDemand,
   atualizarCronogramaHorario,
+  deletarViagem,
   Viagem,
   RoteiroDiario,
   Hospedagem,
@@ -164,6 +165,20 @@ export default function Home() {
     // Recarrega a base e foca na viagem editada
     await carregarDadosViagens(id);
     setIsFormEdicaoAberto(false);
+  };
+
+  // Handler para deletar uma viagem definitivamente
+  const handleDeletarViagem = async (id: string) => {
+    try {
+      await deletarViagem(id);
+      emitLog(`SYSTEM: Viagem ID ${id} excluída definitivamente do banco de dados.`);
+      // Se a viagem deletada era a ativa, limpa a seleção ativa
+      const activeIdToSet = viagemAtiva?.id === id ? undefined : viagemAtiva?.id;
+      await carregarDadosViagens(activeIdToSet);
+    } catch (err) {
+      console.error("Erro ao deletar viagem:", err);
+      emitLog("SYSTEM ERROR: Falha ao excluir viagem.");
+    }
   };
 
   // Lado A ➔ Injetar Hospedagem (Otimista)
@@ -365,11 +380,11 @@ export default function Home() {
             setIsFormCriacaoAberto(!isFormCriacaoAberto);
             setIsFormEdicaoAberto(false);
           }}
-          isFormCriacaoAberto={isFormCriacaoAberto}
           onToggleFormEdicao={() => {
             setIsFormEdicaoAberto(!isFormEdicaoAberto);
             setIsFormCriacaoAberto(false);
           }}
+          onDeletarViagem={handleDeletarViagem}
         />
 
         {isFormCriacaoAberto && (
