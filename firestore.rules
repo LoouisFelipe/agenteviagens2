@@ -1,68 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Funções de Validação Auxiliares
-    function isValidViagem(data) {
-      return data.usuario_id is string
-        && data.origem is string && data.origem.size() > 0 && data.origem.size() <= 100
-        && data.destino is string && data.destino.size() > 0 && data.destino.size() <= 100
-        && data.data_inicio is string && data.data_inicio.matches('^\\d{4}-\\d{2}-\\d{2}$')
-        && data.data_fim is string && data.data_fim.matches('^\\d{4}-\\d{2}-\\d{2}$')
-        && (data.orcamento_maximo is int || data.orcamento_maximo is float) && data.orcamento_maximo >= 0;
+    match /{document=**} {
+      allow read, write: if true; // Altere para exigir auth assim que subir o login
     }
-
-    function isValidHotel(data) {
-      return data.nome is string && data.nome.size() > 0
-        && (data.preco_diario is int || data.preco_diario is float) && data.preco_diario >= 0
-        && data.link is string;
-    }
-
-    function isValidPasseio(data) {
-      return data.diaId is string && data.diaId.matches('^\\d{4}-\\d{2}-\\d{2}$')
-        && data.nome is string && data.nome.size() > 0
-        && (data.valor is int || data.valor is float) && data.valor >= 0
-        && data.link is string;
-    }
-
-    // Coleção principal: viagens e subcoleções: hoteis, passeios, roteiros
-    match /viagens/{viagemId} {
-      allow read: if true;
-      allow create, update: if isValidViagem(request.resource.data);
-      allow delete: if true;
-
-      // Subcoleção para Hotéis
-      match /hoteis/{diaId} {
-        allow read: if true;
-        allow create, update: if diaId.matches('^\\d{4}-\\d{2}-\\d{2}$') 
-          && isValidHotel(request.resource.data);
-        allow delete: if true;
-      }
-
-      // Subcoleção para Passeios/Atividades
-      match /passeios/{passeioId} {
-        allow read: if true;
-        allow create, update: if isValidPasseio(request.resource.data);
-        allow delete: if true;
-      }
-
-      // Subcoleção para Cronogramas/Roteiros
-      match /roteiros/{diaId} {
-        allow read: if true;
-        allow create, update: if diaId.matches('^\\d{4}-\\d{2}-\\d{2}$') 
-          && request.resource.data.cronograma_horario is map;
-        allow delete: if true;
-      }
-    }
-    
-    // Coleção para buscas em cache do Scraper
-    match /pesquisas_online/{pesquisaId} {
-      allow read: if true;
-      allow create, update: if request.resource.data.keys().hasAll(['destino', 'timestamp'])
-        && request.resource.data.destino is string
-        && request.resource.data.destino.size() > 0;
-      allow delete: if true;
-    }
-    
   }
 }

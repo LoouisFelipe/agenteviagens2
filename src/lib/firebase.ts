@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -10,23 +10,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Verifica se as chaves mínimas do Firebase estão configuradas
+// Evita inicializar o Firebase multiplas vezes no Next.js
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+// Suporta banco de dados padrão ou nomeado (ex: agenteviagens2)
+const dbId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID;
+export const db = dbId ? getFirestore(app, dbId) : getFirestore(app);
+
+// Exporta verificação de configuração mínima
 export const isFirebaseConfigured = !!(
   process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY
 );
 
-let db: Firestore | null = null;
-
-if (isFirebaseConfigured) {
-  try {
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    const dbId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID;
-    db = dbId ? getFirestore(app, dbId) : getFirestore(app);
-    console.log(`Firebase/Firestore inicializado com sucesso. Banco ativo: ${dbId || "(default)"}`);
-  } catch (error) {
-    console.error("Erro crítico ao inicializar o Firebase:", error);
-  }
-}
-
-export { db };
