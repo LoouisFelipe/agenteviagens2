@@ -82,13 +82,13 @@ export default function Home() {
         // Se houver um ID específico solicitado, foca nele, senão foca na primeira viagem
         const selecionada = lista.find((v) => v.id === activeIdToSet) || lista[0];
         setViagemAtiva(selecionada);
-        
+
         const dias = gerarDiasPeriodo(selecionada.data_inicio, selecionada.data_fim);
         setDatasViagem(dias);
         if (dias.length > 0) {
           setDiaAtivoWorkspace(dias[0]);
         }
-        
+
         const roteiro = await obterRoteiroDiario(selecionada.id);
         setRoteiroDiario(roteiro);
       } else {
@@ -187,10 +187,10 @@ export default function Home() {
   // Lado A ➔ Injetar Hospedagem (Otimista)
   const handleInjetarHospedagem = async (dataDia: string, hospedagem: Hospedagem) => {
     if (!viagemAtiva) return;
-    
+
     // Armazena estado antigo para reversão
     const backupRoteiro = { ...roteiroDiario };
-    
+
     // Atualiza o estado da UI instantaneamente
     const otimistaRoteiro = { ...roteiroDiario };
     if (!otimistaRoteiro[dataDia]) {
@@ -216,10 +216,10 @@ export default function Home() {
   // Lado A ➔ Injetar Atividade (Otimista)
   const handleInjetarAtividade = async (dataDia: string, atividade: Atividade) => {
     if (!viagemAtiva) return;
-    
+
     // Armazena estado antigo para reversão
     const backupRoteiro = { ...roteiroDiario };
-    
+
     // Atualiza o estado da UI instantaneamente
     const otimistaRoteiro = { ...roteiroDiario };
     if (!otimistaRoteiro[dataDia]) {
@@ -245,9 +245,9 @@ export default function Home() {
   // Lado B ➔ Remover Hospedagem (Otimista)
   const handleRemoverHospedagem = async (dataDia: string) => {
     if (!viagemAtiva) return;
-    
+
     const backupRoteiro = { ...roteiroDiario };
-    
+
     const otimistaRoteiro = { ...roteiroDiario };
     if (otimistaRoteiro[dataDia]) {
       otimistaRoteiro[dataDia] = {
@@ -271,9 +271,9 @@ export default function Home() {
   // Lado B ➔ Remover Atividade (Otimista)
   const handleRemoverAtividade = async (dataDia: string, index: number) => {
     if (!viagemAtiva) return;
-    
+
     const backupRoteiro = { ...roteiroDiario };
-    
+
     const otimistaRoteiro = { ...roteiroDiario };
     if (otimistaRoteiro[dataDia] && otimistaRoteiro[dataDia].atividades) {
       const novasAtividades = [...otimistaRoteiro[dataDia].atividades];
@@ -295,13 +295,13 @@ export default function Home() {
       emitLog("OPTIMISTIC ERROR: Falha ao remover atividade do banco. Ação revertida.");
     }
   };
-  
+
   // Lado A/B ➔ Injetar Despesa (Otimista)
   const handleInjetarDespesa = async (dataDia: string, despesa: { nome: string; valor: number; categoria: string }) => {
     if (!viagemAtiva) return;
-    
+
     const backupRoteiro = { ...roteiroDiario };
-    
+
     const otimistaRoteiro = { ...roteiroDiario };
     if (!otimistaRoteiro[dataDia]) {
       otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [], despesas: [] };
@@ -309,7 +309,7 @@ export default function Home() {
     if (!otimistaRoteiro[dataDia].despesas) {
       otimistaRoteiro[dataDia].despesas = [];
     }
-    
+
     const tempId = "exp_" + Math.random().toString(36).substring(2, 9);
     otimistaRoteiro[dataDia] = {
       ...otimistaRoteiro[dataDia],
@@ -331,9 +331,9 @@ export default function Home() {
   // Lado B ➔ Remover Despesa (Otimista)
   const handleRemoverDespesa = async (dataDia: string, despesaId: string) => {
     if (!viagemAtiva) return;
-    
+
     const backupRoteiro = { ...roteiroDiario };
-    
+
     const otimistaRoteiro = { ...roteiroDiario };
     if (otimistaRoteiro[dataDia] && otimistaRoteiro[dataDia].despesas) {
       otimistaRoteiro[dataDia] = {
@@ -384,7 +384,7 @@ export default function Home() {
       <header className="w-full glass-panel shadow-xl shadow-slate-950/20 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 relative overflow-hidden rounded-2xl select-none">
         {/* Faixa decorativa indigo moderna */}
         <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
-        
+
         <div className="flex items-center space-x-3">
           <div className="bg-indigo-600 text-white p-2 rounded-lg font-black text-sm tracking-widest shadow-lg shadow-indigo-500/20 select-none">
             CHL
@@ -426,7 +426,7 @@ export default function Home() {
               <span className="text-[#10b981] font-bold">ONLINE</span>
             </div>
             <span className="text-slate-800">|</span>
-            <span className="text-slate-400">SYS_TIME: 2026-05-25</span>
+            <span className="text-slate-400">SYS_TIME: 2026-05-30</span>
           </div>
         </div>
       </header>
@@ -483,10 +483,10 @@ export default function Home() {
         const diasCompletos = datasViagem.filter(dia => !!roteiroDiario[dia]?.hospedagem).length;
         const percentualDiasCompletos = datasViagem.length > 0 ? Math.round((diasCompletos / datasViagem.length) * 100) : 0;
 
-        const financialGlowClass = ultrapassou 
-          ? "border-rose-500/50 shadow-lg shadow-rose-500/10 hover:shadow-rose-500/20" 
-          : percentualConsumido > 80 
-            ? "border-amber-500/50 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20" 
+        const financialGlowClass = ultrapassou
+          ? "border-rose-500/50 shadow-lg shadow-rose-500/10 hover:shadow-rose-500/20"
+          : percentualConsumido > 80
+            ? "border-amber-500/50 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20"
             : "border-indigo-500/35 shadow-lg shadow-indigo-500/5 hover:shadow-indigo-500/10";
 
         return (
@@ -507,7 +507,7 @@ export default function Home() {
             </div>
 
             {/* Card 2: Orçamento */}
-            <div 
+            <div
               onClick={() => setIsBudgetModalOpen(true)}
               className={`glass-panel-light p-4 rounded-2xl border flex items-center gap-4 relative overflow-hidden transition-all duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.99] ${financialGlowClass}`}
             >
@@ -583,11 +583,10 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsModoFoco(!isModoFoco)}
-              className={`px-4.5 py-1.5 font-mono-tech text-[9px] font-bold rounded-lg border transition-all duration-200 uppercase cursor-pointer ${
-                isModoFoco
+              className={`px-4.5 py-1.5 font-mono-tech text-[9px] font-bold rounded-lg border transition-all duration-200 uppercase cursor-pointer ${isModoFoco
                   ? "bg-indigo-600/10 border-indigo-500/40 text-indigo-400 hover:bg-indigo-600/25"
                   : "bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-350"
-              }`}
+                }`}
             >
               {isModoFoco ? "[ ⚡ MODO: FOCO DIÁRIO ]" : "[ 🌐 MODO: VISÃO COMPLETA ]"}
             </button>
@@ -637,7 +636,7 @@ export default function Home() {
         let totalHospedagem = 0;
         let totalPasseios = 0;
         let totalDespesas = 0;
-        
+
         datasViagem.forEach((dia) => {
           const diario = roteiroDiario[dia];
           if (diario) {
@@ -646,18 +645,18 @@ export default function Home() {
             totalDespesas += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
           }
         });
-        
+
         const custoTotal = totalHospedagem + totalPasseios + totalDespesas;
         const orcamento = viagemAtiva.orcamento_maximo || 0;
         const saldo = orcamento - custoTotal;
         const ultrapassou = orcamento > 0 && custoTotal > orcamento;
-        
+
         const percentualHospedagem = custoTotal > 0 ? Math.round((totalHospedagem / custoTotal) * 100) : 0;
         const percentualPasseios = custoTotal > 0 ? Math.round((totalPasseios / custoTotal) * 100) : 0;
         const percentualDespesas = custoTotal > 0 ? Math.round((totalDespesas / custoTotal) * 100) : 0;
-        
+
         // 2. Acumulados por dia para o gráfico
-        const dadosGráfico: { diaLabel: string; diaData: string; custoDia: number; acumulado: number }[] = [];
+        const dadosGrafico: { diaLabel: string; diaData: string; custoDia: number; acumulado: number }[] = [];
         let somaAcumulada = 0;
         datasViagem.forEach((dia, idx) => {
           const diario = roteiroDiario[dia];
@@ -668,14 +667,14 @@ export default function Home() {
             custoDia += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
           }
           somaAcumulada += custoDia;
-          dadosGráfico.push({
+          dadosGrafico.push({
             diaLabel: `DIA ${String(idx + 1).padStart(2, "0")}`,
             diaData: dia,
             custoDia,
             acumulado: somaAcumulada
           });
         });
-        
+
         // 3. Extrato Consolidado
         const statementItems: {
           key: string;
@@ -687,7 +686,7 @@ export default function Home() {
           detalhe?: string;
           onDelete: () => Promise<void>;
         }[] = [];
-        
+
         datasViagem.forEach((dia, idx) => {
           const diario = roteiroDiario[dia];
           if (diario) {
@@ -734,14 +733,14 @@ export default function Home() {
             }
           }
         });
-        
+
         return (
           <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-fade-in select-none">
             {/* Modal Box */}
             <div className="bg-slate-900/95 border border-slate-800 rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl relative flex flex-col h-[90vh] md:h-[80vh]">
               {/* Top Warning stripes */}
               <div className="h-[4px] w-full hazard-stripes" />
-              
+
               {/* Header */}
               <div className="p-5 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -762,13 +761,13 @@ export default function Home() {
                   FECHAR [✕]
                 </button>
               </div>
-              
+
               {/* Body */}
               <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                
+
                 {/* Left Panel: Financial Overview & CSS Charts (col-span-7) */}
                 <div className="lg:col-span-7 space-y-6">
-                  
+
                   {/* Row 1: KPI Balances */}
                   <div className="grid grid-cols-3 gap-4">
                     {/* KPI Orçamento */}
@@ -796,35 +795,35 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Category Division breakdown */}
                   <div className="bg-slate-950/20 border border-slate-850 p-5 rounded-2xl space-y-4">
                     <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
                       <span>🏷️ DISTRIBUIÇÃO OPERACIONAL POR CATEGORIA</span>
                       <span className="text-[8px] text-slate-500 lowercase italic">divisão percentual</span>
                     </h3>
-                    
+
                     {/* Single Combined Segmented Bar */}
                     <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-850 shadow-inner">
                       {totalHospedagem > 0 && (
-                        <div 
-                          style={{ width: `${percentualHospedagem}%` }} 
-                          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all" 
-                          title={`Hospedagem: ${percentualHospedagem}%`} 
+                        <div
+                          style={{ width: `${percentualHospedagem}%` }}
+                          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all"
+                          title={`Hospedagem: ${percentualHospedagem}%`}
                         />
                       )}
                       {totalPasseios > 0 && (
-                        <div 
-                          style={{ width: `${percentualPasseios}%` }} 
-                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950 transition-all" 
-                          title={`Passeios: ${percentualPasseios}%`} 
+                        <div
+                          style={{ width: `${percentualPasseios}%` }}
+                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950 transition-all"
+                          title={`Passeios: ${percentualPasseios}%`}
                         />
                       )}
                       {totalDespesas > 0 && (
-                        <div 
-                          style={{ width: `${percentualDespesas}%` }} 
-                          className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950 transition-all" 
-                          title={`Despesas: ${percentualDespesas}%`} 
+                        <div
+                          style={{ width: `${percentualDespesas}%` }}
+                          className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950 transition-all"
+                          title={`Despesas: ${percentualDespesas}%`}
                         />
                       )}
                       {custoTotal === 0 && (
@@ -833,7 +832,7 @@ export default function Home() {
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Grid labels */}
                     <div className="grid grid-cols-3 gap-3 text-[9.5px]">
                       <div className="flex flex-col gap-1">
@@ -843,7 +842,7 @@ export default function Home() {
                         </div>
                         <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
                       </div>
-                      
+
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -851,7 +850,7 @@ export default function Home() {
                         </div>
                         <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
                       </div>
-                      
+
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5 text-amber-400 font-bold">
                           <span className="w-2 h-2 rounded-full bg-amber-500" />
@@ -861,28 +860,28 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Progression Graph */}
                   <div className="bg-slate-950/20 border border-slate-850 p-5 rounded-2xl space-y-4 relative">
                     <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider select-none flex items-center justify-between">
                       <span>📈 PROGRESSÃO CUMULATIVA DE GASTOS</span>
                       <span className="text-[8px] text-slate-500 lowercase italic">passe o mouse nas barras</span>
                     </h3>
-                    
+
                     {/* Graph Container */}
                     <div className="flex items-end gap-1.5 md:gap-2.5 h-44 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none">
-                      
+
                       {/* Budget Limit Line */}
                       {orcamento > 0 && (
                         <div className="absolute left-0 right-0 border-t border-dashed border-rose-500/30 text-[7.5px] font-black text-rose-500/60 uppercase tracking-widest pl-2 pt-0.5 pointer-events-none z-10" style={{ bottom: "80%" }}>
                           [ TETO ORÇAMENTO ]
                         </div>
                       )}
-                      
-                      {dadosGráfico.map((d) => {
+
+                      {dadosGrafico.map((d) => {
                         const heightPercent = orcamento > 0 ? Math.min(100, Math.round((d.acumulado / orcamento) * 80)) : 0;
                         const isOver = orcamento > 0 && d.acumulado > orcamento;
-                        
+
                         return (
                           <div key={d.diaData} className="flex-1 flex flex-col items-center group/bar relative">
                             {/* Hover tooltip */}
@@ -892,21 +891,20 @@ export default function Home() {
                               <span className="text-indigo-400 font-mono-tech mt-1">Dia: R$ {d.custoDia}</span>
                               <span className="text-[#10b981] font-mono-tech">Cum: R$ {d.acumulado}</span>
                             </div>
-                            
+
                             {/* Bar Graph */}
                             <div className="w-full bg-slate-950/50 rounded-t h-32 flex flex-col justify-end relative shadow-inner overflow-hidden border border-slate-900">
-                              <div 
-                                style={{ height: `${heightPercent}%` }} 
-                                className={`w-full rounded-t transition-all duration-300 ${
-                                  isOver 
-                                    ? "bg-gradient-to-t from-rose-600 to-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.3)]" 
+                              <div
+                                style={{ height: `${heightPercent}%` }}
+                                className={`w-full rounded-t transition-all duration-300 ${isOver
+                                    ? "bg-gradient-to-t from-rose-600 to-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.3)]"
                                     : d.acumulado > orcamento * 0.8
                                       ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.3)]"
                                       : "bg-gradient-to-t from-indigo-600 to-indigo-400 shadow-[0_0_6px_rgba(99,102,241,0.3)]"
-                                }`}
+                                  }`}
                               />
                             </div>
-                            
+
                             {/* Label */}
                             <span className="text-[8.5px] font-mono-tech font-bold text-slate-500 mt-1.5 uppercase select-none">{d.diaLabel.replace("DIA ", "D")}</span>
                           </div>
@@ -914,9 +912,9 @@ export default function Home() {
                       })}
                     </div>
                   </div>
-                  
+
                 </div>
-                
+
                 {/* Right Panel: Detailed Extrato Consolidado Statement (col-span-5) */}
                 <div className="lg:col-span-5 flex flex-col h-full bg-slate-950/20 border border-slate-850 p-5 rounded-2xl relative space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
@@ -925,7 +923,7 @@ export default function Home() {
                       {statementItems.length} itens
                     </span>
                   </h3>
-                  
+
                   {/* Scrollable list of statement items */}
                   <div className="flex-1 overflow-y-auto max-h-[360px] pr-1.5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                     {statementItems.length === 0 ? (
@@ -942,10 +940,10 @@ export default function Home() {
                         } else if (item.tipo === "despesa") {
                           colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-400";
                         }
-                        
+
                         return (
-                          <div 
-                            key={item.key} 
+                          <div
+                            key={item.key}
                             className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
                           >
                             <div className="flex-1 min-w-0">
@@ -961,12 +959,12 @@ export default function Home() {
                                   {item.detalhe}
                                 </span>
                               </div>
-                              
+
                               <div className="font-bold text-slate-200 truncate uppercase text-[10.5px] mt-1 tracking-wide">
                                 {item.nome}
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-2 select-none">
                               <span className="text-[#10b981] font-mono-tech font-bold text-[10px]">
                                 R$ {item.valor.toLocaleString("pt-BR")}
@@ -988,14 +986,14 @@ export default function Home() {
                       })
                     )}
                   </div>
-                  
+
                   {/* Dashboard Totalizer Footer */}
                   <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[10px] font-mono-tech">
                     <span className="text-slate-450 uppercase font-sans font-bold">Total Consolidado:</span>
                     <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
                   </div>
                 </div>
-                
+
               </div>
             </div>
           </div>

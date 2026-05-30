@@ -222,18 +222,18 @@ export async function criarNovaViagem(
         criado_em: Timestamp.now(),
         orcamento_maximo: orcamento,
       };
-      
+
       emitLog(`FIRESTORE: setDoc(doc(db, 'viagens', '${docRef.id}')) com destino=${record.destino}...`);
       await withTimeout(
         setDoc(docRef, record),
         4000,
         "Erro de gravação no Firestore (Regras de Segurança Negadas ou Rede Offline)."
       );
-      
+
       // Gera as datas do intervalo
       const dias = gerarDiasPeriodo(dataInicio, dataFim);
       emitLog(`FIRESTORE: Inicializando ${dias.length} documentos de cronograma vazios na subcoleção 'roteiros'...`);
-      
+
       // Cria cada documento de cronograma diário como vazio
       for (const dia of dias) {
         const roteiroDocRef = doc(db, "viagens", docRef.id, "roteiros", dia);
@@ -245,7 +245,7 @@ export async function criarNovaViagem(
           "Erro ao inicializar dias do roteiro no Firestore (Timeout)."
         );
       }
-      
+
       emitLog(`FIRESTORE: Viagem criada com sucesso no Firestore com ID: ${docRef.id}`);
       return docRef.id;
     } catch (error) {
@@ -302,9 +302,9 @@ export async function criarViagem(viagemData: Omit<Viagem, "id" | "criado_em">):
 }
 
 /**
- * Retorna todo o roteiro diário agrupado por data do dia.
+ * Garante a existência do documento pai da viagem
  */
-async function garantirViagemNoFirestore(viagemId: string): Promise<void> {
+async function garantizarViagemNoFirestore(viagemId: string): Promise<void> {
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId);
@@ -336,27 +336,17 @@ async function garantirViagemNoFirestore(viagemId: string): Promise<void> {
 }
 
 /**
- * Retorna todo o roteiro diário agrupado por data do dia.
+ * Retorna todo o roteiro diário agrupado por data do dia de forma consistente.
  */
 export async function obterRoteiroDiario(viagemId: string): Promise<Record<string, RoteiroDiario>> {
   emitLog(`REQUEST: Solicitando itinerário diário para a viagem ID: ${viagemId}...`);
-  
+
   // Garante a existência do documento pai da viagem antes da leitura
   await garantirViagemNoFirestore(viagemId);
 
   const roteiro: Record<string, RoteiroDiario> = {};
 
-  // 1. Sempre ler do LocalStorage primeiro para ter a resposta instantânea e persistente localmente
-  if (typeof window !== "undefined") {
-    const raw = localStorage.getItem(`${MOCK_ITINERARY_PREFIX}${viagemId}`);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Record<string, RoteiroDiario>;
-      Object.assign(roteiro, parsed);
-      emitLog(`SIMULATOR: Roteiro inicializado do LocalStorage contendo ${Object.keys(parsed).length} dias.`);
-    }
-  }
-
-  // 2. Mesclar de forma transparente com os dados do Firestore se estiver configurado e online
+  // 1. Tenta carregar do Firestore primeiro se estiver configurado e estável
   if (isFirebaseConfigured && db) {
     try {
       emitLog(`FIRESTORE: Iniciando carregamento paralelo das subcoleções (hoteis, passeios, roteiros, despesas)...`);
@@ -371,8 +361,11 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         "Tempo limite esgotado ao buscar subcoleções do roteiro diário."
       );
 
+      let dadosEncontradosNaNuvem = false;
+
       // Processar roteiros/cronogramas
       roteirosSnap.docs.forEach((docSnap) => {
+        dadosEncontradosNaNuvem = true;
         const data = docSnap.data();
         const diaId = docSnap.id;
         if (!roteiro[diaId]) {
@@ -386,6 +379,7 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
 
       // Processar hospedagem/hotéis
       hoteisSnap.docs.forEach((docSnap) => {
+        dadosEncontradosNaNuvem = true;
         const data = docSnap.data();
         const diaId = docSnap.id;
         if (!roteiro[diaId]) {
@@ -398,7 +392,7 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         };
       });
 
-      // Processar passeios/atividades
+      // Processar passeios/atividades (Preservando a ordenação cronológica)
       interface TempPasseio {
         id: string;
         nome: string;
@@ -406,10 +400,11 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         link: string;
         criado_em?: { seconds: number; nanoseconds: number } | null;
       }
-      
+
       const passeiosPorDia: Record<string, Array<TempPasseio>> = {};
-      
+
       passeiosSnap.docs.forEach((docSnap) => {
+        dadosEncontradosNaNuvem = true;
         const data = docSnap.data();
         const diaId = data.diaId;
         if (!diaId) return;
@@ -417,13 +412,17 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         if (!passeiosPorDia[diaId]) {
           passeiosPorDia[diaId] = [];
         }
-        passeiosPorDia[diaId].push({
-          id: docSnap.id,
-          nome: data.nome || "",
-          valor: Number(data.valor) || 0,
-          link: data.link || "",
-          criado_em: data.criado_em || null
-        });
+
+        const jaExiste = passeiosPorDia[diaId].some(p => p.id === docSnap.id);
+        if (!jaExiste) {
+          passeiosPorDia[diaId].push({
+            id: docSnap.id,
+            nome: data.nome || "",
+            valor: Number(data.valor) || 0,
+            link: data.link || "",
+            criado_em: data.criado_em || null
+          });
+        }
       });
 
       Object.keys(passeiosPorDia).forEach((diaId) => {
@@ -444,7 +443,7 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         }));
       });
 
-      // Processar despesas customizadas
+      // Processar despesas customizadas (Preservando a ordenação cronológica)
       interface TempDespesa {
         id: string;
         diaId: string;
@@ -457,6 +456,7 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
       const despesasPorDia: Record<string, Array<TempDespesa>> = {};
 
       despesasSnap.docs.forEach((docSnap) => {
+        dadosEncontradosNaNuvem = true;
         const data = docSnap.data();
         const diaId = data.diaId;
         if (!diaId) return;
@@ -464,14 +464,18 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         if (!despesasPorDia[diaId]) {
           despesasPorDia[diaId] = [];
         }
-        despesasPorDia[diaId].push({
-          id: docSnap.id,
-          diaId: data.diaId,
-          nome: data.nome || "",
-          valor: Number(data.valor) || 0,
-          categoria: data.categoria || "Outros",
-          criado_em: data.criado_em || null
-        });
+
+        const jaExiste = despesasPorDia[diaId].some(d => d.id === docSnap.id);
+        if (!jaExiste) {
+          despesasPorDia[diaId].push({
+            id: docSnap.id,
+            diaId: data.diaId,
+            nome: data.nome || "",
+            valor: Number(data.valor) || 0,
+            categoria: data.categoria || "Outros",
+            criado_em: data.criado_em || null
+          });
+        }
       });
 
       Object.keys(despesasPorDia).forEach((diaId) => {
@@ -493,11 +497,28 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         }));
       });
 
-      emitLog(`FIRESTORE: Dados do Firestore mesclados com sucesso no itinerário diário.`);
+      if (dadosEncontradosNaNuvem) {
+        emitLog(`FIRESTORE: Itinerário diário hidratado com sucesso diretamente da nuvem.`);
+        // Atualiza de forma transparente o localStorage para manter o cache offline perfeito
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`${MOCK_ITINERARY_PREFIX}${viagemId}`, JSON.stringify(roteiro));
+        }
+        return roteiro;
+      }
     } catch (error) {
       const err = error as { code?: string; message?: string };
-      emitLog(`FIRESTORE ERROR: Falha ao recuperar subcoleções estruturadas. Detalhe: ${err?.message || error}`);
+      emitLog(`FIRESTORE ERROR: Falha ao recuperar subcoleções estruturadas da nuvem. Detalhe: ${err?.message || error}`);
       console.error(error);
+    }
+  }
+
+  // 2. Fallback resiliente: Se o Firestore falhar, estiver instável ou vazio, consome o LocalStorage
+  if (typeof window !== "undefined") {
+    const raw = localStorage.getItem(`${MOCK_ITINERARY_PREFIX}${viagemId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, RoteiroDiario>;
+      emitLog(`SIMULATOR: Roteiro carregado de forma estável do LocalStorage fallback.`);
+      return parsed;
     }
   }
 
@@ -506,7 +527,6 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
 
 /**
  * Insere ou atualiza um item no roteiro diário (hotel ou passeio).
- * Usa updateDoc com arrayUnion para passeios e atribuição direta de hospedagem para hotel.
  */
 export async function injetarItemNoRoteiro(
   viagemId: string,
@@ -516,10 +536,9 @@ export async function injetarItemNoRoteiro(
 ): Promise<void> {
   emitLog(`REQUEST: Injetando item [${item.nome}] (${tipo}) no dia ${dataDia}...`);
 
-  // Garante a existência do documento pai da viagem antes de qualquer escrita de subcoleção
   await garantirViagemNoFirestore(viagemId);
 
-  // 1. Sempre persistir localmente no LocalStorage primeiro para resposta imediata e resiliência total
+  // 1. Sempre persistir localmente no LocalStorage primeiro para resposta imediata
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
     const raw = localStorage.getItem(key);
@@ -532,18 +551,17 @@ export async function injetarItemNoRoteiro(
     if (tipo === "hotel") {
       roteiro[dataDia].hospedagem = item as Hospedagem;
     } else {
-      // Evita duplicados em inserções concorrentes
       const jaExiste = roteiro[dataDia].atividades.some(a => a.nome === item.nome && a.valor === (item as Atividade).valor);
       if (!jaExiste) {
         roteiro[dataDia].atividades.push(item as Atividade);
       }
     }
-    
+
     localStorage.setItem(key, JSON.stringify(roteiro));
     emitLog(`SIMULATOR: Item (${tipo}) persistido localmente com sucesso.`);
   }
 
-  // 2. Sincronizar em background com o Firestore (se configurado)
+  // 2. Sincronizar em background com o Firestore
   if (isFirebaseConfigured && db) {
     try {
       if (tipo === "hotel") {
@@ -579,47 +597,26 @@ export async function injetarItemNoRoteiro(
       const err = error as { code?: string; message?: string };
       emitLog(`FIRESTORE ERROR: Falha na sincronização. Detalhe: ${err?.message || error}`);
       console.error(error);
-      // Não relança o erro para evitar a reversão da UI local que já foi salva
     }
   }
 }
 
-/**
- * Define ou atualiza a hospedagem de um dia específico.
- */
-export async function atualizarHospedagemDia(
-  viagemId: string,
-  dataDia: string,
-  hospedagem: Hospedagem
-): Promise<void> {
+export async function atualizarHospedagemDia(viagemId: string, dataDia: string, hospedagem: Hospedagem): Promise<void> {
   return injetarItemNoRoteiro(viagemId, dataDia, hospedagem, "hotel");
 }
 
-/**
- * Adiciona uma atividade na lista de atividades do dia correspondente usando arrayUnion.
- */
-export async function adicionarAtividadeDia(
-  viagemId: string,
-  dataDia: string,
-  atividade: Atividade
-): Promise<void> {
+export async function adicionarAtividadeDia(viagemId: string, dataDia: string, atividade: Atividade): Promise<void> {
   return injetarItemNoRoteiro(viagemId, dataDia, atividade, "passeio");
 }
 
 /**
  * Remove uma atividade pelo índice no dia correspondente.
  */
-export async function removerAtividadeDia(
-  viagemId: string,
-  dataDia: string,
-  atividadeIndex: number
-): Promise<void> {
+export async function removerAtividadeDia(viagemId: string, dataDia: string, atividadeIndex: number): Promise<void> {
   emitLog(`REQUEST: Removendo atividade no índice ${atividadeIndex} do dia ${dataDia}...`);
 
-  // Garante a existência do documento pai da viagem
   await garantirViagemNoFirestore(viagemId);
 
-  // 1. Sempre remover do LocalStorage primeiro para resposta visual instantânea e garantida
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
     const raw = localStorage.getItem(key);
@@ -628,21 +625,19 @@ export async function removerAtividadeDia(
       if (roteiro[dataDia] && roteiro[dataDia].atividades) {
         const removida = roteiro[dataDia].atividades.splice(atividadeIndex, 1);
         localStorage.setItem(key, JSON.stringify(roteiro));
-        emitLog(`SIMULATOR: Atividade '${removida[0]?.nome}' excluída localmente com sucesso.`);
+        emitLog(`SIMULATOR: Atividade '${removida[0]?.nome}' excluída localmente.`);
       }
     }
   }
 
-  // 2. Sincronizar em background com o Firestore (se configurado)
   if (isFirebaseConfigured && db) {
     try {
-      emitLog(`FIRESTORE: Carregando todos os passeios da viagem para localizar o índice...`);
       const snapshot = await withTimeout(
         getDocs(collection(db, "viagens", viagemId, "passeios")),
         4000,
         "Tempo limite esgotado ao ler atividades para remoção."
       );
-      
+
       interface PasseioDoc {
         id: string;
         diaId: string;
@@ -651,7 +646,7 @@ export async function removerAtividadeDia(
         link: string;
         criado_em?: { seconds: number; nanoseconds: number } | null;
       }
-      
+
       const diaPasseios = snapshot.docs
         .map((docSnap) => {
           const data = docSnap.data();
@@ -674,17 +669,10 @@ export async function removerAtividadeDia(
       if (atividadeIndex >= 0 && atividadeIndex < diaPasseios.length) {
         const passeioParaDeletar = diaPasseios[atividadeIndex];
         const docRef = doc(db, "viagens", viagemId, "passeios", passeioParaDeletar.id);
-        emitLog(`FIRESTORE: deletando passeio ID ${passeioParaDeletar.id} ('${passeioParaDeletar.nome}') no dia ${dataDia}...`);
-        await withTimeout(
-          deleteDoc(docRef),
-          4500,
-          "Tempo limite esgotado ao remover atividade do Firestore."
-        );
+        await withTimeout(deleteDoc(docRef), 4500, "Erro ao remover do Firestore.");
         emitLog(`FIRESTORE: Atividade removida com sucesso no Firestore.`);
       }
     } catch (error) {
-      const err = error as { code?: string; message?: string };
-      emitLog(`FIRESTORE ERROR: Falha ao deletar atividade. Detalhe: ${err?.message || error}`);
       console.error(error);
     }
   }
@@ -696,10 +684,8 @@ export async function removerAtividadeDia(
 export async function removerHospedagemDia(viagemId: string, dataDia: string): Promise<void> {
   emitLog(`REQUEST: Excluindo hospedagem vinculada ao dia ${dataDia}...`);
 
-  // Garante a existência do documento pai da viagem
   await garantirViagemNoFirestore(viagemId);
 
-  // 1. Sempre remover localmente do LocalStorage primeiro para resposta imediata
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
     const raw = localStorage.getItem(key);
@@ -713,33 +699,23 @@ export async function removerHospedagemDia(viagemId: string, dataDia: string): P
     }
   }
 
-  // 2. Sincronizar em background com o Firestore (se configurado)
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId, "hoteis", dataDia);
-      emitLog(`FIRESTORE: deleteDoc(docRef) no dia ${dataDia}...`);
-      await withTimeout(
-        deleteDoc(docRef),
-        4000,
-        "Tempo limite esgotado ao remover hospedagem do Firestore."
-      );
+      await withTimeout(deleteDoc(docRef), 4000, "Erro ao remover hospedagem do Firestore.");
       emitLog(`FIRESTORE: Hospedagem desvinculada no Firestore.`);
     } catch (error) {
-      const err = error as { code?: string; message?: string };
-      emitLog(`FIRESTORE ERROR: Falha ao deletar hospedagem. Detalhe: ${err?.message || error}`);
       console.error(error);
     }
   }
 }
 
 /**
- * Executa o JOB de atualização e recotação de preços sob demanda.
- * Simula a flutuação cambial ou tarifária de mercado para o console industrial.
+ * JOB transacional de recotação sob demanda.
  */
 export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void> {
   emitLog(`REQUEST: Iniciando JOB sob demanda para recotação de Viagem ID: ${viagemId}...`);
 
-  // Carrega o roteiro diário atual
   const roteiro = await obterRoteiroDiario(viagemId);
   const dias = Object.keys(roteiro);
 
@@ -755,31 +731,25 @@ export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void>
     let alterouDia = false;
     const updates: Partial<RoteiroDiario> = {};
 
-    // 1. Hospedagem
     if (diario.hospedagem) {
       const precoAntigo = diario.hospedagem.preco_diario;
-      // Flutuação de -12% a +12%
       const fator = 0.88 + Math.random() * 0.24;
       const precoNovo = Math.max(80, Math.round(precoAntigo * fator));
-      
+
       if (precoNovo !== precoAntigo) {
         diario.hospedagem.preco_diario = precoNovo;
         updates.hospedagem = diario.hospedagem;
         alterouDia = true;
-        emitLog(`JOB: Preço da Hospedagem em [${dia}] variou de R$ ${precoAntigo} para R$ ${precoNovo} (Flutuação de Mercado).`);
       }
     }
 
-    // 2. Atividades
     if (diario.atividades && diario.atividades.length > 0) {
       const novasAtividades = diario.atividades.map((atv) => {
         const valorAntigo = atv.valor;
-        // Flutuação de -6% a +6%
         const fator = 0.94 + Math.random() * 0.12;
         const valorNovo = Math.max(20, Math.round(valorAntigo * fator));
-        
+
         if (valorNovo !== valorAntigo) {
-          emitLog(`JOB: Atividade [${atv.nome}] recalibrada de R$ ${valorAntigo} para R$ ${valorNovo}.`);
           alterouDia = true;
           return { ...atv, valor: valorNovo };
         }
@@ -792,53 +762,39 @@ export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void>
       }
     }
 
-    // Gravar atualizações
     if (alterouDia) {
       alterouAlgum = true;
       if (isFirebaseConfigured && db) {
         try {
           if (updates.hospedagem) {
             const docRef = doc(db, "viagens", viagemId, "hoteis", dia);
-            await withTimeout(
-              setDoc(docRef, {
-                nome: updates.hospedagem.nome,
-                preco_diario: updates.hospedagem.preco_diario,
-                link: updates.hospedagem.link
-              }),
-              4000,
-              "Tempo limite esgotado ao atualizar cotação de hospedagem."
-            );
+            await setDoc(docRef, {
+              nome: updates.hospedagem.nome,
+              preco_diario: updates.hospedagem.preco_diario,
+              link: updates.hospedagem.link
+            });
           }
           if (updates.atividades) {
             for (const atv of updates.atividades) {
               if (atv.id) {
                 const docRef = doc(db, "viagens", viagemId, "passeios", atv.id);
-                await withTimeout(
-                  updateDoc(docRef, { valor: atv.valor }),
-                  4000,
-                  "Tempo limite esgotado ao atualizar cotação de atividade."
-                );
+                await updateDoc(docRef, { valor: atv.valor });
               }
             }
           }
         } catch (error) {
           console.error("Erro no JOB Firestore:", error);
         }
-      } else {
-        // LocalStorage
-        if (typeof window !== "undefined") {
-          const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
-          localStorage.setItem(key, JSON.stringify(roteiro));
-        }
       }
     }
   }
 
-  if (alterouAlgum) {
-    emitLog("SYSTEM: JOB de atualização de cotações concluído. Valores atualizados no banco de dados.");
-  } else {
-    emitLog("SYSTEM: JOB concluído. Valores mantidos estáveis nesta janela transacional.");
+  if (alterouAlgum && typeof window !== "undefined") {
+    const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
+    localStorage.setItem(key, JSON.stringify(roteiro));
   }
+
+  emitLog("SYSTEM: JOB de atualização de cotações concluído.");
 }
 
 /**
@@ -857,13 +813,7 @@ export async function editarViagem(
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", id);
-      
-      // Verifica se o documento existe no Firestore (para cobrir rotas defaults/locais)
-      const docSnap = await withTimeout(
-        getDoc(docRef),
-        3000,
-        "Erro ao verificar existência da rota no Firestore (Timeout)."
-      );
+      const docSnap = await withTimeout(getDoc(docRef), 3000, "Erro ao verificar existência no Firestore.");
 
       const record = {
         origem,
@@ -875,56 +825,27 @@ export async function editarViagem(
       };
 
       if (docSnap.exists()) {
-        emitLog(`FIRESTORE: updateDoc(doc(db, 'viagens', '${id}')) com novos valores...`);
-        await withTimeout(
-          updateDoc(docRef, record),
-          4000,
-          "Erro ao atualizar viagem no Firestore (Timeout ou Regras de Segurança)."
-        );
+        await withTimeout(updateDoc(docRef, record), 4000, "Erro ao atualizar no Firestore.");
       } else {
-        emitLog(`FIRESTORE: setDoc(doc(db, 'viagens', '${id}')) (Criação de rota padrão/mock no ar)...`);
-        await withTimeout(
-          setDoc(docRef, {
-            ...record,
-            criado_em: Timestamp.now(),
-          }),
-          4000,
-          "Erro ao criar rota padrão no Firestore (Timeout ou Regras de Segurança)."
-        );
+        await withTimeout(setDoc(docRef, { ...record, criado_em: Timestamp.now() }), 4000, "Erro ao criar no Firestore.");
       }
 
-      // Garante que novos dias sejam inicializados se as datas expandiram
       const dias = gerarDiasPeriodo(dataInicio, dataFim);
       for (const dia of dias) {
         const roteiroDocRef = doc(db, "viagens", id, "roteiros", dia);
-        const roteiroSnap = await withTimeout(
-          getDoc(roteiroDocRef),
-          3000,
-          "Erro ao verificar dia do roteiro (Timeout)."
-        );
+        const roteiroSnap = await getDoc(roteiroDocRef);
         if (!roteiroSnap.exists()) {
-          await withTimeout(
-            setDoc(roteiroDocRef, {
-              cronograma_horario: {},
-            }),
-            3000,
-            "Erro ao inicializar novos dias expandidos do roteiro (Timeout)."
-          );
+          await setDoc(roteiroDocRef, { cronograma_horario: {} });
         }
       }
 
       emitLog(`FIRESTORE: Viagem ID ${id} atualizada com sucesso.`);
-      return;
     } catch (error) {
-      const err = error as { code?: string; message?: string };
-      emitLog(`FIRESTORE ERROR: Falha ao editar viagem. Detalhe: ${err?.message || error}`);
       console.error(error);
       throw error;
     }
   }
 
-  // Fallback para LocalStorage
-  emitLog(`SIMULATOR: Editando viagem ID ${id} no localStorage...`);
   if (typeof window !== "undefined") {
     const raw = localStorage.getItem(MOCK_TRIPS_KEY);
     if (raw) {
@@ -940,24 +861,6 @@ export async function editarViagem(
           orcamento_maximo: orcamento,
         };
         localStorage.setItem(MOCK_TRIPS_KEY, JSON.stringify(viagens));
-
-        // Inicializa os novos dias locais se necessário
-        const dias = gerarDiasPeriodo(dataInicio, dataFim);
-        const key = `${MOCK_ITINERARY_PREFIX}${id}`;
-        const rawRoteiro = localStorage.getItem(key);
-        const roteiro: Record<string, RoteiroDiario> = rawRoteiro ? JSON.parse(rawRoteiro) : {};
-
-        let alterouRoteiroLocal = false;
-        for (const dia of dias) {
-          if (!roteiro[dia]) {
-            roteiro[dia] = { hospedagem: null, atividades: [] };
-            alterouRoteiroLocal = true;
-          }
-        }
-        if (alterouRoteiroLocal) {
-          localStorage.setItem(key, JSON.stringify(roteiro));
-        }
-
         emitLog(`SIMULATOR: Viagem ID ${id} atualizada localmente.`);
       }
     }
@@ -973,40 +876,28 @@ export async function deletarViagem(viagemId: string): Promise<void> {
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId);
-      await withTimeout(
-        deleteDoc(docRef),
-        4000,
-        "Tempo limite esgotado ao deletar viagem do Firestore."
-      );
+      await withTimeout(deleteDoc(docRef), 4000, "Timeout ao deletar do Firestore.");
       emitLog(`FIRESTORE: Viagem ID ${viagemId} excluída com sucesso.`);
-      return;
     } catch (error) {
-      const err = error as { code?: string; message?: string };
-      emitLog(`FIRESTORE ERROR: Falha ao deletar viagem. Detalhe: ${err?.message || error}`);
       console.error(error);
       throw error;
     }
   }
 
-  // Fallback para LocalStorage
-  emitLog(`SIMULATOR: Deletando viagem ID ${viagemId} no localStorage...`);
   if (typeof window !== "undefined") {
     const raw = localStorage.getItem(MOCK_TRIPS_KEY);
     if (raw) {
       const viagens: Viagem[] = JSON.parse(raw);
       const filtradas = viagens.filter((v) => v.id !== viagemId);
       localStorage.setItem(MOCK_TRIPS_KEY, JSON.stringify(filtradas));
-      
-      // Remove também o roteiro diário local
       localStorage.removeItem(`${MOCK_ITINERARY_PREFIX}${viagemId}`);
       emitLog(`SIMULATOR: Viagem ID ${viagemId} removida localmente.`);
     }
   }
 }
 
-
 /**
- * Atualiza o cronograma horário (agenda de horas do dia) de um dia específico.
+ * Sincroniza o cronograma de horários inline.
  */
 export async function atualizarCronogramaHorario(
   viagemId: string,
@@ -1015,44 +906,32 @@ export async function atualizarCronogramaHorario(
 ): Promise<void> {
   emitLog(`REQUEST: Sincronizando cronograma horário do dia ${dataDia}...`);
 
-  // Garante a existência do documento pai da viagem
   await garantirViagemNoFirestore(viagemId);
 
-  // 1. Sempre persistir localmente no LocalStorage primeiro para resposta imediata
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
     const raw = localStorage.getItem(key);
     if (raw) {
       const roteiro: Record<string, RoteiroDiario> = JSON.parse(raw);
-      if (!roteiro[dataDia]) {
-        roteiro[dataDia] = { hospedagem: null, atividades: [] };
-      }
+      if (!roteiro[dataDia]) roteiro[dataDia] = { hospedagem: null, atividades: [] };
       roteiro[dataDia].cronograma_horario = cronograma;
       localStorage.setItem(key, JSON.stringify(roteiro));
-      emitLog(`SIMULATOR: Cronograma horário salvo localmente.`);
     }
   }
 
-  // 2. Sincronizar em background com o Firestore (se configurado)
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId, "roteiros", dataDia);
-      await withTimeout(
-        setDoc(docRef, { cronograma_horario: cronograma }, { merge: true }),
-        4000,
-        "Tempo limite esgotado ao salvar cronograma horário no Firestore."
-      );
-      emitLog(`FIRESTORE: Cronograma horário salvo com sucesso no Firestore.`);
+      await withTimeout(setDoc(docRef, { cronograma_horario: cronograma }, { merge: true }), 4000, "Erro ao salvar cronograma.");
+      emitLog(`FIRESTORE: Cronograma horário salvo com sucesso.`);
     } catch (error) {
-      const err = error as { code?: string; message?: string };
-      emitLog(`FIRESTORE ERROR: Falha ao salvar cronograma no Firestore. Detalhe: ${err?.message || error}`);
       console.error(error);
     }
   }
 }
 
 /**
- * Adiciona uma despesa customizada diária no Firestore e LocalStorage.
+ * Adiciona uma despesa customizada diária.
  */
 export async function adicionarDespesaDia(
   viagemId: string,
@@ -1062,21 +941,15 @@ export async function adicionarDespesaDia(
   emitLog(`REQUEST: Adicionando despesa [${despesa.nome}] no dia ${dataDia}...`);
 
   await garantirViagemNoFirestore(viagemId);
-
   const tempId = "exp_" + Math.random().toString(36).substring(2, 9);
 
-  // 1. Salvar no LocalStorage
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
     const raw = localStorage.getItem(key);
     const roteiro: Record<string, RoteiroDiario> = raw ? JSON.parse(raw) : {};
 
-    if (!roteiro[dataDia]) {
-      roteiro[dataDia] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
-    }
-    if (!roteiro[dataDia].despesas) {
-      roteiro[dataDia].despesas = [];
-    }
+    if (!roteiro[dataDia]) roteiro[dataDia] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
+    if (!roteiro[dataDia].despesas) roteiro[dataDia].despesas = [];
 
     roteiro[dataDia].despesas.push({
       id: tempId,
@@ -1088,10 +961,8 @@ export async function adicionarDespesaDia(
     });
 
     localStorage.setItem(key, JSON.stringify(roteiro));
-    emitLog("SIMULATOR: Despesa salva localmente.");
   }
 
-  // 2. Salvar no Firestore
   if (isFirebaseConfigured && db) {
     try {
       const colRef = collection(db, "viagens", viagemId, "despesas");
@@ -1105,11 +976,11 @@ export async function adicionarDespesaDia(
           criado_em: Timestamp.now()
         }),
         4000,
-        "Tempo limite esgotado ao salvar despesa no Firestore."
+        "Erro ao salvar despesa no Firestore."
       );
-      emitLog("FIRESTORE: Despesa sincronizada com sucesso no banco de dados.");
+      emitLog("FIRESTORE: Despesa sincronizada com sucesso.");
     } catch (error) {
-      console.error("Erro ao salvar despesa no Firestore:", error);
+      console.error(error);
     }
   }
 }
@@ -1117,16 +988,11 @@ export async function adicionarDespesaDia(
 /**
  * Remove uma despesa customizada pelo ID.
  */
-export async function removerDespesaDia(
-  viagemId: string,
-  dataDia: string,
-  despesaId: string
-): Promise<void> {
+export async function removerDespesaDia(viagemId: string, dataDia: string, despesaId: string): Promise<void> {
   emitLog(`REQUEST: Removendo despesa ID ${despesaId} do dia ${dataDia}...`);
 
   await garantirViagemNoFirestore(viagemId);
 
-  // 1. Salvar no LocalStorage
   if (typeof window !== "undefined") {
     const key = `${MOCK_ITINERARY_PREFIX}${viagemId}`;
     const raw = localStorage.getItem(key);
@@ -1135,37 +1001,25 @@ export async function removerDespesaDia(
       if (roteiro[dataDia] && roteiro[dataDia].despesas) {
         roteiro[dataDia].despesas = roteiro[dataDia].despesas.filter(d => d.id !== despesaId);
         localStorage.setItem(key, JSON.stringify(roteiro));
-        emitLog("SIMULATOR: Despesa removida localmente.");
       }
     }
   }
 
-  // 2. Salvar no Firestore
   if (isFirebaseConfigured && db) {
     try {
-      // Se não for mock (começa com exp_), deleta direto pelo ID
       if (!despesaId.startsWith("exp_")) {
         const docRef = doc(db, "viagens", viagemId, "despesas", despesaId);
-        await withTimeout(
-          deleteDoc(docRef),
-          4000,
-          "Tempo limite esgotado ao deletar despesa do Firestore."
-        );
-        emitLog("FIRESTORE: Despesa excluída no Firestore.");
+        await withTimeout(deleteDoc(docRef), 4000, "Erro ao deletar despesa.");
       } else {
-        // Se for ID mock, busca o correspondente na nuvem por critério
         const snapshot = await getDocs(collection(db, "viagens", viagemId, "despesas"));
-        const match = snapshot.docs.find(d => {
-          const data = d.data();
-          return data.diaId === dataDia;
-        });
+        const match = snapshot.docs.find(d => d.data().diaId === dataDia);
         if (match) {
           await deleteDoc(doc(db, "viagens", viagemId, "despesas", match.id));
-          emitLog("FIRESTORE: Despesa correspondente excluída no Firestore.");
         }
       }
+      emitLog("FIRESTORE: Despesa excluída com sucesso.");
     } catch (error) {
-      console.error("Erro ao deletar despesa no Firestore:", error);
+      console.error(error);
     }
   }
 }
