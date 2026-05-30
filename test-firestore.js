@@ -1,5 +1,5 @@
 const { initializeApp } = require('firebase/app');
-const { getFirestore, collection, getDocs } = require('firebase/firestore');
+const { getFirestore, collection, getDocs, query, orderBy } = require('firebase/firestore');
 
 const firebaseConfig = {
   apiKey: "AIzaSyAoQ8r-EWujyit6Ckn96JUY_GPS35f_fTs",
@@ -15,25 +15,19 @@ const db = getFirestore(app, "agenteviagens2");
 
 async function test() {
   try {
-    const snap = await getDocs(collection(db, "viagens"));
-    const viagemId = snap.docs[0].id;
-    console.log("Viagem ID:", viagemId);
-    
-    console.log("Buscando hoteis...");
-    await getDocs(collection(db, "viagens", viagemId, "hoteis"));
-    console.log("Buscando passeios...");
-    await getDocs(collection(db, "viagens", viagemId, "passeios"));
-    console.log("Buscando roteiros...");
-    await getDocs(collection(db, "viagens", viagemId, "roteiros"));
-    console.log("Buscando despesas...");
-    await getDocs(collection(db, "viagens", viagemId, "despesas"));
-    
-    console.log("Sucesso!");
+    console.log("Executando query ordenada por criado_em desc...");
+    const q = query(collection(db, "viagens"), orderBy("criado_em", "desc"));
+    const snap = await getDocs(q);
+    console.log(`Sucesso! Encontrados ${snap.docs.length} documentos.`);
+    snap.docs.forEach(doc => {
+      console.log("ID:", doc.id, "Dados:", doc.data());
+    });
     process.exit(0);
   } catch (err) {
-    console.error("Erro ao conectar subcoleção:", err);
+    console.error("Erro ao executar query ordenada:", err);
     process.exit(1);
   }
 }
 
 test();
+

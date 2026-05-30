@@ -138,7 +138,7 @@ export async function listarViagens(): Promise<Viagem[]> {
         return {
           id: d.id,
           usuario_id: data.usuario_id || "operator-01",
-          origem: data.origem || "Não informada",
+          origem: data.origem || data.origen || "Não informada",
           destino: data.destino || "Não informado",
           data_inicio: data.data_inicio,
           data_fim: data.data_fim,
