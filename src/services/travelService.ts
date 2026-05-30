@@ -1,4 +1,4 @@
-import { db, isFirebaseConfigured } from "@/lib/firebase";
+import { db, isFirebaseConfigured, auth } from "@/lib/firebase";
 import {
   collection,
   doc,
@@ -52,6 +52,14 @@ export interface Viagem {
   data_fim: string;
   orcamento_maximo: number;
   criado_em: unknown;
+}
+
+// Helper para obter o ID do usuário autenticado atual
+export function obterUsuarioId(): string {
+  if (auth && auth.currentUser) {
+    return auth.currentUser.uid;
+  }
+  return "operator-01";
 }
 
 // --- LOGGING ENGINE ---
@@ -137,7 +145,7 @@ export async function listarViagens(): Promise<Viagem[]> {
         const data = d.data();
         return {
           id: d.id,
-          usuario_id: data.usuario_id || "operator-01",
+          usuario_id: data.usuario_id || obterUsuarioId(),
           origem: data.origem || data.origen || "Não informada",
           destino: data.destino || "Não informado",
           data_inicio: data.data_inicio,
@@ -181,7 +189,7 @@ export async function listarViagens(): Promise<Viagem[]> {
     const defaultTrips: Viagem[] = [
       {
         id: "trip-default-santiago",
-        usuario_id: "operator-01",
+        usuario_id: obterUsuarioId(),
         origem: "São Paulo (GRU)",
         destino: "Santiago (SCL)",
         data_inicio: "2026-07-10",
@@ -214,7 +222,7 @@ export async function criarNovaViagem(
     try {
       const docRef = doc(collection(db, "viagens"));
       const record = {
-        usuario_id: "operator-01",
+        usuario_id: obterUsuarioId(),
         origem,
         destino,
         data_inicio: dataInicio,
@@ -263,7 +271,7 @@ export async function criarNovaViagem(
     const viagens: Viagem[] = raw ? JSON.parse(raw) : [];
     const novaViagem: Viagem = {
       id: tempId,
-      usuario_id: "operator-01",
+      usuario_id: obterUsuarioId(),
       origem,
       destino,
       data_inicio: dataInicio,
@@ -287,6 +295,7 @@ export async function criarNovaViagem(
   }
   return tempId;
 }
+
 
 /**
  * Mantém compatibilidade com a assinatura antiga chamando internamente criarNovaViagem
@@ -317,7 +326,7 @@ async function garantirViagemNoFirestore(viagemId: string): Promise<void> {
           if (localTrip) {
             emitLog(`FIRESTORE: Auto-sincronizando viagem principal '${localTrip.destino}' no Firestore...`);
             await setDoc(docRef, {
-              usuario_id: localTrip.usuario_id || "operator-01",
+              usuario_id: localTrip.usuario_id || obterUsuarioId(),
               origem: localTrip.origem,
               destino: localTrip.destino,
               data_inicio: localTrip.data_inicio,

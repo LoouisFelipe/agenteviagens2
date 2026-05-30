@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAoQ8r-EWujyit6Ckn96JUY_GPS35f_fTs",
@@ -13,6 +14,9 @@ const firebaseConfig = {
 // Evita inicializar o Firebase multiplas vezes no Next.js
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
+// Inicializa e exporta Autenticação
+export const auth = getAuth(app);
+
 // Suporta banco de dados padrão ou nomeado (ex: agenteviagens2)
 const dbId = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || "agenteviagens2";
 export const db = dbId ? getFirestore(app, dbId) : getFirestore(app);
@@ -22,5 +26,6 @@ export const isFirebaseConfigured = !!(
   (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || firebaseConfig.projectId) &&
   (process.env.NEXT_PUBLIC_FIREBASE_API_KEY || firebaseConfig.apiKey)
 );
+
 
 

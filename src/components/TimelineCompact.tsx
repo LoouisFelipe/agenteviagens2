@@ -30,13 +30,14 @@ export default function TimelineCompact({
 }: TimelineCompactProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
   
-  // Calcula o total de gastos de um dia específico
+  // Calcula o total de gastos de um dia específico (incluindo hospedagem, passeios e despesas)
   const obterTotalDia = (dataDia: string): number => {
     const diario = roteiroDiario[dataDia];
     if (!diario) return 0;
     const custoHospedagem = diario.hospedagem?.preco_diario || 0;
     const custoAtividades = diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
-    return custoHospedagem + custoAtividades;
+    const custoDespesas = diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
+    return custoHospedagem + custoAtividades + custoDespesas;
   };
 
   // Monta a lista de nós com os running totals

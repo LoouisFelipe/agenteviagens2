@@ -19,6 +19,7 @@ import {
   RoteiroDiario,
   Hospedagem,
   Atividade,
+  Despesa,
   emitLog,
 } from "@/services/travelService";
 
@@ -27,6 +28,11 @@ import SideAList from "@/components/SideAList";
 import SideBItinerary from "@/components/SideBItinerary";
 import IndustrialLog from "@/components/IndustrialLog";
 import TimelineCompact from "@/components/TimelineCompact";
+
+// Firebase Imports
+import { db, isFirebaseConfigured, auth } from "@/lib/firebase";
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
+import { onSnapshot, query, collection, orderBy } from "firebase/firestore";
 
 // Helper para gerar as datas cronologicamente entre início e fim sem bugs de timezone
 function gerarDiasPeriodo(dataInicio: string, dataFim: string): string[] {
@@ -52,6 +58,10 @@ export default function Home() {
   const [isFormEdicaoAberto, setIsFormEdicaoAberto] = useState(false);
   const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
 
+  // Estados de Autenticação
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
   // Estados para o Workspace Focado (Redesenho UX Premium)
   const [diaAtivoWorkspace, setDiaAtivoWorkspace] = useState<string | null>(null);
   const [isModoFoco, setIsModoFoco] = useState(true);
@@ -59,21 +69,65 @@ export default function Home() {
   // Controle de Abas no Sidebar
   const [activeTab, setActiveTab] = useState<"dashboard" | "cronograma" | "banco" | "logs">("dashboard");
 
+  // Escuta alterações de Autenticação em tempo real
+  useEffect(() => {
+    if (!auth) {
+      setIsAuthLoading(false);
+      return;
+    }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthLoading(false);
+      if (currentUser) {
+        emitLog(`AUTH: Usuário [${currentUser.displayName || currentUser.email}] autenticado com sucesso.`);
+      } else {
+        emitLog("AUTH: Modo visitante ativo (desconectado).");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Handlers de Login/Logout
+  const handleLoginGoogle = async () => {
+    if (!auth) return;
+    const provider = new GoogleAuthProvider();
+    try {
+      emitLog("AUTH: Iniciando janela de login do Google...");
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      console.error(err);
+      emitLog("AUTH ERROR: Falha na autenticação do Google.");
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      emitLog("AUTH: Desconectando usuário do sistema...");
+      await signOut(auth);
+      setViagemAtiva(null);
+      setDatasViagem([]);
+      setDiaAtivoWorkspace(null);
+      setRoteiroDiario({});
+    } catch (err) {
+      console.error(err);
+      emitLog("AUTH ERROR: Falha ao efetuar logout.");
+    }
+  };
+
   // Salva o cronograma horário inline diretamente do Sidebar sem modal
   const handleSalvarCronogramaInline = async (dataDia: string, cronograma: Record<string, string>) => {
     if (!viagemAtiva) return;
     try {
       await atualizarCronogramaHorario(viagemAtiva.id, dataDia, cronograma);
-      const roteiro = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(roteiro);
-      emitLog(`SYSTEM: Cronograma do dia ${dataDia} atualizado com sucesso.`);
+      emitLog(`SYSTEM: Cronograma do dia ${dataDia} atualizado no banco.`);
     } catch (err) {
       console.error("Erro ao salvar cronograma inline:", err);
       emitLog("SYSTEM ERROR: Falha ao sincronizar o cronograma de horários.");
     }
   };
 
-  // Carrega todas as viagens salvas
+  // Carrega todas as viagens salvas (usado como fallback local ou inicialização)
   const carregarDadosViagens = useCallback(async (activeIdToSet?: string) => {
     try {
       const lista = await listarViagens();
@@ -98,10 +152,208 @@ export default function Home() {
     }
   }, []);
 
-  // Inicialização
+  // 1. Escuta Viagens em tempo real (Filtra por proprietário no cliente para máxima resiliência)
   useEffect(() => {
-    carregarDadosViagens();
-  }, [carregarDadosViagens]);
+    if (isFirebaseConfigured && db) {
+      emitLog("FIRESTORE: Conectando escuta em tempo real da coleção 'viagens'...");
+      const q = query(collection(db, "viagens"), orderBy("criado_em", "desc"));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const currentUser = auth.currentUser;
+        const userId = currentUser ? currentUser.uid : "operator-01";
+        
+        const list = snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            usuario_id: data.usuario_id || "operator-01",
+            origem: data.origem || data.origen || "Não informada",
+            destino: data.destino || "Não informado",
+            data_inicio: data.data_inicio,
+            data_fim: data.data_fim,
+            criado_em: data.criado_em,
+            orcamento_maximo: Number(data.orcamento_maximo ?? data.orcamento) || 0,
+          } as Viagem;
+        }).filter(v => v.usuario_id === userId);
+        
+        setViagens(list);
+        emitLog(`FIRESTORE: ${list.length} viagens hidratadas reativamente.`);
+      }, (err) => {
+        console.error("Erro ao escutar viagens:", err);
+        emitLog("FIRESTORE ERROR: Falha na escuta de viagens em tempo real.");
+      });
+      return () => unsubscribe();
+    } else {
+      carregarDadosViagens();
+    }
+  }, [user, carregarDadosViagens]);
+
+  // 2. Escuta Roteiros diários em tempo real (Hospedagem, Atividades, Cronogramas e Despesas)
+  useEffect(() => {
+    if (!viagemAtiva) {
+      setRoteiroDiario({});
+      return;
+    }
+
+    if (isFirebaseConfigured && db) {
+      emitLog(`FIRESTORE: Conectando ouvintes em tempo real para subcoleções do Roteiro ID [${viagemAtiva.id}]...`);
+      const unsubscribes: (() => void)[] = [];
+
+      const hoteisRef = collection(db, "viagens", viagemAtiva.id, "hoteis");
+      const passeiosRef = collection(db, "viagens", viagemAtiva.id, "passeios");
+      const roteirosRef = collection(db, "viagens", viagemAtiva.id, "roteiros");
+      const despesasRef = collection(db, "viagens", viagemAtiva.id, "despesas");
+
+      // Buffers locais
+      let localHoteis: Record<string, Hospedagem> = {};
+      let localPasseios: Record<string, Atividade[]> = {};
+      let localRoteiros: Record<string, Record<string, string>> = {};
+      let localDespesas: Record<string, Despesa[]> = {};
+
+      const combinarRoteiroReativo = () => {
+        const novoRoteiro: Record<string, RoteiroDiario> = {};
+        
+        // Inicializa todas as datas do período de viagem
+        datasViagem.forEach((dia) => {
+          novoRoteiro[dia] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
+        });
+
+        // Preenche hotéis
+        Object.keys(localHoteis).forEach((diaId) => {
+          if (novoRoteiro[diaId]) {
+             novoRoteiro[diaId].hospedagem = localHoteis[diaId];
+          }
+        });
+
+        // Preenche passeios
+        Object.keys(localPasseios).forEach((diaId) => {
+          if (novoRoteiro[diaId]) {
+             novoRoteiro[diaId].atividades = localPasseios[diaId];
+          }
+        });
+
+        // Preenche cronogramas/roteiros
+        Object.keys(localRoteiros).forEach((diaId) => {
+          if (novoRoteiro[diaId]) {
+             novoRoteiro[diaId].cronograma_horario = localRoteiros[diaId];
+          }
+        });
+
+        // Preenche despesas
+        Object.keys(localDespesas).forEach((diaId) => {
+          if (novoRoteiro[diaId]) {
+             novoRoteiro[diaId].despesas = localDespesas[diaId];
+          }
+        });
+
+        setRoteiroDiario(novoRoteiro);
+      };
+
+      // A. Ouvinte de Hotéis
+      unsubscribes.push(onSnapshot(hoteisRef, (snap) => {
+        localHoteis = {};
+        snap.docs.forEach((doc) => {
+          const data = doc.data();
+          localHoteis[doc.id] = {
+            nome: data.nome || "",
+            preco_diario: Number(data.preco_diario) || 0,
+            link: data.link || ""
+          };
+        });
+        combinarRoteiroReativo();
+      }));
+
+      // B. Ouvinte de Passeios/Atividades
+      unsubscribes.push(onSnapshot(passeiosRef, (snap) => {
+        const tempPasseios: Record<string, Array<Atividade & { criado_em?: { seconds?: number; nanoseconds?: number } | null }>> = {};
+        snap.docs.forEach((doc) => {
+          const data = doc.data();
+          const diaId = data.diaId;
+          if (diaId) {
+            if (!tempPasseios[diaId]) tempPasseios[diaId] = [];
+            tempPasseios[diaId].push({
+              id: doc.id,
+              nome: data.nome || "",
+              valor: Number(data.valor) || 0,
+              link: data.link || "",
+              criado_em: data.criado_em
+            });
+          }
+        });
+        
+        localPasseios = {};
+        Object.keys(tempPasseios).forEach((diaId) => {
+          localPasseios[diaId] = tempPasseios[diaId].sort((a, b) => {
+            const tA = a.criado_em?.seconds || 0;
+            const tB = b.criado_em?.seconds || 0;
+            return tA - tB;
+          }).map(p => ({
+            id: p.id,
+            nome: p.nome,
+            valor: p.valor,
+            link: p.link
+          }));
+        });
+        combinarRoteiroReativo();
+      }));
+
+      // C. Ouvinte de Roteiros/Cronograma de Horas
+      unsubscribes.push(onSnapshot(roteirosRef, (snap) => {
+        localRoteiros = {};
+        snap.docs.forEach((doc) => {
+          const data = doc.data();
+          localRoteiros[doc.id] = (data.cronograma_horario as Record<string, string>) || {};
+        });
+        combinarRoteiroReativo();
+      }));
+
+      // D. Ouvinte de Despesas Extras
+      unsubscribes.push(onSnapshot(despesasRef, (snap) => {
+        const tempDespesas: Record<string, Array<Despesa & { criado_em?: { seconds?: number; nanoseconds?: number } | null }>> = {};
+        snap.docs.forEach((doc) => {
+          const data = doc.data();
+          const diaId = data.diaId;
+          if (diaId) {
+            if (!tempDespesas[diaId]) tempDespesas[diaId] = [];
+            tempDespesas[diaId].push({
+              id: doc.id,
+              diaId: data.diaId,
+              nome: data.nome || "",
+              valor: Number(data.valor) || 0,
+              categoria: data.categoria || "Outros",
+              criado_em: data.criado_em
+            });
+          }
+        });
+
+        localDespesas = {};
+        Object.keys(tempDespesas).forEach((diaId) => {
+          localDespesas[diaId] = tempDespesas[diaId].sort((a, b) => {
+            const tA = a.criado_em?.seconds || 0;
+            const tB = b.criado_em?.seconds || 0;
+            return tA - tB;
+          }).map(d => ({
+            id: d.id,
+            diaId: d.diaId,
+            nome: d.nome,
+            valor: d.valor,
+            categoria: d.categoria
+          }));
+        });
+        combinarRoteiroReativo();
+      }));
+
+      return () => {
+        unsubscribes.forEach((u) => u());
+      };
+    } else {
+      // Fallback estático de LocalStorage
+      const raw = localStorage.getItem(`chilinho_itinerary_${viagemAtiva.id}`);
+      if (raw) {
+        setRoteiroDiario(JSON.parse(raw));
+      }
+    }
+  }, [viagemAtiva, datasViagem]);
+
 
   // Handler para trocar de viagem ativa
   const handleSelecionarViagem = async (id: string) => {
@@ -392,13 +644,47 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3.5 font-mono-tech text-[10px] bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner">
-            <div className="flex items-center space-x-1.5">
-              <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
-              <span className="text-[#10b981] font-bold">CONECTADO</span>
+          <div className="flex items-center gap-3.5 flex-wrap">
+            {/* Bloco de Auth no Header */}
+            {isAuthLoading ? (
+              <div className="flex items-center gap-1.5 bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner text-[10px] text-slate-500 font-mono-tech font-bold">
+                Carregando...
+              </div>
+            ) : user ? (
+              <div className="flex items-center gap-3 bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner">
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="Foto" className="w-5 h-5 rounded-full border border-indigo-500/40" />
+                ) : (
+                  <span className="w-5 h-5 flex items-center justify-center bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full font-bold text-[9px]">👤</span>
+                )}
+                <span className="text-slate-200 font-mono-tech text-[10px] font-bold uppercase truncate max-w-[120px]" title={user.email || ""}>
+                  {user.displayName || user.email}
+                </span>
+                <span className="text-slate-800">|</span>
+                <button
+                  onClick={handleLogout}
+                  className="bg-transparent hover:text-rose-400 text-slate-450 text-[10px] font-bold uppercase border-0 cursor-pointer transition-colors"
+                >
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleLoginGoogle}
+                className="h-10 px-4 flex items-center gap-2 font-black tracking-wide uppercase transition-all bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/10 cursor-pointer rounded-xl text-[10px] border-0"
+              >
+                🔑 Entrar com Google
+              </button>
+            )}
+
+            <div className="flex items-center space-x-3.5 font-mono-tech text-[10px] bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner">
+              <div className="flex items-center space-x-1.5">
+                <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
+                <span className="text-[#10b981] font-bold">CONECTADO</span>
+              </div>
+              <span className="text-slate-800">|</span>
+              <span className="text-slate-450">DATA: 2026-05-30</span>
             </div>
-            <span className="text-slate-800">|</span>
-            <span className="text-slate-450">DATA: 2026-05-30</span>
           </div>
         </header>
 
@@ -656,6 +942,48 @@ export default function Home() {
                 REG: {viagemAtiva.id}
               </div>
             </div>
+
+            {/* Bloco de Auth no Sidebar */}
+            {isAuthLoading ? (
+              <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-xl text-center text-[8.5px] font-mono-tech text-slate-500 font-bold uppercase tracking-wider">
+                Verificando Conta...
+              </div>
+            ) : user ? (
+              <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-xl flex items-center justify-between gap-2.5 shadow-inner">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt="Foto" className="w-6 h-6 rounded-full border border-indigo-500/40" />
+                  ) : (
+                    <span className="w-6 h-6 flex items-center justify-center bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full font-bold text-[9px]">👤</span>
+                  )}
+                  <div className="min-w-0 flex flex-col">
+                    <span className="text-slate-200 font-bold text-[9.5px] uppercase truncate tracking-wide leading-tight">
+                      {user.displayName || "Usuário"}
+                    </span>
+                    <span className="text-slate-500 font-mono-tech text-[8px] truncate leading-none mt-0.5">
+                      {user.email}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="bg-transparent hover:text-rose-450 text-slate-450 font-bold text-[9px] uppercase border-0 cursor-pointer transition-colors"
+                  title="Sair da Conta"
+                >
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-xl flex flex-col gap-2 text-center shadow-inner">
+                <span className="text-[8.5px] font-mono-tech text-slate-500 uppercase tracking-wider font-bold">Acesso Restrito</span>
+                <button
+                  onClick={handleLoginGoogle}
+                  className="w-full py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer border-0 shadow-md active:scale-95"
+                >
+                  🔑 Entrar com Google
+                </button>
+              </div>
+            )}
 
             {/* Navegador de Abas */}
             <nav className="flex flex-col space-y-2.5">
