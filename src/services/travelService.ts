@@ -813,7 +813,7 @@ export async function editarViagem(
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", id);
-      const docSnap = await withTimeout(getDoc(docRef), 3000, "Erro ao verificar existência no Firestore.");
+      const docSnap = await withTimeout(getDoc(docRef), 15000, "Erro ao verificar existência no Firestore.");
 
       const record = {
         origem,
@@ -825,9 +825,9 @@ export async function editarViagem(
       };
 
       if (docSnap.exists()) {
-        await withTimeout(updateDoc(docRef, record), 4000, "Erro ao atualizar no Firestore.");
+        await withTimeout(updateDoc(docRef, record), 15000, "Erro ao atualizar no Firestore.");
       } else {
-        await withTimeout(setDoc(docRef, { ...record, criado_em: Timestamp.now() }), 4000, "Erro ao criar no Firestore.");
+        await withTimeout(setDoc(docRef, { ...record, criado_em: Timestamp.now() }), 15000, "Erro ao criar no Firestore.");
       }
 
       const dias = gerarDiasPeriodo(dataInicio, dataFim);
@@ -876,7 +876,7 @@ export async function deletarViagem(viagemId: string): Promise<void> {
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId);
-      await withTimeout(deleteDoc(docRef), 4000, "Timeout ao deletar do Firestore.");
+      await withTimeout(deleteDoc(docRef), 15000, "Timeout ao deletar do Firestore.");
       emitLog(`FIRESTORE: Viagem ID ${viagemId} excluída com sucesso.`);
     } catch (error) {
       console.error(error);
@@ -922,7 +922,7 @@ export async function atualizarCronogramaHorario(
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId, "roteiros", dataDia);
-      await withTimeout(setDoc(docRef, { cronograma_horario: cronograma }, { merge: true }), 4000, "Erro ao salvar cronograma.");
+      await withTimeout(setDoc(docRef, { cronograma_horario: cronograma }, { merge: true }), 15000, "Erro ao salvar cronograma.");
       emitLog(`FIRESTORE: Cronograma horário salvo com sucesso.`);
     } catch (error) {
       console.error(error);
@@ -1009,7 +1009,7 @@ export async function removerDespesaDia(viagemId: string, dataDia: string, despe
     try {
       if (!despesaId.startsWith("exp_")) {
         const docRef = doc(db, "viagens", viagemId, "despesas", despesaId);
-        await withTimeout(deleteDoc(docRef), 4000, "Erro ao deletar despesa.");
+        await withTimeout(deleteDoc(docRef), 15000, "Erro ao deletar despesa.");
       } else {
         const snapshot = await getDocs(collection(db, "viagens", viagemId, "despesas"));
         const match = snapshot.docs.find(d => d.data().diaId === dataDia);
