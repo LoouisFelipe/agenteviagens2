@@ -1,13 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg-primary: #080a10;
-  --bg-secondary: #0d121f;
-  --bg-tertiary: #131a2b;
-  --border-primary: #1f2a45;
-  --border-active: #384f80;
+  --bg-primary: #07090e;
+  --bg-secondary: #0c0f17;
+  --bg-tertiary: #111522;
+  --border-primary: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(99, 102, 241, 0.35);
   
   --accent-amber: #f59e0b;
   --accent-green: #10b981;
@@ -15,33 +17,36 @@
   --accent-blue: #3b82f6;
   --accent-indigo: #6366f1;
 
-  --text-primary: #f1f5f9;
+  --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
+  --text-muted: #64748b;
   --text-mono: #10b981;
 }
 
 body {
   color: var(--text-primary);
   background-color: var(--bg-primary);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  background-image: 
-    radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px),
-    radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: 0 0, 12px 12px;
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
+  letter-spacing: -0.01em;
 }
 
-/* Efeito de brilho de fundo radial sutil e premium */
+/* Títulos usando a fonte Outfit de alto impacto */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Efeito de brilho de fundo radial suave e premium */
 body::before {
   content: "";
   position: absolute;
-  top: 10%;
+  top: -10%;
   left: 20%;
-  width: 600px;
-  height: 600px;
+  width: 700px;
+  height: 700px;
   background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
   z-index: -1;
   pointer-events: none;
@@ -50,71 +55,69 @@ body::before {
 body::after {
   content: "";
   position: absolute;
-  bottom: 10%;
+  bottom: -10%;
   right: 10%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.04) 0%, transparent 75%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 75%);
   z-index: -1;
   pointer-events: none;
 }
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-primary);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-active);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* Utilitários de Vidro (Glassmorphism) */
+/* Utilitários de Vidro (SaaS Glassmorphism) */
 .glass-panel {
-  background: rgba(13, 18, 31, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(31, 42, 69, 0.8);
+  background: rgba(12, 15, 23, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .glass-panel-light {
-  background: rgba(19, 26, 43, 0.45);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(31, 42, 69, 0.5);
+  background: rgba(17, 21, 34, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Glowing Indicator Utilities */
 .led-amber {
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
 }
 .led-green {
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
 }
 .led-red {
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.4);
 }
 .led-blue {
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
 }
 
-/* Estilo de Gradiente de Acento para Carregamentos e Bordas */
+/* Estilo de Gradiente de Acento Fino e Sofisticado */
 .hazard-stripes {
-  background: linear-gradient(90deg, var(--accent-indigo), var(--accent-blue), var(--accent-green));
+  background: linear-gradient(90deg, #6366f1, #3b82f6, #10b981);
   background-size: 200% 200%;
-  animation: gradientShift 6s ease infinite;
+  animation: gradientShift 8s ease infinite;
 }
 
 .hazard-stripes-dark {
-  background: linear-gradient(90deg, var(--border-primary), var(--border-active), var(--border-primary));
-  background-size: 200% 200%;
-  animation: gradientShift 8s ease infinite;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 @keyframes gradientShift {
@@ -123,163 +126,151 @@ body::after {
   100% { background-position: 0% 50%; }
 }
 
-/* Retro CRT scanlines suave - ativado apenas onde agrega estética */
-.scanlines {
-  position: relative;
-  overflow: hidden;
-}
-.scanlines::before {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
-  z-index: 2;
-  background-size: 100% 2px;
-  pointer-events: none;
-  opacity: 0.8;
-}
-
 /* Blinking utility */
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  50% { opacity: 0.4; }
 }
 .animate-blink {
-  animation: blink 1.5s infinite;
+  animation: blink 2s infinite;
 }
 
-/* Sharp focus outlines for mechanical controls */
+/* Input Focus Premium styles */
 .panel-border {
-  border: 1px solid var(--border-primary);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .panel-focus:focus-within {
-  border-color: var(--accent-indigo);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
 }
 
-/* Classes utilitárias para forçar fontes monoespaçadas onde necessário */
+/* Classes utilitárias para fontes monoespaçadas premium */
 .font-mono-tech {
-  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
 }
 
 /* Efeito tridimensional de glowing mesh blobs */
 .glass-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(120px);
+  filter: blur(130px);
   z-index: 0;
   pointer-events: none;
-  opacity: 0.12;
+  opacity: 0.15;
 }
 
 @keyframes drift-blob-1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(80px, 60px) scale(1.2); }
+  50% { transform: translate(60px, 40px) scale(1.15); }
 }
 @keyframes drift-blob-2 {
-  0%, 100% { transform: translate(0, 0) scale(1.15); }
-  50% { transform: translate(-60px, 80px) scale(0.85); }
+  0%, 100% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-40px, 60px) scale(0.9); }
 }
 @keyframes drift-blob-3 {
-  0%, 100% { transform: translate(0, 0) scale(0.9); }
-  50% { transform: translate(50px, -90px) scale(1.1); }
+  0%, 100% { transform: translate(0, 0) scale(0.95); }
+  50% { transform: translate(30px, -60px) scale(1.05); }
 }
 
 .animate-drift-1 {
-  animation: drift-blob-1 25s ease-in-out infinite;
+  animation: drift-blob-1 20s ease-in-out infinite;
 }
 .animate-drift-2 {
-  animation: drift-blob-2 30s ease-in-out infinite;
+  animation: drift-blob-2 25s ease-in-out infinite;
 }
 .animate-drift-3 {
-  animation: drift-blob-3 28s ease-in-out infinite;
+  animation: drift-blob-3 22s ease-in-out infinite;
 }
 
-/* Glows personalizados para cartões premium */
+/* Glows de cartões premium */
 .glow-card-indigo {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease !important;
 }
 .glow-card-indigo:hover {
-  border-color: rgba(99, 102, 241, 0.6) !important;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
 }
 
 .glow-card-emerald {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease !important;
 }
 .glow-card-emerald:hover {
-  border-color: rgba(16, 185, 129, 0.6) !important;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.1);
+  transform: translateY(-2px);
 }
 
 .glow-card-amber {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease !important;
 }
 .glow-card-amber:hover {
-  border-color: rgba(245, 158, 11, 0.6) !important;
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.1);
+  transform: translateY(-2px);
 }
 
 .glow-card-rose {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease !important;
 }
 .glow-card-rose:hover {
-  border-color: rgba(244, 63, 94, 0.6) !important;
-  box-shadow: 0 0 20px rgba(244, 63, 94, 0.18);
+  border-color: rgba(244, 63, 94, 0.45) !important;
+  box-shadow: 0 12px 30px rgba(244, 63, 94, 0.1);
+  transform: translateY(-2px);
 }
 
-/* Glow pulsante de orçamento estourado */
+/* Glow de orçamento estourado */
 .glow-border-rose-pulse {
-  border-color: rgba(244, 63, 94, 0.7) !important;
-  box-shadow: 0 0 20px rgba(244, 63, 94, 0.25);
-  animation: borderGlowPulse 2.5s infinite;
+  border-color: rgba(244, 63, 94, 0.5) !important;
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.15);
+  animation: borderGlowPulse 3s infinite;
 }
 
 @keyframes borderGlowPulse {
   0%, 100% {
-    box-shadow: 0 0 15px rgba(244, 63, 94, 0.2);
-    border-color: rgba(244, 63, 94, 0.5) !important;
-    background-color: rgba(244, 63, 94, 0.02) !important;
+    box-shadow: 0 0 12px rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.4) !important;
   }
   50% {
-    box-shadow: 0 0 25px rgba(244, 63, 94, 0.4);
-    border-color: rgba(244, 63, 94, 0.9) !important;
-    background-color: rgba(244, 63, 94, 0.05) !important;
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.25);
+    border-color: rgba(244, 63, 94, 0.75) !important;
   }
 }
 
 /* Efeito de Card 3D com Neon Glow */
 .glow-card-3d {
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
-              border-color 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
-              box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform, box-shadow;
 }
 .glow-card-3d:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 
-              0 8px 10px -6px rgba(99, 102, 241, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px -5px rgba(99, 102, 241, 0.12), 
+              0 8px 15px -6px rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.4) !important;
 }
 
 /* Estado de Dia Focado (Neon Indigo Glow) */
 .active-focused-day-card {
-  border-color: rgba(99, 102, 241, 0.9) !important;
-  background: rgba(99, 102, 241, 0.08) !important;
-  box-shadow: 0 0 25px rgba(99, 102, 241, 0.3), 
-              inset 0 0 12px rgba(99, 102, 241, 0.15) !important;
+  border-color: rgba(99, 102, 241, 0.7) !important;
+  background: rgba(99, 102, 241, 0.05) !important;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.15), 
+              inset 0 0 8px rgba(99, 102, 241, 0.08) !important;
 }
 
 /* Transição de Workspace */
 .workspace-fade-in {
-  animation: workspaceFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: workspaceFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes workspaceFadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -293,10 +284,8 @@ body::after {
   height: 4px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(255, 255, 255, 0.08);
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.4);
+  background: rgba(255, 255, 255, 0.15);
 }
-
-

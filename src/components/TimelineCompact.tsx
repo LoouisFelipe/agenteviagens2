@@ -123,7 +123,7 @@ export default function TimelineCompact({
           )}
 
           <div className="flex items-center gap-1.5 py-1.5 px-3.5 bg-indigo-600/10 border border-indigo-500/35 text-indigo-400 hover:text-indigo-300 font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer select-none">
-            <span>{isExpanded ? "[ RECOLHER GRADE ]" : "[ SELECIONAR OUTRO DIA ]"}</span>
+            <span>{isExpanded ? "Recolher Grade" : "Selecionar outro dia"}</span>
             <span className="text-[10px] font-bold">{isExpanded ? "▲" : "▼"}</span>
           </div>
         </div>

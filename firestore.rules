@@ -1,8 +1,186 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true; // Altere para exigir auth assim que subir o login
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: viagens
+    // Document ID: viagemId (auto-generated)
+    // Fields:
+    //   - usuario_id: string (required, 1-50 chars) - Owner id (or "operator-01")
+    //   - origem: string (required, 1-100 chars) - Route origin
+    //   - destino: string (required, 1-100 chars) - Route destination
+    //   - data_inicio: string (required, YYYY-MM-DD) - Start date
+    //   - data_fim: string (required, YYYY-MM-DD) - End date
+    //   - orcamento_maximo: number (required, >= 0) - Max budget limit
+    //   - criado_em: timestamp (required) - Timestamp of creation
+    //
+    // Subcollection: viagens/{viagemId}/hoteis
+    // Document ID: diaId (YYYY-MM-DD format)
+    // Fields:
+    //   - nome: string (required, 1-100 chars) - Hotel name
+    //   - preco_diario: number (required, >= 0) - Cost per day
+    //   - link: string (required, 0-2048 chars) - Web link
+    //
+    // Subcollection: viagens/{viagemId}/passeios
+    // Document ID: passeioId (auto-generated)
+    // Fields:
+    //   - diaId: string (required, YYYY-MM-DD) - Day link
+    //   - nome: string (required, 1-100 chars) - Activity name
+    //   - valor: number (required, >= 0) - Cost of activity
+    //   - link: string (required, 0-2048 chars) - Booking link
+    //   - criado_em: timestamp (required) - Log timestamp
+    //
+    // Subcollection: viagens/{viagemId}/roteiros
+    // Document ID: diaId (YYYY-MM-DD format)
+    // Fields:
+    //   - cronograma_horario: map (required) - Map of dynamic schedules (HH:MM -> text)
+    //
+    // Subcollection: viagens/{viagemId}/despesas
+    // Document ID: despesaId (auto-generated)
+    // Fields:
+    //   - diaId: string (required, YYYY-MM-DD) - Day link
+    //   - nome: string (required, 1-100 chars) - Expense description
+    //   - valor: number (required, >= 0) - Expense cost
+    //   - categoria: string (required, 1-50 chars) - Budget category
+    //   - criado_em: timestamp (required) - Log timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Verifica se o usuário está autenticado no Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Valida se o usuário é dono do recurso (Suporta Auth e o Mock "operator-01")
+    function isOwner(usuarioId) {
+      return (isAuthenticated() && request.auth.uid == usuarioId) || usuarioId == "operator-01";
+    }
+
+    // Verifica se a viagem pai pertence ao usuário autenticado ou mock
+    function isViagemOwner(viagemId) {
+      return isOwner(get(/databases/$(database)/documents/viagens/$(viagemId)).data.usuario_id);
+    }
+
+    // Valida a presença de todos os campos obrigatórios
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Bloqueia campos extras no esquema (evita poluição maliciosa)
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Valida se uma string de data segue o formato estrito YYYY-MM-DD
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\\\d{4}-\\\\d{2}-\\\\d{2}$");
+    }
+
+    // Evita modificação de chaves imutáveis em updates
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Schema Validators
+    // ===============================================================
+
+    function isValidViagem(data) {
+      return hasRequiredFields(['usuario_id', 'origem', 'destino', 'data_inicio', 'data_fim', 'orcamento_maximo', 'criado_em']) &&
+             hasOnlyAllowedFields(['usuario_id', 'origem', 'destino', 'data_inicio', 'data_fim', 'orcamento_maximo', 'criado_em']) &&
+             data.usuario_id is string && data.usuario_id.size() >= 1 && data.usuario_id.size() <= 50 &&
+             data.origem is string && data.origem.size() >= 1 && data.origem.size() <= 100 &&
+             data.destino is string && data.destino.size() >= 1 && data.destino.size() <= 100 &&
+             isValidDateString(data.data_inicio) &&
+             isValidDateString(data.data_fim) &&
+             data.orcamento_maximo is number && data.orcamento_maximo >= 0 &&
+             data.criado_em is timestamp;
+    }
+
+    function isValidHotel(data) {
+      return hasRequiredFields(['nome', 'preco_diario', 'link']) &&
+             hasOnlyAllowedFields(['nome', 'preco_diario', 'link']) &&
+             data.nome is string && data.nome.size() >= 1 && data.nome.size() <= 100 &&
+             data.preco_diario is number && data.preco_diario >= 0 &&
+             data.link is string && data.link.size() <= 2048;
+    }
+
+    function isValidPasseio(data) {
+      return hasRequiredFields(['diaId', 'nome', 'valor', 'link', 'criado_em']) &&
+             hasOnlyAllowedFields(['diaId', 'nome', 'valor', 'link', 'criado_em']) &&
+             isValidDateString(data.diaId) &&
+             data.nome is string && data.nome.size() >= 1 && data.nome.size() <= 100 &&
+             data.valor is number && data.valor >= 0 &&
+             data.link is string && data.link.size() <= 2048 &&
+             data.criado_em is timestamp;
+    }
+
+    function isValidRoteiro(data) {
+      return hasRequiredFields(['cronograma_horario']) &&
+             hasOnlyAllowedFields(['cronograma_horario']) &&
+             data.cronograma_horario is map;
+    }
+
+    function isValidDespesa(data) {
+      return hasRequiredFields(['diaId', 'nome', 'valor', 'categoria', 'criado_em']) &&
+             hasOnlyAllowedFields(['diaId', 'nome', 'valor', 'categoria', 'criado_em']) &&
+             isValidDateString(data.diaId) &&
+             data.nome is string && data.nome.size() >= 1 && data.nome.size() <= 100 &&
+             data.valor is number && data.valor >= 0 &&
+             data.categoria is string && data.categoria.size() >= 1 && data.categoria.size() <= 50 &&
+             data.criado_em is timestamp;
+    }
+
+    // ===============================================================
+    // Collection Paths & Rules
+    // ===============================================================
+
+    match /viagens/{viagemId} {
+      // Permite a leitura das viagens para possibilitar a listagem central sem filtros de query,
+      // visto que os detalhes operacionais sensíveis continuam protegidos nas subcoleções.
+      allow read: if true;
+      
+      allow create: if isOwner(request.resource.data.usuario_id) && 
+                       isValidViagem(request.resource.data);
+      
+      allow update: if isOwner(resource.data.usuario_id) && 
+                       isOwner(request.resource.data.usuario_id) && 
+                       isValidViagem(request.resource.data) && 
+                       areImmutableFieldsUnchanged(['usuario_id', 'criado_em']);
+      
+      allow delete: if isOwner(resource.data.usuario_id);
+
+      // Subcoleções
+      match /hoteis/{diaId} {
+        allow read: if isViagemOwner(viagemId);
+        allow create, update: if isViagemOwner(viagemId) && isValidHotel(request.resource.data);
+        allow delete: if isViagemOwner(viagemId);
+      }
+
+      match /passeios/{passeioId} {
+        allow read: if isViagemOwner(viagemId);
+        allow create, update: if isViagemOwner(viagemId) && isValidPasseio(request.resource.data);
+        allow delete: if isViagemOwner(viagemId);
+      }
+
+      match /roteiros/{diaId} {
+        allow read: if isViagemOwner(viagemId);
+        allow create, update: if isViagemOwner(viagemId) && isValidRoteiro(request.resource.data);
+        allow delete: if isViagemOwner(viagemId);
+      }
+
+      match /despesas/{despesaId} {
+        allow read: if isViagemOwner(viagemId);
+        allow create, update: if isViagemOwner(viagemId) && isValidDespesa(request.resource.data);
+        allow delete: if isViagemOwner(viagemId);
+      }
     }
   }
 }

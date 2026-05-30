@@ -22,7 +22,6 @@ import {
   emitLog,
 } from "@/services/travelService";
 
-import TripSelector from "@/components/TripSelector";
 import TripForm from "@/components/TripForm";
 import SideAList from "@/components/SideAList";
 import SideBItinerary from "@/components/SideBItinerary";
@@ -56,7 +55,9 @@ export default function Home() {
   // Estados para o Workspace Focado (Redesenho UX Premium)
   const [diaAtivoWorkspace, setDiaAtivoWorkspace] = useState<string | null>(null);
   const [isModoFoco, setIsModoFoco] = useState(true);
-  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+
+  // Controle de Abas no Sidebar
+  const [activeTab, setActiveTab] = useState<"dashboard" | "cronograma" | "banco" | "logs">("dashboard");
 
   // Salva o cronograma horário inline diretamente do Sidebar sem modal
   const handleSalvarCronogramaInline = async (dataDia: string, cronograma: Record<string, string>) => {
@@ -78,30 +79,34 @@ export default function Home() {
       const lista = await listarViagens();
       setViagens(lista);
 
-      if (lista.length > 0) {
-        // Se houver um ID específico solicitado, foca nele, senão foca na primeira viagem
-        const selecionada = lista.find((v) => v.id === activeIdToSet) || lista[0];
-        setViagemAtiva(selecionada);
-
-        const dias = gerarDiasPeriodo(selecionada.data_inicio, selecionada.data_fim);
-        setDatasViagem(dias);
-        if (dias.length > 0) {
-          setDiaAtivoWorkspace(dias[0]);
+      if (activeIdToSet) {
+        const selecionada = lista.find((v) => v.id === activeIdToSet);
+        if (selecionada) {
+          setViagemAtiva(selecionada);
+          const dias = gerarDiasPeriodo(selecionada.data_inicio, selecionada.data_fim);
+          setDatasViagem(dias);
+          if (dias.length > 0) {
+            setDiaAtivoWorkspace(dias[0]);
+          }
+          const roteiro = await obterRoteiroDiario(selecionada.id);
+          setRoteiroDiario(roteiro);
         }
-
-        const roteiro = await obterRoteiroDiario(selecionada.id);
-        setRoteiroDiario(roteiro);
-      } else {
-        setViagemAtiva(null);
-        setDatasViagem([]);
-        setDiaAtivoWorkspace(null);
-        setRoteiroDiario({});
+      } else if (viagemAtiva) {
+        // Mantém a viagem atualizada se já houver uma ativa
+        const atualizada = lista.find((v) => v.id === viagemAtiva.id);
+        if (atualizada) {
+          setViagemAtiva(atualizada);
+          const dias = gerarDiasPeriodo(atualizada.data_inicio, atualizada.data_fim);
+          setDatasViagem(dias);
+          const roteiro = await obterRoteiroDiario(atualizada.id);
+          setRoteiroDiario(roteiro);
+        }
       }
     } catch (err) {
       console.error("Erro ao carregar lista de viagens:", err);
       emitLog("SYSTEM ERROR: Falha de comunicação ao listar viagens.");
     }
-  }, []);
+  }, [viagemAtiva]);
 
   // Inicialização
   useEffect(() => {
@@ -121,6 +126,7 @@ export default function Home() {
       }
       const roteiro = await obterRoteiroDiario(selecionada.id);
       setRoteiroDiario(roteiro);
+      setActiveTab("dashboard"); // Reseta para a dashboard ao focar
     }
   };
 
@@ -171,16 +177,23 @@ export default function Home() {
   };
 
   // Handler para deletar uma viagem definitivamente
-  const handleDeletarViagem = async (id: string) => {
-    try {
-      await deletarViagem(id);
-      emitLog(`SYSTEM: Viagem ID ${id} excluída definitivamente do banco de dados.`);
-      // Se a viagem deletada era a ativa, limpa a seleção ativa
-      const activeIdToSet = viagemAtiva?.id === id ? undefined : viagemAtiva?.id;
-      await carregarDadosViagens(activeIdToSet);
-    } catch (err) {
-      console.error("Erro ao deletar viagem:", err);
-      emitLog("SYSTEM ERROR: Falha ao excluir viagem.");
+  const handleDeletarViagem = async (e: React.MouseEvent, id: string, destino: string) => {
+    e.stopPropagation();
+    if (confirm(`⚠️ Tem certeza que deseja excluir a viagem para ${destino}?\nEsta ação é permanente e apagará todos os dados associados no banco de dados.`)) {
+      try {
+        await deletarViagem(id);
+        emitLog(`SYSTEM: Viagem ID ${id} excluída definitivamente do banco de dados.`);
+        if (viagemAtiva?.id === id) {
+          setViagemAtiva(null);
+          setDatasViagem([]);
+          setDiaAtivoWorkspace(null);
+          setRoteiroDiario({});
+        }
+        await carregarDadosViagens();
+      } catch (err) {
+        console.error("Erro ao deletar viagem:", err);
+        emitLog("SYSTEM ERROR: Falha ao excluir viagem.");
+      }
     }
   };
 
@@ -188,10 +201,7 @@ export default function Home() {
   const handleInjetarHospedagem = async (dataDia: string, hospedagem: Hospedagem) => {
     if (!viagemAtiva) return;
 
-    // Armazena estado antigo para reversão
     const backupRoteiro = { ...roteiroDiario };
-
-    // Atualiza o estado da UI instantaneamente
     const otimistaRoteiro = { ...roteiroDiario };
     if (!otimistaRoteiro[dataDia]) {
       otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [] };
@@ -217,10 +227,7 @@ export default function Home() {
   const handleInjetarAtividade = async (dataDia: string, atividade: Atividade) => {
     if (!viagemAtiva) return;
 
-    // Armazena estado antigo para reversão
     const backupRoteiro = { ...roteiroDiario };
-
-    // Atualiza o estado da UI instantaneamente
     const otimistaRoteiro = { ...roteiroDiario };
     if (!otimistaRoteiro[dataDia]) {
       otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [] };
@@ -247,7 +254,6 @@ export default function Home() {
     if (!viagemAtiva) return;
 
     const backupRoteiro = { ...roteiroDiario };
-
     const otimistaRoteiro = { ...roteiroDiario };
     if (otimistaRoteiro[dataDia]) {
       otimistaRoteiro[dataDia] = {
@@ -273,7 +279,6 @@ export default function Home() {
     if (!viagemAtiva) return;
 
     const backupRoteiro = { ...roteiroDiario };
-
     const otimistaRoteiro = { ...roteiroDiario };
     if (otimistaRoteiro[dataDia] && otimistaRoteiro[dataDia].atividades) {
       const novasAtividades = [...otimistaRoteiro[dataDia].atividades];
@@ -301,7 +306,6 @@ export default function Home() {
     if (!viagemAtiva) return;
 
     const backupRoteiro = { ...roteiroDiario };
-
     const otimistaRoteiro = { ...roteiroDiario };
     if (!otimistaRoteiro[dataDia]) {
       otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [], despesas: [] };
@@ -333,7 +337,6 @@ export default function Home() {
     if (!viagemAtiva) return;
 
     const backupRoteiro = { ...roteiroDiario };
-
     const otimistaRoteiro = { ...roteiroDiario };
     if (otimistaRoteiro[dataDia] && otimistaRoteiro[dataDia].despesas) {
       otimistaRoteiro[dataDia] = {
@@ -360,7 +363,6 @@ export default function Home() {
     setIsUpdatingPrices(true);
     try {
       await atualizarCotacoesOnDemand(viagemAtiva.id);
-      // Recarrega as cotações na UI
       const roteiro = await obterRoteiroDiario(viagemAtiva.id);
       setRoteiroDiario(roteiro);
     } catch (err) {
@@ -371,435 +373,476 @@ export default function Home() {
     }
   };
 
+  // ==========================================
+  // LAYOUT 1: Central de Viagens (Home Grid)
+  // ==========================================
+  if (!viagemAtiva) {
+    return (
+      <div className="flex flex-col min-h-screen p-4 md:p-6 space-y-6 max-w-7xl mx-auto relative selection:bg-indigo-500/30">
+        {/* Glowing radial blobs no BG */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 select-none rounded-3xl">
+          <div className="glass-blob animate-drift-1 bg-indigo-600/10 w-[500px] h-[500px] -top-40 -left-40" />
+          <div className="glass-blob animate-drift-2 bg-emerald-500/5 w-[600px] h-[600px] top-[40%] -right-40" />
+        </div>
+
+        {/* Header Premium Central */}
+        <header className="w-full glass-panel shadow-xl shadow-slate-950/20 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none">
+          <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
+          <div className="flex items-center space-x-3.5">
+            <div className="bg-indigo-600 text-white p-3 rounded-xl font-black text-sm tracking-widest shadow-lg shadow-indigo-500/30">
+              CHL
+            </div>
+            <div>
+              <h1 className="text-sm font-black tracking-widest text-slate-100 uppercase font-sans">
+                CHILINHO GESTÃO DE VIAGENS
+              </h1>
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5 font-mono-tech">
+                Painel de Gestão e Planejamento
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3.5 font-mono-tech text-[10px] bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner">
+            <div className="flex items-center space-x-1.5">
+              <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
+              <span className="text-[#10b981] font-bold">CONECTADO</span>
+            </div>
+            <span className="text-slate-800">|</span>
+            <span className="text-slate-450">DATA: 2026-05-30</span>
+          </div>
+        </header>
+
+        {/* Introdução / Subtitle */}
+        <div className="text-center py-6 select-none max-w-2xl mx-auto space-y-2.5">
+          <h2 className="text-base font-black text-slate-100 tracking-wider uppercase font-sans">
+            Selecione uma Viagem
+          </h2>
+          <p className="text-[10px] text-slate-450 uppercase tracking-widest font-bold font-mono-tech">
+            Acesse o workspace de planejamento focado ou crie uma nova rota
+          </p>
+        </div>
+
+        {/* Grid de Viagens */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pb-12">
+          {viagens.map((v, index) => {
+            // Escolhe gradiente de destaque do card baseado no índice/nome
+            const colors = [
+              { border: "hover:border-indigo-500/60", badge: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20", glow: "glow-card-indigo" },
+              { border: "hover:border-emerald-500/60", badge: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", glow: "glow-card-emerald" },
+              { border: "hover:border-amber-500/60", badge: "text-amber-400 bg-amber-500/10 border-amber-500/20", glow: "glow-card-amber" }
+            ];
+            const theme = colors[index % colors.length];
+
+            return (
+              <div
+                key={v.id}
+                onClick={() => handleSelecionarViagem(v.id)}
+                className={`glass-panel-light p-6 rounded-3xl border border-slate-800/80 cursor-pointer flex flex-col justify-between min-h-[220px] relative overflow-hidden group transition-all duration-300 hover:scale-[1.01] ${theme.border} ${theme.glow}`}
+              >
+                {/* Indicador Neon sutil de Atividade */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-transparent blur-md rounded-bl-full pointer-events-none" />
+
+                {/* Cabeçalho do Card */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-[8.5px] font-bold font-mono-tech uppercase border px-2 py-0.5 rounded ${theme.badge}`}>
+                      ROTA ATIVA
+                    </span>
+                    <button
+                      onClick={(e) => handleDeletarViagem(e, v.id, v.destino)}
+                      className="w-7 h-7 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/25 border-0 text-rose-500 rounded-lg transition-colors cursor-pointer z-10 scale-90"
+                      title="Excluir Rota definitivamente"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                  <h3 className="text-base font-black text-slate-100 uppercase tracking-wide truncate pt-2">
+                    {v.destino.replace(/ \(.*\)/, "")}
+                  </h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono-tech mt-0.5">
+                    Saída: <span className="text-slate-400">{v.origem.replace(/ \(.*\)/, "")}</span>
+                  </p>
+                </div>
+
+                {/* Datas e Orçamento */}
+                <div className="pt-6 border-t border-slate-850 space-y-3.5">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500 font-bold uppercase">Período</span>
+                    <span className="font-mono-tech text-slate-300 font-semibold">{v.data_inicio} a {v.data_fim}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="text-slate-500 font-bold uppercase">Orçamento Teto</span>
+                    <span className="font-mono-tech text-[#f59e0b] font-bold">R$ {v.orcamento_maximo.toLocaleString("pt-BR")}</span>
+                  </div>
+                </div>
+
+                {/* Overlay Hover Efeito */}
+                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-indigo-500/40 via-blue-500/40 to-emerald-500/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            );
+          })}
+
+          {/* Card Especial de Nova Rota */}
+          <div
+            onClick={() => setIsFormCriacaoAberto(true)}
+            className="glass-panel-light p-6 rounded-3xl border border-dashed border-slate-800 hover:border-indigo-500/60 bg-slate-950/20 hover:bg-slate-950/40 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 min-h-[220px] group/new glow-card-indigo select-none hover:scale-[1.01]"
+          >
+            <span className="text-3xl text-slate-650 group-hover/new:text-indigo-400 group-hover/new:scale-110 transition-all duration-300">➕</span>
+            <span className="text-[10px] font-black tracking-widest text-slate-450 group-hover/new:text-slate-200 mt-4 uppercase">
+              Nova Viagem
+            </span>
+            <span className="text-[9px] font-mono-tech text-slate-650 mt-1 uppercase">
+              Criar nova viagem no Firestore
+            </span>
+          </div>
+        </div>
+
+        {/* Modal de Criação (Overlay) */}
+        {isFormCriacaoAberto && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+            <div className="relative w-full max-w-xl animate-workspace-fade-in">
+              <TripForm
+                onCriarViagem={handleCriarViagem}
+                onClose={() => setIsFormCriacaoAberto(false)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ==========================================
+  // LAYOUT 2: Workspace Focado com Sidebar
+  // ==========================================
+  
+  // 1. Cálculos de orçamento consolidados (para a aba de dashboard/ KPIs da sidebar)
+  let totalHospedagem = 0;
+  let totalPasseios = 0;
+  let totalDespesas = 0;
+
+  datasViagem.forEach((dia) => {
+    const diario = roteiroDiario[dia];
+    if (diario) {
+      totalHospedagem += diario.hospedagem?.preco_diario || 0;
+      totalPasseios += diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
+      totalDespesas += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
+    }
+  });
+
+  const custoTotal = totalHospedagem + totalPasseios + totalDespesas;
+  const orcamento = viagemAtiva.orcamento_maximo || 0;
+  const saldo = orcamento - custoTotal;
+  const ultrapassou = orcamento > 0 && custoTotal > orcamento;
+  const percentualConsumido = orcamento > 0 ? Math.min(100, Math.round((custoTotal / orcamento) * 100)) : 0;
+
+  const percentualHospedagem = custoTotal > 0 ? Math.round((totalHospedagem / custoTotal) * 100) : 0;
+  const percentualPasseios = custoTotal > 0 ? Math.round((totalPasseios / custoTotal) * 100) : 0;
+  const percentualDespesas = custoTotal > 0 ? Math.round((totalDespesas / custoTotal) * 100) : 0;
+
+
+
+  // Montagem do gráfico diário acumulativo
+  const dadosGrafico: { diaLabel: string; diaData: string; custoDia: number; acumulado: number }[] = [];
+  let somaAcumulada = 0;
+  datasViagem.forEach((dia, idx) => {
+    const diario = roteiroDiario[dia];
+    let custoDia = 0;
+    if (diario) {
+      custoDia += diario.hospedagem?.preco_diario || 0;
+      custoDia += diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
+      custoDia += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
+    }
+    somaAcumulada += custoDia;
+    dadosGrafico.push({
+      diaLabel: `DIA ${String(idx + 1).padStart(2, "0")}`,
+      diaData: dia,
+      custoDia,
+      acumulado: somaAcumulada
+    });
+  });
+
+  // Extrato Consolidado
+  const statementItems: {
+    key: string;
+    diaIdx: number;
+    diaData: string;
+    tipo: "hospedagem" | "passeio" | "despesa";
+    nome: string;
+    valor: number;
+    detalhe?: string;
+    onDelete: () => Promise<void>;
+  }[] = [];
+
+  datasViagem.forEach((dia, idx) => {
+    const diario = roteiroDiario[dia];
+    if (diario) {
+      if (diario.hospedagem) {
+        const hotel = diario.hospedagem;
+        statementItems.push({
+          key: `h-${dia}`,
+          diaIdx: idx,
+          diaData: dia,
+          tipo: "hospedagem",
+          nome: hotel.nome,
+          valor: hotel.preco_diario,
+          detalhe: "Diária de Hotel",
+          onDelete: () => handleRemoverHospedagem(dia)
+        });
+      }
+      if (diario.atividades) {
+        diario.atividades.forEach((atv, atvIdx) => {
+          statementItems.push({
+            key: `a-${dia}-${atvIdx}`,
+            diaIdx: idx,
+            diaData: dia,
+            tipo: "passeio",
+            nome: atv.nome,
+            valor: atv.valor,
+            detalhe: "Atividade/Passeio",
+            onDelete: () => handleRemoverAtividade(dia, atvIdx)
+          });
+        });
+      }
+      if (diario.despesas) {
+        diario.despesas.forEach((exp) => {
+          statementItems.push({
+            key: `e-${dia}-${exp.id}`,
+            diaIdx: idx,
+            diaData: dia,
+            tipo: "despesa",
+            nome: exp.nome,
+            valor: exp.valor,
+            detalhe: `Despesa (${exp.categoria})`,
+            onDelete: () => handleRemoverDespesa(dia, exp.id || "")
+          });
+        });
+      }
+    }
+  });
+
+  const financialGlowClass = ultrapassou
+    ? "border-rose-500/50 shadow-lg shadow-rose-500/10"
+    : percentualConsumido > 80
+      ? "border-amber-500/50 shadow-lg shadow-amber-500/10"
+      : "border-indigo-500/35 shadow-lg shadow-indigo-500/5";
+
   return (
-    <div className="flex flex-col min-h-screen p-4 md:p-6 space-y-4 max-w-7xl mx-auto selection:bg-indigo-500/30 relative">
+    <div className="flex flex-col min-h-screen p-4 md:p-6 space-y-4 max-w-7xl mx-auto relative selection:bg-indigo-500/30">
       {/* Mesh Glowing Blobs no background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 select-none rounded-3xl">
         <div className="glass-blob animate-drift-1 bg-indigo-600/10 w-[500px] h-[500px] -top-40 -left-40" />
         <div className="glass-blob animate-drift-2 bg-emerald-500/5 w-[600px] h-[600px] top-[40%] -right-40" />
-        <div className="glass-blob animate-drift-3 bg-amber-500/5 w-[450px] h-[450px] -bottom-20 left-[20%]" />
       </div>
 
-      {/* Cabeçalho de Comando SaaS */}
-      <header className="w-full glass-panel shadow-xl shadow-slate-950/20 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 relative overflow-hidden rounded-2xl select-none">
-        {/* Faixa decorativa indigo moderna */}
-        <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
+      {/* Grid Principal Dividida: Sidebar e Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch flex-1">
+        
+        {/* COLUNA 1: SIDEBAR LATERAL DE CONTROLE */}
+        <aside className="lg:col-span-3 flex flex-col justify-between glass-panel p-5 rounded-2xl relative overflow-hidden h-fit lg:h-[calc(100vh-3rem)] sticky lg:top-6 select-none">
+          <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
+          
+          <div className="space-y-5">
+            {/* Botão de Retorno Central */}
+            <button
+              onClick={() => setViagemAtiva(null)}
+              className="w-full h-10 px-4 flex items-center justify-center font-bold tracking-widest uppercase transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-450 hover:text-slate-200 cursor-pointer rounded-xl text-[9px] hover:scale-[1.01] active:scale-[0.99]"
+            >
+              Voltar para a Central
+            </button>
 
-        <div className="flex items-center space-x-3">
-          <div className="bg-indigo-600 text-white p-2 rounded-lg font-black text-sm tracking-widest shadow-lg shadow-indigo-500/20 select-none">
-            CHL
-          </div>
-          <div>
-            <h1 className="text-sm font-black tracking-widest text-slate-100 uppercase font-sans">
-              CHILINHO GESTÃO DE VIAGENS
-            </h1>
-            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">
-              PAINEL CORPORATIVO DE INTEGRALIZAÇÃO DE ROTAS
-            </p>
-          </div>
-        </div>
+            {/* Info Rota Compact Box */}
+            <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-xl text-center space-y-2">
+              <span className="text-[8px] font-bold font-mono-tech text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded uppercase">
+                Workspace Ativo
+              </span>
+              <h2 className="text-xs font-black text-slate-100 uppercase tracking-wide truncate pt-1">
+                {viagemAtiva.destino.replace(/ \(.*\)/, "")}
+              </h2>
+              <p className="text-[9.5px] font-mono-tech text-slate-400 font-semibold">
+                {viagemAtiva.data_inicio} até {viagemAtiva.data_fim}
+              </p>
+              <div className="text-[8.5px] font-mono-tech text-slate-600 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-900 truncate">
+                REG: {viagemAtiva.id}
+              </div>
+            </div>
 
-        <div className="flex items-center flex-wrap gap-3">
-          {viagemAtiva && (
+            {/* Navegador de Abas */}
+            <nav className="flex flex-col space-y-2.5">
+              <button
+                onClick={() => setActiveTab("dashboard")}
+                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
+                  activeTab === "dashboard"
+                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
+                }`}
+              >
+                <span>📊 Visão Geral & Finanças</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "dashboard" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+              </button>
+
+              <button
+                onClick={() => setActiveTab("cronograma")}
+                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
+                  activeTab === "cronograma"
+                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
+                }`}
+              >
+                <span>📅 Cronograma Diário</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "cronograma" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+              </button>
+
+              <button
+                onClick={() => setActiveTab("banco")}
+                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
+                  activeTab === "banco"
+                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
+                }`}
+              >
+                <span>🛍️ Banco de Alocações</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "banco" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+              </button>
+
+              <button
+                onClick={() => setActiveTab("logs")}
+                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
+                  activeTab === "logs"
+                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
+                }`}
+              >
+                <span>📋 Logs do Terminal</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "logs" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+              </button>
+            </nav>
+          </div>
+
+          {/* Rodapé da Sidebar - Configurações */}
+          <div className="pt-4 border-t border-slate-850 space-y-3.5 select-none mt-6">
+            {/* Botão Re-Cotar */}
             <button
               onClick={handleAtualizarCotacoes}
               disabled={isUpdatingPrices}
-              className="px-4 py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/40 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 text-[10px] font-bold uppercase transition-all duration-200 flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:hover:bg-transparent rounded-lg font-mono-tech shadow-md"
+              className="w-full py-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/35 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 text-[9.5px] font-bold uppercase transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:hover:bg-transparent rounded-lg font-mono-tech shadow-md"
             >
               {isUpdatingPrices ? (
                 <>
                   <span className="w-1.5 h-1.5 bg-indigo-500 led-blue rounded-full animate-ping" />
-                  RE-COTANDO VALORES...
+                  Atualizando...
                 </>
               ) : (
                 <>
                   <span>🔄</span>
-                  <span>[ ATUALIZAR COTAÇÕES ]</span>
+                  <span>Re-cotar Valores</span>
                 </>
               )}
             </button>
-          )}
 
-          <div className="flex items-center space-x-3.5 font-mono-tech text-[10px] bg-slate-950/40 px-3.5 py-1.5 border border-slate-800/80 rounded-lg h-9 shadow-inner">
-            <div className="flex items-center space-x-1.5">
-              <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
-              <span className="text-[#10b981] font-bold">ONLINE</span>
-            </div>
-            <span className="text-slate-800">|</span>
-            <span className="text-slate-400">SYS_TIME: 2026-05-30</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Seletor & Cadastro de Viagens */}
-      <section className="space-y-3">
-        <TripSelector
-          viagens={viagens}
-          viagemAtiva={viagemAtiva}
-          onSelecionarViagem={handleSelecionarViagem}
-          onToggleFormCriacao={() => {
-            setIsFormCriacaoAberto(!isFormCriacaoAberto);
-            setIsFormEdicaoAberto(false);
-          }}
-          onToggleFormEdicao={() => {
-            setIsFormEdicaoAberto(!isFormEdicaoAberto);
-            setIsFormCriacaoAberto(false);
-          }}
-          onDeletarViagem={handleDeletarViagem}
-        />
-
-        {isFormCriacaoAberto && (
-          <TripForm
-            onCriarViagem={handleCriarViagem}
-            onClose={() => setIsFormCriacaoAberto(false)}
-          />
-        )}
-
-        {isFormEdicaoAberto && viagemAtiva && (
-          <TripForm
-            onCriarViagem={handleCriarViagem}
-            onClose={() => setIsFormEdicaoAberto(false)}
-            viagemParaEditar={viagemAtiva}
-            onEditarViagem={handleEditarViagem}
-          />
-        )}
-      </section>
-
-      {/* Grade de KPIs Premium (Micro/Macro Cards) */}
-      {viagemAtiva && (() => {
-        const calcularTotalDiaLocal = (diario: RoteiroDiario | undefined): number => {
-          if (!diario) return 0;
-          const custoHospedagem = diario.hospedagem?.preco_diario || 0;
-          const custoAtividades = diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
-          const custoDespesas = diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
-          return custoHospedagem + custoAtividades + custoDespesas;
-        };
-
-        const custoTotal = datasViagem.reduce((acc, dia) => acc + calcularTotalDiaLocal(roteiroDiario[dia]), 0);
-        const orcamento = viagemAtiva.orcamento_maximo || 0;
-        const ultrapassou = orcamento > 0 && custoTotal > orcamento;
-        const percentualConsumido = orcamento > 0 ? Math.min(100, Math.round((custoTotal / orcamento) * 100)) : 0;
-
-        const diasCompletos = datasViagem.filter(dia => !!roteiroDiario[dia]?.hospedagem).length;
-        const percentualDiasCompletos = datasViagem.length > 0 ? Math.round((diasCompletos / datasViagem.length) * 100) : 0;
-
-        const financialGlowClass = ultrapassou
-          ? "border-rose-500/50 shadow-lg shadow-rose-500/10 hover:shadow-rose-500/20"
-          : percentualConsumido > 80
-            ? "border-amber-500/50 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20"
-            : "border-indigo-500/35 shadow-lg shadow-indigo-500/5 hover:shadow-indigo-500/10";
-
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
-            {/* Card 1: Rota */}
-            <div className="glass-panel-light p-4 rounded-2xl border border-slate-800 flex items-center gap-4 glow-card-indigo relative overflow-hidden transition-all duration-300">
-              <div className="absolute top-0 left-0 w-[4px] h-full bg-indigo-600" />
-              <div className="text-3xl">✈️</div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Conexão de Tráfego</div>
-                <div className="text-sm font-black text-slate-100 uppercase tracking-wide truncate mt-0.5">
-                  {viagemAtiva.origem.replace(/ \(.*\)/, "")} ➔ {viagemAtiva.destino.replace(/ \(.*\)/, "")}
-                </div>
-                <div className="text-[9.5px] font-mono-tech text-indigo-400 mt-1 uppercase">
-                  {viagemAtiva.data_inicio} a {viagemAtiva.data_fim}
-                </div>
-              </div>
+            {/* Ações Auxiliares */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsFormEdicaoAberto(true)}
+                className="flex-1 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-750 text-slate-400 hover:text-slate-200 transition-colors uppercase font-bold text-[9px] rounded-lg cursor-pointer shadow-sm active:scale-95"
+              >
+                Editar
+              </button>
+              <button
+                onClick={(e) => handleDeletarViagem(e, viagemAtiva.id, viagemAtiva.destino)}
+                className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-500 transition-colors rounded-lg cursor-pointer"
+                title="Excluir Viagem definitivamente"
+              >
+                🗑️
+              </button>
             </div>
 
-            {/* Card 2: Orçamento */}
-            <div
-              onClick={() => setIsBudgetModalOpen(true)}
-              className={`glass-panel-light p-4 rounded-2xl border flex items-center gap-4 relative overflow-hidden transition-all duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.99] ${financialGlowClass}`}
-            >
-              <div className={`absolute top-0 left-0 w-[4px] h-full ${ultrapassou ? "bg-rose-500" : percentualConsumido > 80 ? "bg-amber-500" : "bg-emerald-500"}`} />
-              <div className="text-3xl">📊</div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                  <span>Orçamento Operacional</span>
-                  <span className="text-[8px] bg-indigo-500/20 text-indigo-400 font-bold px-1 py-0.2 rounded hover:bg-indigo-500/30">DETALHES ↗</span>
-                </div>
-                <div className="text-sm font-black text-slate-100 mt-0.5 flex items-baseline gap-1.5 font-mono-tech">
-                  <span className={ultrapassou ? "text-rose-400" : "text-[#10b981]"}>
-                    R$ {custoTotal.toLocaleString("pt-BR")}
-                  </span>
-                  <span className="text-slate-650 text-xs">/</span>
-                  <span className="text-slate-400 text-xs">
-                    R$ {orcamento.toLocaleString("pt-BR")}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-1 select-none">
-                  <span className={`text-[9.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#10b981]"}`}>
-                    {percentualConsumido}% CONSUMIDO
-                  </span>
-                  {ultrapassou && (
-                    <span className="text-[8px] bg-rose-500/20 text-rose-500 font-bold px-1.5 py-0.5 rounded uppercase led-red tracking-widest font-sans scale-90">
-                      OVER_BUDGET
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Eficiência */}
-            <div className="glass-panel-light p-4 rounded-2xl border border-slate-800 flex items-center gap-4 glow-card-emerald relative overflow-hidden transition-all duration-300">
-              <div className="absolute top-0 left-0 w-[4px] h-full bg-[#10b981]" />
-              <div className="text-3xl">⚙️</div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Cobertura de Alocação</div>
-                <div className="text-sm font-black text-slate-100 uppercase tracking-wide truncate mt-0.5 font-mono-tech">
-                  {diasCompletos} / {datasViagem.length} dias prontos
-                </div>
-                <div className="text-[9.5px] font-mono-tech text-[#10b981] mt-1 uppercase">
-                  {percentualDiasCompletos}% de dias planejados
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Timeline de Custos Diários (Micro-Cards Grid) */}
-      {viagemAtiva && (
-        <TimelineCompact
-          datasViagem={datasViagem}
-          roteiroDiario={roteiroDiario}
-          orcamentoMaximo={viagemAtiva.orcamento_maximo}
-          onSelecionarDia={(dia) => setDiaAtivoWorkspace(dia)}
-          diaAtivoWorkspace={diaAtivoWorkspace}
-        />
-      )}
-
-      {/* Workspace Header & Modo Toggle */}
-      {viagemAtiva && diaAtivoWorkspace && (
-        <div className="w-full flex items-center justify-between border-b border-slate-850 pb-2.5 mt-1 select-none">
-          <div className="flex items-center space-x-3">
-            <span className="text-[#f59e0b] font-black text-[10.5px] uppercase tracking-wider font-sans flex items-center gap-2">
-              <span>⚡ WORKSPACE OPERACIONAL DE FOCO:</span>
-              <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2.5 py-0.5 rounded-lg text-[10px]">
-                DIA {datasViagem.indexOf(diaAtivoWorkspace) + 1} ➔ {new Date(diaAtivoWorkspace + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ({diaAtivoWorkspace})
+            {/* Time/Status indicator */}
+            <div className="flex items-center justify-between font-mono-tech text-[8px] text-slate-600 px-1 pt-1">
+              <span className="flex items-center gap-1">
+                <span className="w-1 h-1 bg-[#10b981] rounded-full led-green animate-pulse" />
+                ONLINE
               </span>
-            </span>
+              <span>SYS: 2026-05-30</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsModoFoco(!isModoFoco)}
-              className={`px-4.5 py-1.5 font-mono-tech text-[9px] font-bold rounded-lg border transition-all duration-200 uppercase cursor-pointer ${isModoFoco
-                  ? "bg-indigo-600/10 border-indigo-500/40 text-indigo-400 hover:bg-indigo-600/25"
-                  : "bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-350"
-                }`}
-            >
-              {isModoFoco ? "[ ⚡ MODO: FOCO DIÁRIO ]" : "[ 🌐 MODO: VISÃO COMPLETA ]"}
-            </button>
-          </div>
-        </div>
-      )}
+        </aside>
 
-      {/* Painel Dividido Principal (Lado A e Lado B) */}
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch flex-1">
-        {/* Lado A: Hospedagens e Atividades */}
-        <div className="lg:col-span-5 flex flex-col h-full">
-          <SideAList
-            datasViagem={datasViagem}
-            onInjetarHospedagem={handleInjetarHospedagem}
-            onInjetarAtividade={handleInjetarAtividade}
-            onInjetarDespesa={handleInjetarDespesa}
-            viagemDestino={viagemAtiva?.destino || "SANTIAGO"}
-          />
-        </div>
-
-        {/* Lado B: Roteiro Diário (Macro-View) */}
-        <div className="lg:col-span-7 flex flex-col h-full">
-          <SideBItinerary
-            datasViagem={datasViagem}
-            roteiroDiario={roteiroDiario}
-            onRemoverHospedagem={handleRemoverHospedagem}
-            onRemoverAtividade={handleRemoverAtividade}
-            onAdicionarDespesa={handleInjetarDespesa}
-            onRemoverDespesa={handleRemoverDespesa}
-            destino={viagemAtiva?.destino || "SANTIAGO (SCL)"}
-            viagemAtiva={viagemAtiva}
-            diaAtivoWorkspace={diaAtivoWorkspace}
-            isModoFoco={isModoFoco}
-            onSalvarCronogramaInline={handleSalvarCronogramaInline}
-          />
-        </div>
-      </main>
-
-      {/* Rodapé - Console Transacional de Dados */}
-      <footer className="w-full">
-        <IndustrialLog />
-      </footer>
-
-      {/* Modal de Dashboard de Orçamento Analítico Premium */}
-      {isBudgetModalOpen && viagemAtiva && (() => {
-        // 1. Cálculos de verba/categoria
-        let totalHospedagem = 0;
-        let totalPasseios = 0;
-        let totalDespesas = 0;
-
-        datasViagem.forEach((dia) => {
-          const diario = roteiroDiario[dia];
-          if (diario) {
-            totalHospedagem += diario.hospedagem?.preco_diario || 0;
-            totalPasseios += diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
-            totalDespesas += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
-          }
-        });
-
-        const custoTotal = totalHospedagem + totalPasseios + totalDespesas;
-        const orcamento = viagemAtiva.orcamento_maximo || 0;
-        const saldo = orcamento - custoTotal;
-        const ultrapassou = orcamento > 0 && custoTotal > orcamento;
-
-        const percentualHospedagem = custoTotal > 0 ? Math.round((totalHospedagem / custoTotal) * 100) : 0;
-        const percentualPasseios = custoTotal > 0 ? Math.round((totalPasseios / custoTotal) * 100) : 0;
-        const percentualDespesas = custoTotal > 0 ? Math.round((totalDespesas / custoTotal) * 100) : 0;
-
-        // 2. Acumulados por dia para o gráfico
-        const dadosGrafico: { diaLabel: string; diaData: string; custoDia: number; acumulado: number }[] = [];
-        let somaAcumulada = 0;
-        datasViagem.forEach((dia, idx) => {
-          const diario = roteiroDiario[dia];
-          let custoDia = 0;
-          if (diario) {
-            custoDia += diario.hospedagem?.preco_diario || 0;
-            custoDia += diario.atividades?.reduce((acc, act) => acc + act.valor, 0) || 0;
-            custoDia += diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0) || 0;
-          }
-          somaAcumulada += custoDia;
-          dadosGrafico.push({
-            diaLabel: `DIA ${String(idx + 1).padStart(2, "0")}`,
-            diaData: dia,
-            custoDia,
-            acumulado: somaAcumulada
-          });
-        });
-
-        // 3. Extrato Consolidado
-        const statementItems: {
-          key: string;
-          diaIdx: number;
-          diaData: string;
-          tipo: "hospedagem" | "passeio" | "despesa";
-          nome: string;
-          valor: number;
-          detalhe?: string;
-          onDelete: () => Promise<void>;
-        }[] = [];
-
-        datasViagem.forEach((dia, idx) => {
-          const diario = roteiroDiario[dia];
-          if (diario) {
-            if (diario.hospedagem) {
-              const hotel = diario.hospedagem;
-              statementItems.push({
-                key: `h-${dia}`,
-                diaIdx: idx,
-                diaData: dia,
-                tipo: "hospedagem",
-                nome: hotel.nome,
-                valor: hotel.preco_diario,
-                detalhe: "Diária de Hotel",
-                onDelete: () => handleRemoverHospedagem(dia)
-              });
-            }
-            if (diario.atividades) {
-              diario.atividades.forEach((atv, atvIdx) => {
-                statementItems.push({
-                  key: `a-${dia}-${atvIdx}`,
-                  diaIdx: idx,
-                  diaData: dia,
-                  tipo: "passeio",
-                  nome: atv.nome,
-                  valor: atv.valor,
-                  detalhe: "Atividade/Passeio",
-                  onDelete: () => handleRemoverAtividade(dia, atvIdx)
-                });
-              });
-            }
-            if (diario.despesas) {
-              diario.despesas.forEach((exp) => {
-                statementItems.push({
-                  key: `e-${dia}-${exp.id}`,
-                  diaIdx: idx,
-                  diaData: dia,
-                  tipo: "despesa",
-                  nome: exp.nome,
-                  valor: exp.valor,
-                  detalhe: `Despesa (${exp.categoria})`,
-                  onDelete: () => handleRemoverDespesa(dia, exp.id || "")
-                });
-              });
-            }
-          }
-        });
-
-        return (
-          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto animate-fade-in select-none">
-            {/* Modal Box */}
-            <div className="bg-slate-900/95 border border-slate-800 rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl relative flex flex-col h-[90vh] md:h-[80vh]">
-              {/* Top Warning stripes */}
-              <div className="h-[4px] w-full hazard-stripes" />
-
-              {/* Header */}
-              <div className="p-5 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📊</span>
-                  <div>
-                    <h2 className="text-sm font-black tracking-widest text-slate-100 uppercase font-sans">
-                      DASHBOARD ANALÍTICO DE CUSTOS
-                    </h2>
-                    <p className="text-[9.5px] text-indigo-400 font-mono-tech uppercase">
-                      ROTA: {viagemAtiva.destino} | ORÇAMENTO MÁXIMO DO PROJETO
-                    </p>
+        {/* COLUNA 2: WORKSPACE DE CONTEÚDO ATIVO */}
+        <main className="lg:col-span-9 flex flex-col space-y-4 min-h-0 workspace-fade-in">
+          
+          {/* =======================================
+              ABA 1: Visão Geral & Finanças (Dashboard)
+              ======================================= */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-5 flex-1 flex flex-col min-h-0">
+              {/* KPIs de Orçamento */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
+                {/* KPI Orçamento Máximo */}
+                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300">
+                  <div className="absolute top-0 left-0 w-[4px] h-full bg-slate-700" />
+                  <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Teto Orçamentário</div>
+                  <div className="text-sm font-black text-slate-100 mt-1 font-mono-tech">
+                    R$ {orcamento.toLocaleString("pt-BR")}
+                  </div>
+                  <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
+                    definido pelo planejamento
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsBudgetModalOpen(false)}
-                  className="px-3.5 py-1.5 bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors uppercase font-bold text-[10px] rounded-lg border-0 cursor-pointer shadow-md active:scale-95"
-                >
-                  FECHAR [✕]
-                </button>
+
+                {/* KPI Consumido */}
+                <div className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 border ${financialGlowClass}`}>
+                  <div className={`absolute top-0 left-0 w-[4px] h-full ${ultrapassou ? "bg-rose-500" : percentualConsumido > 80 ? "bg-amber-500" : "bg-emerald-500"}`} />
+                  <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Consumo Consolidado</div>
+                  <div className={`text-sm font-black mt-1 font-mono-tech ${ultrapassou ? "text-rose-400" : "text-[#10b981]"}`}>
+                    R$ {custoTotal.toLocaleString("pt-BR")}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1 select-none leading-none">
+                    <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#10b981]"}`}>
+                      {percentualConsumido}% CONSUMIDO
+                    </span>
+                    {ultrapassou && (
+                      <span className="text-[7.5px] bg-rose-500/20 text-rose-500 font-bold px-1 py-0.2 rounded uppercase led-red font-sans">
+                        OVER_BUDGET
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* KPI Saldo Restante */}
+                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300">
+                  <div className={`absolute top-0 left-0 w-[4px] h-full ${saldo < 0 ? "bg-rose-500" : "bg-emerald-500"}`} />
+                  <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Saldo Financeiro</div>
+                  <div className={`text-sm font-black mt-1 font-mono-tech ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
+                    R$ {saldo.toLocaleString("pt-BR")}
+                  </div>
+                  <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
+                    {saldo < 0 ? "saldo devedor da rota" : "saldo livre disponível"}
+                  </div>
+                </div>
               </div>
 
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+              {/* Linha do Tempo de Custos Diários */}
+              <TimelineCompact
+                datasViagem={datasViagem}
+                roteiroDiario={roteiroDiario}
+                orcamentoMaximo={viagemAtiva.orcamento_maximo}
+                onSelecionarDia={(dia) => {
+                  setDiaAtivoWorkspace(dia);
+                  setActiveTab("cronograma"); // Redireciona para focar no cronograma
+                }}
+                diaAtivoWorkspace={diaAtivoWorkspace}
+              />
 
-                {/* Left Panel: Financial Overview & CSS Charts (col-span-7) */}
-                <div className="lg:col-span-7 space-y-6">
-
-                  {/* Row 1: KPI Balances */}
-                  <div className="grid grid-cols-3 gap-4">
-                    {/* KPI Orçamento */}
-                    <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl relative overflow-hidden shadow-inner">
-                      <div className="absolute top-0 left-0 w-[3px] h-full bg-slate-700" />
-                      <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Orçado</div>
-                      <div className="text-xs md:text-sm font-black text-slate-200 mt-1 font-mono-tech truncate">
-                        R$ {orcamento.toLocaleString("pt-BR")}
-                      </div>
-                    </div>
-                    {/* KPI Consumido */}
-                    <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl relative overflow-hidden shadow-inner">
-                      <div className="absolute top-0 left-0 w-[3px] h-full bg-indigo-600" />
-                      <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Consumido</div>
-                      <div className={`text-xs md:text-sm font-black mt-1 font-mono-tech truncate ${ultrapassou ? "text-rose-400" : "text-[#10b981]"}`}>
-                        R$ {custoTotal.toLocaleString("pt-BR")}
-                      </div>
-                    </div>
-                    {/* KPI Saldo */}
-                    <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl relative overflow-hidden shadow-inner">
-                      <div className={`absolute top-0 left-0 w-[3px] h-full ${saldo < 0 ? "bg-rose-500" : "bg-emerald-500"}`} />
-                      <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Saldo Restante</div>
-                      <div className={`text-xs md:text-sm font-black mt-1 font-mono-tech truncate ${saldo < 0 ? "text-rose-400" : "text-emerald-400"}`}>
-                        R$ {saldo.toLocaleString("pt-BR")}
-                      </div>
-                    </div>
-                  </div>
-
+              {/* Grid Central Dashboard: Gráficos e Extrato */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 items-stretch">
+                
+                {/* Lado Esquerdo: Gráficos de Divisão e Progressão (col-span-7) */}
+                <div className="lg:col-span-7 space-y-5 flex flex-col justify-between">
                   {/* Category Division breakdown */}
-                  <div className="bg-slate-950/20 border border-slate-850 p-5 rounded-2xl space-y-4">
+                  <div className="glass-panel p-5 rounded-2xl space-y-4">
                     <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
-                      <span>🏷️ DISTRIBUIÇÃO OPERACIONAL POR CATEGORIA</span>
+                      <span>🏷️ Distribuição por Categoria</span>
                       <span className="text-[8px] text-slate-500 lowercase italic">divisão percentual</span>
                     </h3>
 
@@ -827,7 +870,7 @@ export default function Home() {
                         />
                       )}
                       {custoTotal === 0 && (
-                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[8px] text-slate-600 font-bold uppercase tracking-wider">
+                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[8px] text-slate-650 font-bold uppercase tracking-wider">
                           Nenhum gasto registrado
                         </div>
                       )}
@@ -836,25 +879,25 @@ export default function Home() {
                     {/* Grid labels */}
                     <div className="grid grid-cols-3 gap-3 text-[9.5px]">
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-indigo-400 font-bold">
-                          <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                          <span>HOSPEDAGEM: {percentualHospedagem}%</span>
+                        <div className="flex items-center gap-1.5 text-indigo-450 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          <span>Hospedagem: {percentualHospedagem}%</span>
                         </div>
                         <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                          <span>PASSEIOS: {percentualPasseios}%</span>
+                        <div className="flex items-center gap-1.5 text-emerald-455 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>Passeios: {percentualPasseios}%</span>
                         </div>
                         <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
                       </div>
 
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-amber-400 font-bold">
-                          <span className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span>DESPESAS: {percentualDespesas}%</span>
+                        <div className="flex items-center gap-1.5 text-amber-450 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span>Despesas: {percentualDespesas}%</span>
                         </div>
                         <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
                       </div>
@@ -862,19 +905,18 @@ export default function Home() {
                   </div>
 
                   {/* Progression Graph */}
-                  <div className="bg-slate-950/20 border border-slate-850 p-5 rounded-2xl space-y-4 relative">
+                  <div className="glass-panel p-5 rounded-2xl space-y-4 flex-1 flex flex-col justify-between relative min-h-[220px]">
                     <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider select-none flex items-center justify-between">
-                      <span>📈 PROGRESSÃO CUMULATIVA DE GASTOS</span>
+                      <span>📈 Progressão de Gastos</span>
                       <span className="text-[8px] text-slate-500 lowercase italic">passe o mouse nas barras</span>
                     </h3>
 
                     {/* Graph Container */}
-                    <div className="flex items-end gap-1.5 md:gap-2.5 h-44 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none">
-
+                    <div className="flex items-end gap-1.5 md:gap-2.5 h-40 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none flex-1 mt-4">
                       {/* Budget Limit Line */}
                       {orcamento > 0 && (
                         <div className="absolute left-0 right-0 border-t border-dashed border-rose-500/30 text-[7.5px] font-black text-rose-500/60 uppercase tracking-widest pl-2 pt-0.5 pointer-events-none z-10" style={{ bottom: "80%" }}>
-                          [ TETO ORÇAMENTO ]
+                          Limite do Orçamento
                         </div>
                       )}
 
@@ -893,7 +935,7 @@ export default function Home() {
                             </div>
 
                             {/* Bar Graph */}
-                            <div className="w-full bg-slate-950/50 rounded-t h-32 flex flex-col justify-end relative shadow-inner overflow-hidden border border-slate-900">
+                            <div className="w-full bg-slate-950/50 rounded-t h-28 flex flex-col justify-end relative shadow-inner overflow-hidden border border-slate-900">
                               <div
                                 style={{ height: `${heightPercent}%` }}
                                 className={`w-full rounded-t transition-all duration-300 ${isOver
@@ -912,33 +954,32 @@ export default function Home() {
                       })}
                     </div>
                   </div>
-
                 </div>
 
-                {/* Right Panel: Detailed Extrato Consolidado Statement (col-span-5) */}
-                <div className="lg:col-span-5 flex flex-col h-full bg-slate-950/20 border border-slate-850 p-5 rounded-2xl relative space-y-4">
+                {/* Lado Direito: Extrato Consolidado (col-span-5) */}
+                <div className="lg:col-span-5 flex flex-col h-full glass-panel p-5 rounded-2xl relative space-y-4">
                   <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
-                    <span>🧾 EXTRATO CONSOLIDADO DA VIAGEM</span>
+                    <span>🧾 Extrato Consolidado</span>
                     <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2 py-0.5 rounded text-[8px] leading-none uppercase">
                       {statementItems.length} itens
                     </span>
                   </h3>
 
                   {/* Scrollable list of statement items */}
-                  <div className="flex-1 overflow-y-auto max-h-[360px] pr-1.5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                  <div className="flex-1 overflow-y-auto max-h-[350px] pr-1.5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                     {statementItems.length === 0 ? (
                       <div className="py-24 text-center text-slate-600 font-bold uppercase tracking-wider text-[9px] select-none">
-                        [ NENHUM LANÇAMENTO REGISTRADO ]
+                        Nenhum lançamento registrado
                       </div>
                     ) : (
                       statementItems.map((item) => {
-                        let colorBadge = "bg-slate-900 border-slate-800 text-slate-400";
+                        let colorBadge = "bg-slate-900 border-slate-800 text-slate-450";
                         if (item.tipo === "hospedagem") {
                           colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
                         } else if (item.tipo === "passeio") {
-                          colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
+                          colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-450";
                         } else if (item.tipo === "despesa") {
-                          colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-400";
+                          colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
                         }
 
                         return (
@@ -952,15 +993,15 @@ export default function Home() {
                                   D{String(item.diaIdx + 1).padStart(2, "0")}
                                 </span>
                                 <span className="text-slate-500 text-[9px]">|</span>
-                                <span className={`text-[8.5px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
+                                <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
                                   {item.tipo}
                                 </span>
-                                <span className="text-[8.5px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
+                                <span className="text-[8px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
                                   {item.detalhe}
                                 </span>
                               </div>
 
-                              <div className="font-bold text-slate-200 truncate uppercase text-[10.5px] mt-1 tracking-wide">
+                              <div className="font-bold text-slate-200 truncate uppercase text-[10px] mt-1 tracking-wide">
                                 {item.nome}
                               </div>
                             </div>
@@ -971,7 +1012,7 @@ export default function Home() {
                               </span>
                               <button
                                 onClick={async () => {
-                                  if (confirm(`DESEJA EXCLUIR O LANÇAMENTO "${item.nome.toUpperCase()}" DEFINITIVAMENTE?`)) {
+                                  if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
                                     await item.onDelete();
                                   }
                                 }}
@@ -988,7 +1029,7 @@ export default function Home() {
                   </div>
 
                   {/* Dashboard Totalizer Footer */}
-                  <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[10px] font-mono-tech">
+                  <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono-tech select-none">
                     <span className="text-slate-450 uppercase font-sans font-bold">Total Consolidado:</span>
                     <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
                   </div>
@@ -996,9 +1037,138 @@ export default function Home() {
 
               </div>
             </div>
+          )}
+
+          {/* =======================================
+              ABA 2: Cronograma Diário (Workspace Foco)
+              ======================================= */}
+          {activeTab === "cronograma" && diaAtivoWorkspace && (
+            <div className="space-y-4 flex-1 flex flex-col min-h-0">
+              
+              {/* Seletor de Dia Operacional (TimelineCompact) */}
+              <TimelineCompact
+                datasViagem={datasViagem}
+                roteiroDiario={roteiroDiario}
+                orcamentoMaximo={viagemAtiva.orcamento_maximo}
+                onSelecionarDia={(dia) => setDiaAtivoWorkspace(dia)}
+                diaAtivoWorkspace={diaAtivoWorkspace}
+              />
+
+              {/* Workspace Header & Modo Toggle */}
+              <div className="w-full flex items-center justify-between border-b border-slate-850 pb-2.5 mt-1 select-none">
+                <div className="flex items-center space-x-3">
+                  <span className="text-[#f59e0b] font-black text-[10px] uppercase tracking-wider font-sans flex items-center gap-2">
+                    <span>⚡ Workspace Diário de Foco:</span>
+                    <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2.5 py-0.5 rounded-lg text-[9.5px]">
+                      Dia {datasViagem.indexOf(diaAtivoWorkspace) + 1} ➔ {new Date(diaAtivoWorkspace + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ({diaAtivoWorkspace})
+                    </span>
+                  </span>
+                </div>
+                <button
+                  onClick={() => setIsModoFoco(!isModoFoco)}
+                  className={`px-4 py-1.5 font-mono-tech text-[9px] font-bold rounded-lg border transition-all duration-200 uppercase cursor-pointer ${
+                    isModoFoco
+                      ? "bg-indigo-600/10 border-indigo-500/40 text-indigo-400 hover:bg-indigo-600/25"
+                      : "bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-350"
+                  }`}
+                >
+                  {isModoFoco ? "Foco Diário" : "Visão Completa"}
+                </button>
+              </div>
+
+              {/* Main Workspace Itinerary Lado B */}
+              <div className="flex-1 flex flex-col h-full">
+                <SideBItinerary
+                  datasViagem={datasViagem}
+                  roteiroDiario={roteiroDiario}
+                  onRemoverHospedagem={handleRemoverHospedagem}
+                  onRemoverAtividade={handleRemoverAtividade}
+                  onAdicionarDespesa={handleInjetarDespesa}
+                  onRemoverDespesa={handleRemoverDespesa}
+                  destino={viagemAtiva.destino}
+                  viagemAtiva={viagemAtiva}
+                  diaAtivoWorkspace={diaAtivoWorkspace}
+                  isModoFoco={isModoFoco}
+                  onSalvarCronogramaInline={handleSalvarCronogramaInline}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* =======================================
+              ABA 3: Banco de Alocações (Search List)
+              ======================================= */}
+          {activeTab === "banco" && diaAtivoWorkspace && (
+            <div className="space-y-4 flex-1 flex flex-col min-h-0">
+              
+              {/* Seletor de Dia Operacional (TimelineCompact) */}
+              <TimelineCompact
+                datasViagem={datasViagem}
+                roteiroDiario={roteiroDiario}
+                orcamentoMaximo={viagemAtiva.orcamento_maximo}
+                onSelecionarDia={(dia) => setDiaAtivoWorkspace(dia)}
+                diaAtivoWorkspace={diaAtivoWorkspace}
+              />
+
+              {/* Instrução Contextual */}
+              <div className="bg-slate-950/30 border border-slate-850 p-4 rounded-xl flex items-center justify-between select-none">
+                <div className="space-y-1">
+                  <h4 className="text-[10px] font-black text-slate-200 uppercase tracking-widest leading-none">🛍️ Banco Central de Alocações</h4>
+                  <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider font-mono-tech mt-0.5">
+                    pesquise ou crie itens customizados para injetar no dia operacional selecionado
+                  </p>
+                </div>
+                <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2.5 py-0.5 rounded-lg text-[9.5px]">
+                  Dia em Alocação: {datasViagem.indexOf(diaAtivoWorkspace) + 1} ({diaAtivoWorkspace})
+                </span>
+              </div>
+
+              {/* Componente SideAList no Lado A */}
+              <div className="flex-1 flex flex-col h-full">
+                <SideAList
+                  datasViagem={datasViagem}
+                  onInjetarHospedagem={handleInjetarHospedagem}
+                  onInjetarAtividade={handleInjetarAtividade}
+                  onInjetarDespesa={handleInjetarDespesa}
+                  viagemDestino={viagemAtiva.destino}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* =======================================
+              ABA 4: Logs do Terminal (Console Log)
+              ======================================= */}
+          {activeTab === "logs" && (
+            <div className="flex-1 flex flex-col min-h-0 h-full">
+              <div className="bg-slate-950/30 border border-slate-850 p-4 rounded-t-xl select-none">
+                <h4 className="text-[10px] font-black text-slate-200 uppercase tracking-widest leading-none">📋 Histórico e Logs</h4>
+                <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider font-mono-tech mt-1">
+                  rastreamento em tempo real das chamadas transacionais de rede na nuvem
+                </p>
+              </div>
+              <div className="flex-1 flex flex-col min-h-[300px]">
+                <IndustrialLog />
+              </div>
+            </div>
+          )}
+
+        </main>
+      </div>
+
+      {/* Modal de Edição (Overlay) */}
+      {isFormEdicaoAberto && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+          <div className="relative w-full max-w-xl animate-workspace-fade-in">
+            <TripForm
+              onCriarViagem={handleCriarViagem}
+              onClose={() => setIsFormEdicaoAberto(false)}
+              viagemParaEditar={viagemAtiva}
+              onEditarViagem={handleEditarViagem}
+            />
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }

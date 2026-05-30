@@ -304,7 +304,7 @@ export async function criarViagem(viagemData: Omit<Viagem, "id" | "criado_em">):
 /**
  * Garante a existência do documento pai da viagem
  */
-async function garantizarViagemNoFirestore(viagemId: string): Promise<void> {
+async function garantirViagemNoFirestore(viagemId: string): Promise<void> {
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId);

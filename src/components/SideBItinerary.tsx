@@ -43,9 +43,9 @@ function InlineAddExpenseForm({
       <button
         type="button"
         onClick={() => setEstaAberto(true)}
-        className="w-full py-1.5 bg-slate-900/50 border border-slate-850 hover:border-slate-700 text-slate-400 hover:text-slate-200 transition-all rounded-lg uppercase text-[9px] font-bold cursor-pointer mt-1.5 shadow-sm"
+        className="w-full py-1.5 bg-slate-900/50 border border-slate-850 hover:border-slate-700 text-slate-400 hover:text-slate-200 transition-all rounded-lg text-[9px] font-bold cursor-pointer mt-1.5 shadow-sm"
       >
-        ➕ [ REGISTRAR DESPESA RÁPIDA ]
+        ➕ Registrar Despesa Rápida
       </button>
     );
   }
@@ -245,23 +245,23 @@ export default function SideBItinerary({
       {/* Cabeçalho do Roteiro */}
       <div className="bg-slate-950/30 p-3.5 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-t-2xl">
         <div className="flex items-center space-x-2">
-          <span className="text-[#f59e0b] font-black tracking-wider text-[11px] uppercase">
-            {isModoFoco ? "[ WORKSPACE DIÁRIO DE FOCO ]" : "[ ROTEIRO OPERACIONAL COMPLETO ]"}
+          <span className="text-[#f59e0b] font-black tracking-wider text-[11px]">
+            {isModoFoco ? "Workspace Diário de Foco" : "Roteiro Operacional Completo"}
           </span>
           <span className="text-slate-650 font-normal">|</span>
           <span className="text-slate-300 font-bold uppercase tracking-wide">{destino}</span>
         </div>
         <div className="bg-indigo-600/10 border border-indigo-500/30 px-3.5 py-1.5 rounded-lg font-bold text-indigo-400 font-mono-tech shadow-md">
-          CUSTO ESTIMADO TOTAL: <span className="font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+          Custo Estimado Total: <span className="font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
         </div>
       </div>
 
-      {/* Barra de Medição de Orçamento - Estilo SaaS */}
+      {/* Barra de progresso com hazard styling */}
       {orcamento > 0 && (
         <div className="bg-slate-950/20 border-b border-slate-800/60 px-4 py-3 flex flex-col gap-2 select-none font-sans">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 tracking-wider">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span>📊 CONSUMO DA VERBA:</span>
+              <span>📊 Consumo da Verba:</span>
               <span className="text-slate-200 font-mono-tech font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
               <span className="text-slate-650 font-normal">/</span>
               <span className="text-slate-400 font-mono-tech">R$ {orcamento.toLocaleString("pt-BR")}</span>
@@ -269,19 +269,17 @@ export default function SideBItinerary({
             
             <div className="flex items-center gap-2">
               <span className={ultrapassou ? "text-rose-500 font-black animate-pulse" : "text-[#10b981] font-bold"}>
-                {percentualConsumido}% CONSUMIDO
+                {percentualConsumido}% Consumido
               </span>
               
               {ultrapassou && (
-                <div className="bg-rose-500/10 border border-rose-500/40 text-rose-500 text-[8px] font-black px-2 py-0.5 animate-pulse select-none tracking-widest uppercase flex items-center gap-1 leading-none rounded-md font-sans shadow-md shadow-rose-500/5">
+                <div className="bg-rose-500/10 border border-rose-500/40 text-rose-500 text-[8px] font-bold px-2 py-0.5 animate-pulse select-none tracking-widest uppercase flex items-center gap-1 leading-none rounded-md font-sans shadow-md shadow-rose-500/5">
                   <span className="w-1.5 h-1.5 bg-rose-500 rounded-full inline-block animate-ping led-red" />
-                  [ OVER_BUDGET ]
+                  Limite Excedido
                 </div>
               )}
             </div>
           </div>
-
-          {/* Barra de progresso com hazard styling */}
           <div className="w-full h-2.5 bg-slate-950 border border-slate-850 rounded-full overflow-hidden flex shadow-inner relative">
             <div
               className={`h-full transition-all duration-300 rounded-full ${
@@ -301,15 +299,15 @@ export default function SideBItinerary({
       {/* Grid de Dias com Visual Timeline */}
       <div className="flex-1 p-4 overflow-y-auto max-h-[520px] bg-slate-950/5 flex flex-col gap-4 pl-7 border-l border-slate-800/40 rounded-b-2xl relative scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
         {datasViagem.length === 0 ? (
-          <div className="py-16 text-center text-slate-600 uppercase font-bold tracking-wider w-full select-none">
-            [ AGUARDANDO CRIAÇÃO OU SELEÇÃO DE VIAGEM PARA EXIBIÇÃO ]
+          <div className="py-16 text-center text-slate-650 font-bold tracking-wider w-full select-none">
+            Aguardando criação ou seleção de viagem para exibição
           </div>
         ) : (
           diasParaExibir.map((dataDia) => {
             const idx = datasViagem.indexOf(dataDia);
             const diario = roteiroDiario[dataDia] || { hospedagem: null, atividades: [] };
             const dateObj = new Date(dataDia + "T12:00:00");
-            const labelDia = `DIA ${String(idx + 1).padStart(2, "0")}`;
+            const labelDia = `Dia ${String(idx + 1).padStart(2, "0")}`;
             const labelData = dateObj.toLocaleDateString("pt-BR", {
               weekday: "short",
               day: "2-digit",
@@ -322,16 +320,16 @@ export default function SideBItinerary({
             const temAtividades = diario.atividades && diario.atividades.length > 0;
 
             let statusCorNode = "bg-slate-700 border-slate-600";
-            let statusLabel = "NÃO ESCALADO";
+            let statusLabel = "Não Escalado";
             if (temHospedagem && temAtividades) {
               statusCorNode = "bg-emerald-500 border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
-              statusLabel = "PRONTO E ESCALADO";
+              statusLabel = "Pronto e Escalado";
             } else if (temHospedagem) {
               statusCorNode = "bg-amber-500 border-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]";
-              statusLabel = "VINCULADO HOSPEDAGEM";
+              statusLabel = "Hospedagem Vinculada";
             } else if (temAtividades) {
               statusCorNode = "bg-cyan-500 border-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]";
-              statusLabel = "VINCULADO ATIVIDADES";
+              statusLabel = "Atividades Vinculadas";
             }
 
             const isWorkspaceDia = dataDia === diaAtivoWorkspace;
@@ -375,10 +373,10 @@ export default function SideBItinerary({
                     )}
                     <span className="text-[#f59e0b] font-black">{labelDia}</span>
                     <span className="text-slate-500 font-normal">|</span>
-                    <span className="text-slate-200 uppercase font-sans tracking-wide">{labelData} ({dataDia})</span>
+                    <span className="text-slate-200 font-sans tracking-wide">{labelData} ({dataDia})</span>
                     {isWorkspaceDia && (
-                      <span className="bg-indigo-500/20 text-indigo-400 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider scale-95 shadow">
-                        ATIVO_WORKSPACE
+                      <span className="bg-indigo-500/20 text-indigo-400 text-[8px] font-black px-1.5 py-0.5 rounded tracking-wider scale-95 shadow">
+                        Ativo no Workspace
                       </span>
                     )}
                   </div>
@@ -386,11 +384,11 @@ export default function SideBItinerary({
                   {/* Custo Subtotal & Cumulativo */}
                   <div className="flex items-center space-x-3 text-[10.5px] font-mono-tech text-slate-400 font-semibold select-none flex-wrap">
                     <span className="text-[#10b981] font-bold">
-                      SUB: R$ {subtotalDia.toLocaleString("pt-BR")}
+                      Subtotal: R$ {subtotalDia.toLocaleString("pt-BR")}
                     </span>
                     <span className="text-slate-750">|</span>
                     <span className="text-slate-300 font-bold">
-                      CUM: R$ {acumuladoDia.toLocaleString("pt-BR")}
+                      Acumulado: R$ {acumuladoDia.toLocaleString("pt-BR")}
                     </span>
                   </div>
                 </div>
@@ -405,13 +403,13 @@ export default function SideBItinerary({
                       <div className="xl:col-span-5 space-y-4">
                         {/* Seção 1: Hospedagem */}
                         <div className="space-y-1.5">
-                          <div className="text-[9.5px] uppercase font-bold text-slate-450 tracking-wider">
-                            🏨 HOSPEDAGEM ALOCADA
+                          <div className="text-[9.5px] font-bold text-slate-400 tracking-wider">
+                            🏨 Hospedagem Alocada
                           </div>
                           {diario.hospedagem ? (
                             <div className="bg-slate-950/40 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-lg shadow-sm">
                               <div className="flex-1 min-w-0">
-                                <div className="font-bold text-slate-200 truncate uppercase text-[10.5px] tracking-wide">
+                                <div className="font-bold text-slate-200 truncate text-[10.5px] tracking-wide">
                                   {diario.hospedagem.nome}
                                 </div>
                                 <div className="flex items-center space-x-2 mt-0.5 text-[9.5px] font-mono-tech select-none">
@@ -425,28 +423,28 @@ export default function SideBItinerary({
                                     rel="noopener noreferrer"
                                     className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline font-sans"
                                   >
-                                    TRAVEL ↗
+                                    Google Travel ↗
                                   </a>
                                 </div>
                               </div>
                               <button
                                 onClick={() => onRemoverHospedagem(dataDia)}
-                                className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 hover:text-rose-400 rounded-lg uppercase font-bold text-[9px] transition-colors cursor-pointer border-0 shadow-md"
+                                className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 hover:text-rose-450 rounded-lg font-bold text-[9px] transition-colors cursor-pointer border-0 shadow-md"
                               >
-                                [ REMOVER ]
+                                Remover
                               </button>
                             </div>
                           ) : (
-                            <div className="border border-dashed border-slate-850 hover:bg-slate-900/10 p-3 text-center text-slate-500 font-bold uppercase text-[9px] rounded-lg tracking-wider bg-slate-950/5 transition-all select-none shadow-inner">
-                              SEM HOSPEDAGEM ALOCADA
+                            <div className="border border-dashed border-slate-850 hover:bg-slate-900/10 p-3 text-center text-slate-500 font-semibold text-[9px] rounded-lg tracking-wider bg-slate-950/5 transition-all select-none shadow-inner">
+                              Sem hospedagem alocada
                             </div>
                           )}
                         </div>
 
                         {/* Seção 2: Atividades/Passeios */}
                         <div className="space-y-1.5">
-                          <div className="text-[9.5px] uppercase font-bold text-slate-450 tracking-wider">
-                            🧭 MANIFESTO DE PASSEIOS
+                          <div className="text-[9.5px] font-bold text-slate-400 tracking-wider">
+                            🧭 Manifesto de Passeios
                           </div>
                           {diario.atividades && diario.atividades.length > 0 ? (
                             <div className="border border-slate-850 divide-y divide-slate-850/60 bg-slate-950/40 rounded-lg overflow-hidden shadow-sm">
@@ -460,7 +458,7 @@ export default function SideBItinerary({
                                       #{String(aIdx + 1).padStart(2, "0")}
                                     </span>
                                     <div className="min-w-0">
-                                      <div className="font-bold text-slate-300 truncate uppercase text-[10px] tracking-wide">
+                                      <div className="font-bold text-slate-300 truncate text-[10px] tracking-wide">
                                         {atv.nome}
                                       </div>
                                       <div className="flex items-center space-x-2 text-[9px] mt-0.5 font-mono-tech">
@@ -474,7 +472,7 @@ export default function SideBItinerary({
                                           rel="noopener noreferrer"
                                           className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline font-sans"
                                         >
-                                          SITE ↗
+                                          Site ↗
                                         </a>
                                       </div>
                                     </div>
@@ -489,16 +487,16 @@ export default function SideBItinerary({
                               ))}
                             </div>
                           ) : (
-                            <div className="border border-dashed border-slate-850 hover:bg-slate-900/10 p-3 text-center text-slate-500 font-bold uppercase text-[9px] rounded-lg tracking-wider bg-slate-950/5 transition-all select-none shadow-inner">
-                              SEM PASSEIOS DIÁRIOS
+                            <div className="border border-dashed border-slate-850 hover:bg-slate-900/10 p-3 text-center text-slate-500 font-semibold text-[9px] rounded-lg tracking-wider bg-slate-950/5 transition-all select-none shadow-inner">
+                              Sem passeios diários
                             </div>
                           )}
                         </div>
 
                         {/* Seção 3: Despesas Diárias (Gastos Extras) */}
                         <div className="space-y-1.5 pt-1.5">
-                          <div className="text-[9.5px] uppercase font-bold text-slate-455 tracking-wider flex items-center justify-between">
-                            <span>🛍️ DESPESAS E GASTOS DIÁRIOS</span>
+                          <div className="text-[9.5px] font-bold text-slate-400 tracking-wider flex items-center justify-between">
+                            <span>🛍️ Despesas e Gastos Diários</span>
                             <span className="text-amber-500 font-mono-tech text-[8.5px] font-black bg-amber-500/10 px-1.5 py-0.5 rounded leading-none">
                               R$ {diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0).toLocaleString("pt-BR") || 0}
                             </span>
@@ -513,7 +511,7 @@ export default function SideBItinerary({
                                 >
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className="font-bold text-slate-300 uppercase text-[10px] tracking-wide truncate">
+                                      <span className="font-bold text-slate-300 text-[10px] tracking-wide truncate">
                                         {exp.nome}
                                       </span>
                                       <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono-tech select-none leading-none rounded">
@@ -535,8 +533,8 @@ export default function SideBItinerary({
                               ))}
                             </div>
                           ) : (
-                            <div className="border border-dashed border-slate-850 p-2.5 text-center text-slate-500 font-bold uppercase text-[9px] rounded-lg bg-slate-950/5 select-none shadow-inner">
-                              SEM DESPESAS ADICIONADAS
+                            <div className="border border-dashed border-slate-850 p-2.5 text-center text-slate-500 font-semibold text-[9px] rounded-lg bg-slate-950/5 select-none shadow-inner">
+                              Sem despesas adicionadas
                             </div>
                           )}
 
@@ -551,8 +549,8 @@ export default function SideBItinerary({
 
                       {/* Coluna 2: Cronograma Horário Editável Inline (Sem Modais) */}
                       <div className="xl:col-span-7 border border-slate-850/60 bg-slate-950/30 p-3.5 rounded-xl flex flex-col space-y-3.5 relative">
-                        <div className="text-[9.5px] uppercase font-bold text-indigo-400 tracking-wider flex items-center justify-between border-b border-slate-850 pb-1.5 select-none font-sans">
-                          <span className="flex items-center gap-1">🕒 AGENDA DO DIA (HORÁRIOS)</span>
+                        <div className="text-[9.5px] font-bold text-indigo-400 tracking-wider flex items-center justify-between border-b border-slate-850 pb-1.5 select-none font-sans">
+                          <span className="flex items-center gap-1">🕒 Agenda do Dia</span>
                           <span className="text-slate-500 text-[8.5px] lowercase font-normal italic">campos editáveis</span>
                         </div>
 
@@ -569,7 +567,7 @@ export default function SideBItinerary({
                                 value={agendaDia[hora] || ""}
                                 onChange={(e) => handleInputChange(dataDia, hora, e.target.value)}
                                 onBlur={() => handleSalvarDia(dataDia)}
-                                className="flex-1 bg-slate-950 border border-slate-850/80 text-slate-100 px-2.5 py-1 focus:border-indigo-500 focus:outline-none placeholder-slate-800 text-[10px] font-medium rounded-lg shadow-inner uppercase tracking-wide transition-all"
+                                className="flex-1 bg-slate-950 border border-slate-850/80 text-slate-100 px-2.5 py-1 focus:border-indigo-500 focus:outline-none placeholder-slate-800 text-[10px] font-medium rounded-lg shadow-inner tracking-wide transition-all"
                                 autoComplete="off"
                               />
                             </div>
@@ -582,9 +580,9 @@ export default function SideBItinerary({
                             type="button"
                             onClick={() => handleSalvarDia(dataDia)}
                             disabled={salvandoDia[dataDia]}
-                            className="w-full sm:w-auto px-4.5 py-1.5 bg-indigo-600/10 border border-indigo-500/35 hover:bg-indigo-650/20 text-indigo-400 font-bold transition-all uppercase cursor-pointer rounded-lg text-[9px] shadow-sm disabled:opacity-40"
+                            className="w-full sm:w-auto px-4.5 py-1.5 bg-indigo-600/10 border border-indigo-500/35 hover:bg-indigo-650/20 text-indigo-400 font-bold transition-all cursor-pointer rounded-lg text-[9px] shadow-sm disabled:opacity-40"
                           >
-                            {salvandoDia[dataDia] ? "⚡ AUTO-SALVANDO..." : "[ ⚡ AUTO-SALVAR ATIVO (SALVA AO SAIR DO CAMPO) ]"}
+                            {salvandoDia[dataDia] ? "⚡ Salvando..." : "⚡ Auto-salvar ativo (salva ao sair do campo)"}
                           </button>
                         </div>
                       </div>
@@ -601,8 +599,8 @@ export default function SideBItinerary({
 
       {/* Rodapé Informativo */}
       <div className="bg-slate-950/40 border-t border-slate-800/80 p-2 flex items-center justify-between text-[10px] text-slate-500 rounded-b-2xl font-mono-tech select-none">
-        <span>ESTADO: {isModoFoco ? "FOCO DIÁRIO ATIVO" : "MANIFESTO GERAL COMPLETO"}</span>
-        <span>METRICS: COMPLIANT</span>
+        <span>Estado: {isModoFoco ? "Foco Diário Ativo" : "Roteiro Operacional Completo"}</span>
+        <span>Métricas: Em Conformidade</span>
       </div>
     </div>
   );

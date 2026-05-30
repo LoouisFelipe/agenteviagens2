@@ -180,7 +180,7 @@ export default function TripForm({
     setErro("");
 
     if (!origem || !destino || !dataInicio || !dataFim || !orcamento) {
-      setErro("ERRO: TODOS OS PARÂMETROS DA ROTA DEVERÃO SER PREENCHIDOS.");
+      setErro("Todos os parâmetros da rota deverão ser preenchidos.");
       emitLog("SYSTEM WARNING: Parâmetros de criação incompletos.");
       return;
     }
@@ -189,14 +189,14 @@ export default function TripForm({
     const end = new Date(dataFim);
 
     if (end < start) {
-      setErro("ERRO: DATA DE VOLTA INCOMPATÍVEL COM DATA DE PARTIDA.");
+      setErro("Data de volta incompatível com a data de partida.");
       emitLog("SYSTEM WARNING: Inconsistência cronológica nas datas de ida/volta.");
       return;
     }
 
     const budgetVal = Number(orcamento);
     if (isNaN(budgetVal) || budgetVal <= 0) {
-      setErro("ERRO: ORÇAMENTO OPERACIONAL DEVE SER UM VALOR MAIOR QUE ZERO.");
+      setErro("O orçamento operacional deve ser um valor maior que zero.");
       emitLog("SYSTEM WARNING: Orçamento inválido fornecido.");
       return;
     }
@@ -216,7 +216,7 @@ export default function TripForm({
         onClose();
       } catch (error) {
         console.error(error);
-        setErro("FALHA DE PERSISTÊNCIA NA EDIÇÃO: ENTRE EM CONTATO COM O SUPORTE.");
+        setErro("Falha ao salvar as alterações da viagem.");
       } finally {
         setIsLoading(false);
       }
@@ -242,7 +242,7 @@ export default function TripForm({
       onClose();
     } catch (error) {
       console.error(error);
-      setErro("FALHA DE PERSISTÊNCIA: ENTRE EM CONTATO COM O SUPORTE.");
+      setErro("Falha ao criar a viagem.");
     } finally {
       setIsLoading(false);
     }
@@ -253,12 +253,12 @@ export default function TripForm({
       {/* Decoração da borda superior */}
       <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
 
-      <div className="flex items-center justify-between mb-4.5 border-b border-slate-800/80 pb-2.5">
-        <span className="text-[#f59e0b] font-black tracking-wider uppercase">
-          {viagemParaEditar ? "[ CONSOLE DE EDIÇÃO DE ROTA DE VIAGEM ]" : "[ CONSOLE DE CADASTRO DE NOVA ROTA DE VIAGEM ]"}
+      <div className="flex items-center justify-between mb-4.5 border-b border-slate-800/80 pb-2.5 font-sans">
+        <span className="text-[#f59e0b] font-black tracking-wider">
+          {viagemParaEditar ? "Edição da Rota de Viagem" : "Cadastro de Nova Rota de Viagem"}
         </span>
-        <span className="text-[10px] text-slate-500 font-mono-tech uppercase">
-          {viagemParaEditar ? "TRIP_EDIT_V3" : "TRIP_ADD_V3"}
+        <span className="text-[10px] text-slate-500 font-mono-tech">
+          {viagemParaEditar ? "trip_edit_v3" : "trip_add_v3"}
         </span>
       </div>
 
@@ -266,8 +266,8 @@ export default function TripForm({
         
         {/* Origem com Autocomplete */}
         <div className="flex flex-col relative">
-          <label className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">
-            01. LOCAL DE PARTIDA (ORIGEM)
+          <label className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider">
+            01. Local de Partida (Origem)
           </label>
           <input
             type="text"
@@ -280,7 +280,7 @@ export default function TripForm({
             onFocus={() => setActiveDropdown("origem")}
             onBlur={() => setTimeout(() => setActiveDropdown(null), 200)}
             disabled={isLoading}
-            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-indigo-500 focus:outline-none placeholder-slate-700 uppercase rounded-lg transition-all duration-150 font-medium tracking-wide shadow-inner"
+            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-indigo-500 focus:outline-none placeholder-slate-750 rounded-lg transition-all duration-150 font-medium tracking-wide shadow-inner"
             autoComplete="off"
           />
           
@@ -288,8 +288,8 @@ export default function TripForm({
           {activeDropdown === "origem" && (origemSugestoes.length > 0 || isSearchingOrigem) && (
             <div className="absolute top-full left-0 w-full mt-1.5 bg-slate-900/95 backdrop-blur-md border border-slate-800 z-30 shadow-2xl max-h-48 overflow-y-auto rounded-lg divide-y divide-slate-800/40">
               {isSearchingOrigem ? (
-                <div className="p-3 text-slate-500 text-[10px] uppercase animate-pulse font-mono-tech">
-                  [ Pesquisando diretório... ]
+                <div className="p-3 text-slate-500 text-[10px] animate-pulse font-mono-tech">
+                  Pesquisando...
                 </div>
               ) : (
                 origemSugestoes.map((sug, sIdx) => (
@@ -300,7 +300,7 @@ export default function TripForm({
                       setOrigemSugestoes([]);
                       setActiveDropdown(null);
                     }}
-                    className="p-3 hover:bg-slate-800/60 hover:text-[#f59e0b] text-slate-300 cursor-pointer uppercase text-[10.5px] transition-colors font-semibold leading-none"
+                    className="p-3 hover:bg-slate-800/60 hover:text-[#f59e0b] text-slate-300 cursor-pointer text-[10.5px] transition-colors font-semibold leading-none"
                   >
                     {sug.label}
                   </div>
@@ -312,8 +312,8 @@ export default function TripForm({
 
         {/* Destino com Autocomplete */}
         <div className="flex flex-col relative">
-          <label className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">
-            02. DESTINO DA VIAGEM
+          <label className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider">
+            02. Destino da Viagem
           </label>
           <input
             type="text"
@@ -326,7 +326,7 @@ export default function TripForm({
             onFocus={() => setActiveDropdown("destino")}
             onBlur={() => setTimeout(() => setActiveDropdown(null), 200)}
             disabled={isLoading}
-            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-indigo-500 focus:outline-none placeholder-slate-700 uppercase rounded-lg transition-all duration-150 font-medium tracking-wide shadow-inner"
+            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-indigo-500 focus:outline-none placeholder-slate-750 rounded-lg transition-all duration-150 font-medium tracking-wide shadow-inner"
             autoComplete="off"
           />
           
@@ -334,8 +334,8 @@ export default function TripForm({
           {activeDropdown === "destino" && (destinoSugestoes.length > 0 || isSearchingDestino) && (
             <div className="absolute top-full left-0 w-full mt-1.5 bg-slate-900/95 backdrop-blur-md border border-slate-800 z-30 shadow-2xl max-h-48 overflow-y-auto rounded-lg divide-y divide-slate-800/40">
               {isSearchingDestino ? (
-                <div className="p-3 text-slate-500 text-[10px] uppercase animate-pulse font-mono-tech">
-                  [ Pesquisando diretório... ]
+                <div className="p-3 text-slate-500 text-[10px] animate-pulse font-mono-tech">
+                  Pesquisando...
                 </div>
               ) : (
                 destinoSugestoes.map((sug, sIdx) => (
@@ -346,7 +346,7 @@ export default function TripForm({
                       setDestinoSugestoes([]);
                       setActiveDropdown(null);
                     }}
-                    className="p-3 hover:bg-slate-800/60 hover:text-[#10b981] text-slate-300 cursor-pointer uppercase text-[10.5px] transition-colors font-semibold leading-none"
+                    className="p-3 hover:bg-slate-800/60 hover:text-[#10b981] text-slate-300 cursor-pointer text-[10.5px] transition-colors font-semibold leading-none"
                   >
                     {sug.label}
                   </div>
@@ -358,8 +358,8 @@ export default function TripForm({
 
         {/* Data Partida */}
         <div className="flex flex-col">
-          <label className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">
-            03. DATA IDA (PARTIDA)
+          <label className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider">
+            03. Data Ida (Partida)
           </label>
           <input
             type="date"
@@ -373,8 +373,8 @@ export default function TripForm({
 
         {/* Data Volta */}
         <div className="flex flex-col">
-          <label className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">
-            04. DATA VOLTA (RETORNO)
+          <label className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider">
+            04. Data Volta (Retorno)
           </label>
           <input
             type="date"
@@ -388,8 +388,8 @@ export default function TripForm({
 
         {/* Orçamento Máximo */}
         <div className="flex flex-col">
-          <label className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">
-            05. ORÇAMENTO MÁXIMO (BRL)
+          <label className="text-[10px] font-bold text-slate-400 mb-1.5 tracking-wider">
+            05. Orçamento Máximo (BRL)
           </label>
           <input
             type="number"
@@ -397,7 +397,7 @@ export default function TripForm({
             value={orcamento}
             onChange={(e) => setOrcamento(e.target.value)}
             disabled={isLoading}
-            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-indigo-500 focus:outline-none placeholder-slate-700 font-mono-tech rounded-lg transition-all duration-150 shadow-inner"
+            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-indigo-500 focus:outline-none placeholder-slate-750 font-mono-tech rounded-lg transition-all duration-150 shadow-inner"
             min="1"
           />
         </div>
@@ -411,27 +411,27 @@ export default function TripForm({
         )}
 
         {/* Botões de Ação */}
-        <div className="md:col-span-5 flex justify-end gap-3 pt-2 select-none">
+        <div className="md:col-span-5 flex justify-end gap-3 pt-2 select-none font-sans">
           <button
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4.5 py-2 border border-slate-700 hover:border-slate-500 text-slate-300 hover:bg-slate-800/30 transition-all rounded-lg uppercase cursor-pointer text-[10.5px] font-bold"
+            className="px-4.5 py-2 border border-slate-700 hover:border-slate-500 text-slate-300 hover:bg-slate-800/30 transition-all rounded-lg cursor-pointer text-[10.5px] font-bold"
           >
-            [ DISMISS ]
+            Cancelar
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-5 py-2 bg-gradient-to-r from-[#f59e0b] to-amber-600 hover:from-amber-500 hover:to-amber-600 text-white font-bold transition-all uppercase cursor-pointer flex items-center gap-2 rounded-lg text-[10.5px] hover:scale-[1.02] active:scale-[0.98] border-0 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20"
+            className="px-5 py-2 bg-gradient-to-r from-[#f59e0b] to-amber-600 hover:from-amber-500 hover:to-amber-600 text-white font-bold transition-all cursor-pointer flex items-center gap-2 rounded-lg text-[10.5px] hover:scale-[1.02] active:scale-[0.98] border-0 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20"
           >
             {isLoading ? (
               <>
                 <span className="w-1.5 h-1.5 bg-white led-amber rounded-full animate-ping" />
-                {viagemParaEditar ? "SALVANDO..." : "GRAVANDO..."}
+                {viagemParaEditar ? "Salvando..." : "Gravando..."}
               </>
             ) : (
-              viagemParaEditar ? "[ SALVAR ALTERAÇÕES DE ROTA ]" : "[ CONFIRMAR E SALVAR ROTA ]"
+              viagemParaEditar ? "Salvar Alterações" : "Confirmar e Salvar Rota"
             )}
           </button>
         </div>

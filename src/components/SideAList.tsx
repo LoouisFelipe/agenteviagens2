@@ -198,7 +198,7 @@ export default function SideAList({
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          [ 01. HOSPEDAGENS ]
+          🏨 Hospedagens
         </button>
         <button
           onClick={() => {
@@ -212,7 +212,7 @@ export default function SideAList({
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          [ 02. PASSEIOS ]
+          🧭 Passeios
         </button>
         <button
           onClick={() => {
@@ -226,7 +226,7 @@ export default function SideAList({
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          [ 03. DESPESAS ]
+          💰 Despesas
         </button>
       </div>
 
@@ -235,18 +235,18 @@ export default function SideAList({
         <div className="flex-1 relative">
           <input
             type="text"
-            placeholder={`Filtro de busca rápido por ${tabAtiva === "hospedagem" ? "nome da hospedagem" : "nome da atividade"}...`}
+            placeholder={`Filtrar por ${tabAtiva === "hospedagem" ? "nome da hospedagem" : "nome da atividade"}...`}
             value={filtro}
             onChange={(e) => {
               setFiltro(e.target.value);
               setMenuAbertoIndex(null);
             }}
-            className="w-full bg-slate-950 border border-slate-800/80 text-slate-200 px-3.5 py-2 pl-9 focus:border-indigo-500 focus:outline-none placeholder-slate-700 uppercase text-[11px] rounded-lg shadow-inner font-medium"
+            className="w-full bg-slate-950 border border-slate-800/80 text-slate-200 px-3.5 py-2 pl-9 focus:border-indigo-500 focus:outline-none placeholder-slate-750 text-[11px] rounded-lg shadow-inner font-medium"
           />
-          <span className="absolute left-3.5 top-2.5 text-slate-600 text-xs">🔎</span>
+          <span className="absolute left-3.5 top-2.5 text-slate-650 text-xs">🔎</span>
         </div>
         <div className="text-[10px] text-slate-500 font-bold hidden sm:block font-mono-tech select-none">
-          MATCHES: {itensFiltrados.length}
+          Resultados: {itensFiltrados.length}
         </div>
       </div>
 
@@ -259,42 +259,42 @@ export default function SideAList({
               setCustomFormError("");
             }}
             disabled={datasViagem.length === 0}
-            className="w-full py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-400 font-bold transition-all text-[10.5px] uppercase rounded-lg cursor-pointer flex items-center justify-center gap-1.5 shadow-md"
+            className="w-full py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-400 font-bold transition-all text-[10.5px] rounded-lg cursor-pointer flex items-center justify-center gap-1.5 shadow-md animate-fade-in"
           >
-            <span>{isCustomFormOpen ? "▲ FECHAR FORMULÁRIO" : "➕ INSERIR HOSPEDAGEM JÁ FECHADA / PERSONALIZADA"}</span>
+            <span>{isCustomFormOpen ? "▲ Fechar Formulário" : "➕ Inserir Hospedagem Personalizada"}</span>
           </button>
 
           {isCustomFormOpen && (
             <div className="mt-3 p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3 shadow-inner">
-              <div className="text-[9.5px] uppercase font-bold text-slate-400 tracking-wider">
+              <div className="text-[9.5px] font-bold text-slate-400 tracking-wider">
                 Nova Hospedagem Fechada (Airbnb / Hotel Reservado)
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="flex flex-col">
-                  <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Nome do Hotel/Local</label>
+                  <label className="text-[10px] font-semibold text-slate-400 mb-1">Nome do Hotel/Local</label>
                   <input
                     type="text"
                     placeholder="Ex: Airbnb Providencia"
                     value={customNome}
                     onChange={(e) => setCustomNome(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none uppercase text-[10px] rounded-lg shadow-inner"
+                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-medium"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Valor Diário (R$)</label>
+                  <label className="text-[10px] font-semibold text-slate-400 mb-1">Valor Diário (R$)</label>
                   <input
                     type="number"
                     placeholder="Ex: 300"
                     value={customPreco}
                     onChange={(e) => setCustomPreco(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner"
+                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col">
-                <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Link / URL de Acompanhamento (Opcional)</label>
+                <label className="text-[10px] font-semibold text-slate-400 mb-1">Link / URL de Acompanhamento (Opcional)</label>
                 <input
                   type="text"
                   placeholder="Ex: https://airbnb.com.br/rooms/..."
@@ -306,21 +306,21 @@ export default function SideAList({
 
               <div className="flex flex-col">
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[9px] uppercase font-bold text-slate-500">Dias de Alocação no Roteiro ({customDiasSelecionados.length} selecionados)</label>
+                  <label className="text-[10px] font-semibold text-slate-400">Dias de Alocação ({customDiasSelecionados.length} selecionados)</label>
                   <div className="flex gap-2.5">
                     <button
                       type="button"
                       onClick={selecionarTodosCustomDias}
-                      className="text-[8.5px] font-bold text-indigo-400 hover:text-indigo-300 uppercase cursor-pointer bg-transparent border-0 p-0"
+                      className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer bg-transparent border-0 p-0"
                     >
-                      [ SELECIONAR TODOS ]
+                      Selecionar Todos
                     </button>
                     <button
                       type="button"
                       onClick={limparCustomDias}
-                      className="text-[8.5px] font-bold text-slate-500 hover:text-slate-400 uppercase cursor-pointer bg-transparent border-0 p-0"
+                      className="text-[9px] font-bold text-slate-500 hover:text-slate-400 cursor-pointer bg-transparent border-0 p-0"
                     >
-                      [ LIMPAR ]
+                      Limpar
                     </button>
                   </div>
                 </div>
@@ -333,14 +333,14 @@ export default function SideAList({
                         key={dia}
                         type="button"
                         onClick={() => toggleCustomDiaSelecionado(dia)}
-                        className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-bold uppercase transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
+                        className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-semibold transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
                           isSelected
                             ? "bg-indigo-600 border-indigo-400 text-white shadow-md shadow-indigo-500/10 scale-[1.02]"
                             : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
                         }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-white animate-pulse" : "bg-slate-600"}`} />
-                        <span>D{String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                        <span>Dia {String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
                       </button>
                     );
                   })}
@@ -348,7 +348,7 @@ export default function SideAList({
               </div>
 
               {customFormError && (
-                <div className="text-[9.5px] text-rose-400 font-mono-tech leading-none">
+                <div className="text-[9.5px] text-rose-450 font-mono-tech leading-none">
                   ⚠️ {customFormError}
                 </div>
               )}
@@ -357,12 +357,12 @@ export default function SideAList({
                 onClick={async () => {
                   setCustomFormError("");
                   if (!customNome.trim() || !customPreco.trim() || customDiasSelecionados.length === 0) {
-                    setCustomFormError("PREENCHA TODOS OS CAMPOS E SELECIONE PELO MENOS UM DIA.");
+                    setCustomFormError("Preencha todos os campos e selecione pelo menos um dia.");
                     return;
                   }
                   const precoVal = Number(customPreco);
                   if (isNaN(precoVal) || precoVal <= 0) {
-                    setCustomFormError("VALOR DIÁRIO INVÁLIDO.");
+                    setCustomFormError("Valor diário inválido.");
                     return;
                   }
                   
@@ -390,12 +390,12 @@ export default function SideAList({
                     emitLog(`SYSTEM: Hospedagem customizada vinculada com sucesso para ${customDiasSelecionados.length} dias.`);
                   } catch (error) {
                     console.error(error);
-                    setCustomFormError("FALHA AO SALVAR HOSPEDAGEM.");
+                    setCustomFormError("Falha ao salvar hospedagem.");
                   }
                 }}
-                className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10.5px] uppercase transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1 shadow-md hover:scale-[1.01]"
+                className="w-full py-2 bg-indigo-650 hover:bg-indigo-600 text-white font-bold text-[10.5px] transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1 shadow-md hover:scale-[1.01]"
               >
-                [ ✔️ VINCULAR HOSPEDAGEM FECHADA ]
+                Vincular Hospedagem Fechada
               </button>
             </div>
           )}
@@ -405,23 +405,23 @@ export default function SideAList({
       {tabAtiva === "despesa" && (
         <div className="px-3.5 py-3 bg-slate-950/20 border-b border-slate-800/40 select-none space-y-3">
           <div className="p-3.5 bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-3.5 shadow-inner">
-            <div className="text-[10px] uppercase font-black text-[#f59e0b] tracking-wider flex items-center gap-1">
-              <span>💰 REGISTRO DE NOVA DESPESA / GASTO DIÁRIO</span>
+            <div className="text-[10px] font-black text-[#f59e0b] tracking-wider flex items-center gap-1">
+              <span>💰 Registro de Nova Despesa</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div className="flex flex-col">
-                <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Nome da Despesa</label>
+                <label className="text-[10px] font-semibold text-slate-400 mb-1">Nome da Despesa</label>
                 <input
                   type="text"
                   placeholder="Ex: Almoço no Chile"
                   value={despesaNome}
                   onChange={(e) => setDespesaNome(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none uppercase text-[10px] rounded-lg shadow-inner font-medium"
+                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-medium"
                 />
               </div>
               <div className="flex flex-col">
-                <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Valor Unitário (R$)</label>
+                <label className="text-[10px] font-semibold text-slate-400 mb-1">Valor Unitário (R$)</label>
                 <input
                   type="number"
                   placeholder="Ex: 50"
@@ -433,11 +433,11 @@ export default function SideAList({
             </div>
 
             <div className="flex flex-col">
-              <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Categoria do Gasto</label>
+              <label className="text-[10px] font-semibold text-slate-400 mb-1">Categoria do Gasto</label>
               <select
                 value={despesaCategoria}
                 onChange={(e) => setDespesaCategoria(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg cursor-pointer font-bold uppercase"
+                className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg cursor-pointer font-bold"
               >
                 <option value="Alimentação">Alimentação 🍽️</option>
                 <option value="Transporte">Transporte 🚗</option>
@@ -449,21 +449,21 @@ export default function SideAList({
 
             <div className="flex flex-col">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[9px] uppercase font-bold text-slate-500">Dias de Lançamento ({despesaDiasSelecionados.length} selecionados)</label>
+                <label className="text-[10px] font-semibold text-slate-400">Dias de Lançamento ({despesaDiasSelecionados.length} selecionados)</label>
                 <div className="flex gap-2.5">
                   <button
                     type="button"
                     onClick={selecionarTodosDespesaDias}
-                    className="text-[8.5px] font-bold text-indigo-400 hover:text-indigo-300 uppercase cursor-pointer bg-transparent border-0 p-0"
+                    className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer bg-transparent border-0 p-0"
                   >
-                    [ SELECIONAR TODOS ]
+                    Selecionar Todos
                   </button>
                   <button
                     type="button"
                     onClick={limparDespesaDias}
-                    className="text-[8.5px] font-bold text-slate-500 hover:text-slate-400 uppercase cursor-pointer bg-transparent border-0 p-0"
+                    className="text-[9px] font-bold text-slate-500 hover:text-slate-400 cursor-pointer bg-transparent border-0 p-0"
                   >
-                    [ LIMPAR ]
+                    Limpar
                   </button>
                 </div>
               </div>
@@ -476,14 +476,14 @@ export default function SideAList({
                       key={dia}
                       type="button"
                       onClick={() => toggleDespesaDiaSelecionado(dia)}
-                      className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-bold uppercase transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-semibold transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
                         isSelected
                           ? "bg-amber-600 border-amber-400 text-white shadow-md shadow-amber-500/10 scale-[1.02]"
                           : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
                       }`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-white animate-pulse" : "bg-slate-600"}`} />
-                      <span>D{String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                      <span>Dia {String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
                     </button>
                   );
                 })}
@@ -491,7 +491,7 @@ export default function SideAList({
             </div>
 
             {despesaFormError && (
-              <div className="text-[9.5px] text-rose-400 font-mono-tech leading-none">
+              <div className="text-[9.5px] text-rose-450 font-mono-tech leading-none">
                 ⚠️ {despesaFormError}
               </div>
             )}
@@ -500,12 +500,12 @@ export default function SideAList({
               onClick={async () => {
                 setDespesaFormError("");
                 if (!despesaNome.trim() || !despesaPreco.trim() || despesaDiasSelecionados.length === 0) {
-                  setDespesaFormError("PREENCHA TODOS OS CAMPOS E SELECIONE PELO MENOS UM DIA.");
+                  setDespesaFormError("Preencha todos os campos e selecione pelo menos um dia.");
                   return;
                 }
                 const precoVal = Number(despesaPreco);
                 if (isNaN(precoVal) || precoVal <= 0) {
-                  setDespesaFormError("VALOR DIÁRIO EXCEDIDO OU INVÁLIDO.");
+                  setDespesaFormError("Valor diário inválido.");
                   return;
                 }
 
@@ -530,12 +530,12 @@ export default function SideAList({
                   emitLog(`SYSTEM: Despesa vinculada com sucesso para ${despesaDiasSelecionados.length} dias.`);
                 } catch (e) {
                   console.error(e);
-                  setDespesaFormError("ERRO AO REGISTRAR GASTO.");
+                  setDespesaFormError("Erro ao registrar gasto.");
                 }
               }}
-              className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-[#f59e0b] hover:from-amber-400 hover:to-amber-500 text-white font-bold text-[10.5px] uppercase transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1 shadow-md hover:scale-[1.01] border-0"
+              className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-[#f59e0b] hover:from-amber-400 hover:to-amber-500 text-white font-bold text-[10.5px] transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1 shadow-md hover:scale-[1.01] border-0"
             >
-              [ 💰 LANÇAR E SALVAR DESPESA ]
+              Lançar e Salvar Despesa
             </button>
           </div>
         </div>
@@ -545,15 +545,15 @@ export default function SideAList({
       <div className="flex-1 overflow-y-auto max-h-[460px] divide-y divide-slate-900/60 bg-slate-950/5 rounded-b-2xl scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
         {isLoading ? (
           <div className="p-16 text-center text-[#f59e0b] font-bold uppercase space-y-3.5 animate-pulse font-sans">
-            <div className="text-sm font-black tracking-wider">⚙️ [ CONEXÃO DE CAPTURA ONLINE ATIVA ]</div>
+            <div className="text-sm font-black tracking-wider">⚙️ Captura Online Ativa</div>
             <div className="text-[10px] text-slate-500 font-mono-tech tracking-widest leading-relaxed">
-              EXECUTANDO SCRIPT DE COLETA EM TEMPO REAL...<br/>
-              CARREGANDO COTAÇÕES VIVAS DE {viagemDestino}...
+              Executando coleta em tempo real...<br/>
+              Carregando cotações de {viagemDestino}...
             </div>
           </div>
         ) : itensFiltrados.length === 0 ? (
-          <div className="p-10 text-center text-slate-600 uppercase font-bold tracking-wide font-sans">
-            [ NENHUM REGISTRO CORRESPONDENTE AO FILTRO ]
+          <div className="p-10 text-center text-slate-650 font-semibold tracking-wide font-sans">
+            Nenhum registro correspondente ao filtro
           </div>
         ) : (
           itensFiltrados.map((item, index) => {
@@ -572,7 +572,7 @@ export default function SideAList({
                 {/* Dados da Coluna Esquerda */}
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-slate-200 group-hover:text-indigo-400 transition-colors uppercase text-[11px] font-sans tracking-wide">
+                    <span className="font-bold text-slate-200 group-hover:text-indigo-400 transition-colors text-[11px] font-sans tracking-wide">
                       {item.nome}
                     </span>
                     <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded border font-mono-tech select-none leading-none ${badge.style}`}>
@@ -581,7 +581,7 @@ export default function SideAList({
                   </div>
                   <div className="flex items-center space-x-3 text-[10px] font-mono-tech select-none">
                     <span className="text-slate-400">
-                      CUSTO: <span className="text-slate-100 font-semibold">{valorExibido}</span>
+                      Custo: <span className="text-slate-100 font-semibold">{valorExibido}</span>
                     </span>
                     {tabAtiva === "hospedagem" ? (
                       <a
@@ -601,18 +601,18 @@ export default function SideAList({
                         className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline transition-colors font-sans"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        GOOGLE TRAVEL ↗
+                        Google Travel ↗
                       </a>
                     ) : (
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 font-sans">
                         <a
                           href={item.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline transition-colors font-sans text-[9.5px]"
+                          className="text-cyan-400 hover:text-cyan-300 font-bold hover:underline transition-colors text-[9.5px]"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          SITE OFICIAL ↗
+                          Site Oficial ↗
                         </a>
                         <span className="text-slate-800">|</span>
                         <a
@@ -621,10 +621,10 @@ export default function SideAList({
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-indigo-400 hover:text-indigo-300 font-bold hover:underline transition-colors font-sans text-[9.5px]"
+                          className="text-indigo-400 hover:text-indigo-300 font-bold hover:underline transition-colors text-[9.5px]"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          VIATOR ↗
+                          Viator ↗
                         </a>
                         <span className="text-slate-800">|</span>
                         <a
@@ -633,10 +633,10 @@ export default function SideAList({
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#10b981] hover:text-[#34d399] font-bold hover:underline transition-colors font-sans text-[9.5px]"
+                          className="text-[#10b981] hover:text-[#34d399] font-bold hover:underline transition-colors text-[9.5px]"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          GETYOURGUIDE ↗
+                          GetYourGuide ↗
                         </a>
                       </div>
                     )}
@@ -648,56 +648,56 @@ export default function SideAList({
                   <button
                     onClick={() => setMenuAbertoIndex(menuAbertoIndex === index ? null : index)}
                     disabled={datasViagem.length === 0}
-                    className={`px-4 py-1.5 font-bold border-0 transition-all duration-200 cursor-pointer rounded-lg text-[10.5px] uppercase shadow-md flex items-center gap-1 ${
+                    className={`px-4 py-1.5 font-bold border-0 transition-all duration-200 cursor-pointer rounded-lg text-[10.5px] shadow-md flex items-center gap-1 ${
                       tabAtiva === "hospedagem"
                         ? "bg-indigo-600/10 hover:bg-indigo-600/25 text-indigo-400 hover:text-indigo-300"
                         : "bg-emerald-600/10 hover:bg-emerald-600/25 text-emerald-400 hover:text-emerald-300"
                     } disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:scale-100 hover:scale-[1.02] active:scale-[0.98]`}
                   >
-                    <span>{datasViagem.length === 0 ? "[ SEM DIAS ]" : "[ INJETAR ]"}</span>
+                    <span>{datasViagem.length === 0 ? "Sem dias" : "Injetar"}</span>
                     {datasViagem.length > 0 && <span className="text-[9px] group-hover:translate-x-0.5 transition-transform">➔</span>}
                   </button>
 
                   {/* Dropdown de Seleção de Dia para Injetar - Estilo SaaS Popover */}
                   {menuAbertoIndex === index && (
                     tabAtiva === "hospedagem" ? (
-                      <div className="absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-800 shadow-2xl z-20 font-mono-tech p-1 rounded-xl">
-                        <div className="border-b border-slate-800 px-3 py-2 text-[9px] font-bold text-slate-500 uppercase tracking-wider select-none font-sans">
-                          SELECIONE O DIA DE ALOCAÇÃO:
+                      <div className="absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-800 shadow-2xl z-20 font-sans p-1 rounded-xl">
+                        <div className="border-b border-slate-800 px-3 py-2 text-[9px] font-bold text-slate-500 uppercase tracking-wider select-none">
+                          Selecione o Dia de Alocação:
                         </div>
                         <div className="max-h-48 overflow-y-auto divide-y divide-slate-850/60 mt-1 scrollbar-thin">
                           {datasViagem.map((dataDia, dIdx) => {
                             const dateObj = new Date(dataDia + "T12:00:00");
-                            const labelDia = `DIA ${String(dIdx + 1).padStart(2, "0")} - ${dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} (${dataDia})`;
+                            const labelDia = `Dia ${String(dIdx + 1).padStart(2, "0")} - ${dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} (${dataDia})`;
 
                             return (
                               <button
                                 key={dataDia}
                                 onClick={() => handleInjetar(item, dataDia)}
-                                className="w-full text-left px-3 py-2 text-[10.5px] text-slate-300 hover:bg-indigo-600/10 hover:text-white transition-colors cursor-pointer font-semibold uppercase flex items-center justify-between rounded-lg border-0"
+                                className="w-full text-left px-3 py-2 text-[10.5px] text-slate-300 hover:bg-indigo-600/10 hover:text-white transition-colors cursor-pointer font-semibold flex items-center justify-between rounded-lg border-0"
                               >
                                 <span>{labelDia}</span>
-                                <span className="text-slate-600 font-mono text-[9px] group-hover:text-indigo-400">➔</span>
+                                <span className="text-slate-650 text-[9px] group-hover:text-indigo-400">➔</span>
                               </button>
                             );
                           })}
                         </div>
                         <button
                           onClick={() => setMenuAbertoIndex(null)}
-                          className="w-full text-center py-2 bg-rose-950/20 text-rose-400 hover:bg-rose-950/40 text-[9.5px] uppercase font-bold border-t border-slate-800 mt-1.5 rounded-b-lg border-0"
+                          className="w-full text-center py-2 bg-rose-950/20 text-rose-450 hover:bg-rose-950/40 text-[9.5px] font-bold border-t border-slate-800 mt-1.5 rounded-b-lg border-0 cursor-pointer"
                         >
-                          [ FECHAR ]
+                          Fechar
                         </button>
                       </div>
                     ) : (
                       <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 shadow-2xl z-30 font-sans p-3.5 rounded-xl text-left space-y-3.5 select-none text-[11px]">
-                        <div className="border-b border-slate-850 pb-2 text-[10px] font-black text-emerald-400 uppercase tracking-wider">
-                          🧭 PARAMETRIZAR ATIVIDADE
+                        <div className="border-b border-slate-850 pb-2 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                          🧭 Parametrizar Atividade
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex flex-col">
-                            <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Nº Pessoas</label>
+                            <label className="text-[10px] font-semibold text-slate-400 mb-1">Nº Pessoas</label>
                             <input
                               type="number"
                               min="1"
@@ -707,7 +707,7 @@ export default function SideAList({
                             />
                           </div>
                           <div className="flex flex-col">
-                            <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Duração (Dias)</label>
+                            <label className="text-[10px] font-semibold text-slate-400 mb-1">Duração (Dias)</label>
                             <input
                               type="number"
                               min="1"
@@ -719,18 +719,18 @@ export default function SideAList({
                         </div>
 
                         <div className="flex flex-col">
-                          <label className="text-[9px] uppercase font-bold text-slate-500 mb-1">Dia de Início</label>
+                          <label className="text-[10px] font-semibold text-slate-400 mb-1">Dia de Início</label>
                           <select
                             value={diaInicioAtividade}
                             onChange={(e) => setDiaInicioAtividade(e.target.value)}
                             className="bg-slate-950 border border-slate-800 text-slate-300 px-2 py-1 focus:border-emerald-500 focus:outline-none rounded-md text-[10.5px] font-sans cursor-pointer"
                           >
-                            <option value="">-- SELECIONE O DIA --</option>
+                            <option value="">-- Selecione o Dia --</option>
                             {datasViagem.map((dia, dIdx) => {
                               const dateObj = new Date(dia + "T12:00:00");
                               return (
                                 <option key={dia} value={dia}>
-                                  DIA {String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                                  Dia {String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
                                 </option>
                               );
                             })}
@@ -739,10 +739,10 @@ export default function SideAList({
 
                         <div className="bg-slate-950/40 border border-slate-850 p-2.5 rounded-lg space-y-1 font-mono-tech text-[10px]">
                           <div className="text-slate-400">
-                            CUSTO BASE: <span className="text-slate-200">R$ {(item as Atividade).valor}/px</span>
+                            Custo base: <span className="text-slate-200">R$ {(item as Atividade).valor}/px</span>
                           </div>
                           <div className="text-slate-400">
-                            TOTAL: <span className="text-emerald-400 font-bold">R$ {((item as Atividade).valor * pessoasAtividade).toLocaleString("pt-BR")}/dia</span>
+                            Total: <span className="text-emerald-400 font-bold">R$ {((item as Atividade).valor * pessoasAtividade).toLocaleString("pt-BR")}/dia</span>
                           </div>
                           <div className="text-[9px] text-slate-500 leading-normal border-t border-slate-850 mt-1.5 pt-1 uppercase">
                             Inserido em {duracaoAtividade} dia(s) consecutivo(s).
@@ -753,16 +753,16 @@ export default function SideAList({
                           <button
                             type="button"
                             onClick={() => setMenuAbertoIndex(null)}
-                            className="flex-1 py-1.5 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/30 text-slate-400 hover:text-slate-300 text-[10px] uppercase font-bold rounded-lg cursor-pointer transition-colors"
+                            className="flex-1 py-1.5 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/30 text-slate-400 hover:text-slate-300 text-[10px] font-bold rounded-lg cursor-pointer transition-colors"
                           >
-                            [ CANCEL ]
+                            Cancelar
                           </button>
                           <button
                             type="button"
                             onClick={() => handleInjetarAtividadeAvancada(item as Atividade)}
-                            className="flex-1 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] uppercase font-black rounded-lg cursor-pointer transition-all hover:scale-[1.02] border-0"
+                            className="flex-1 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black rounded-lg cursor-pointer transition-all hover:scale-[1.02] border-0"
                           >
-                            [ VINCULAR ]
+                            Vincular
                           </button>
                         </div>
                       </div>
@@ -777,8 +777,8 @@ export default function SideAList({
 
       {/* Rodapé Informativo */}
       <div className="bg-slate-950/40 border-t border-slate-800/80 p-2 flex items-center justify-between text-[10px] text-slate-500 rounded-b-2xl font-mono-tech select-none">
-        <span>ESTADO: SELEÇÃO VIVA</span>
-        <span>SCRAPER_API: ACTIVE</span>
+        <span>Estado: Seleção Ativa</span>
+        <span>Scraper API: Ativa</span>
       </div>
     </div>
   );
