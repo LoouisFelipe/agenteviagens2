@@ -91,22 +91,12 @@ export default function Home() {
           const roteiro = await obterRoteiroDiario(selecionada.id);
           setRoteiroDiario(roteiro);
         }
-      } else if (viagemAtiva) {
-        // Mantém a viagem atualizada se já houver uma ativa
-        const atualizada = lista.find((v) => v.id === viagemAtiva.id);
-        if (atualizada) {
-          setViagemAtiva(atualizada);
-          const dias = gerarDiasPeriodo(atualizada.data_inicio, atualizada.data_fim);
-          setDatasViagem(dias);
-          const roteiro = await obterRoteiroDiario(atualizada.id);
-          setRoteiroDiario(roteiro);
-        }
       }
     } catch (err) {
       console.error("Erro ao carregar lista de viagens:", err);
       emitLog("SYSTEM ERROR: Falha de comunicação ao listar viagens.");
     }
-  }, [viagemAtiva]);
+  }, []);
 
   // Inicialização
   useEffect(() => {
