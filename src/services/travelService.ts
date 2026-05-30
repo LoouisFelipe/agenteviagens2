@@ -130,7 +130,7 @@ export async function listarViagens(): Promise<Viagem[]> {
       const q = query(collection(db, "viagens"), orderBy("criado_em", "desc"));
       const snapshot = await withTimeout(
         getDocs(q),
-        6000,
+        15000,
         "Tempo limite de conexão esgotado ao listar viagens (Firestore offline ou bloqueado)."
       );
       viagensFirestore = snapshot.docs.map((d) => {
@@ -226,7 +226,7 @@ export async function criarNovaViagem(
       emitLog(`FIRESTORE: setDoc(doc(db, 'viagens', '${docRef.id}')) com destino=${record.destino}...`);
       await withTimeout(
         setDoc(docRef, record),
-        4000,
+        15000,
         "Erro de gravação no Firestore (Regras de Segurança Negadas ou Rede Offline)."
       );
 
@@ -241,7 +241,7 @@ export async function criarNovaViagem(
           setDoc(roteiroDocRef, {
             cronograma_horario: {},
           }),
-          3000,
+          15000,
           "Erro ao inicializar dias do roteiro no Firestore (Timeout)."
         );
       }
@@ -357,7 +357,7 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
           getDocs(collection(db, "viagens", viagemId, "roteiros")),
           getDocs(collection(db, "viagens", viagemId, "despesas"))
         ]),
-        5000,
+        15000,
         "Tempo limite esgotado ao buscar subcoleções do roteiro diário."
       );
 
@@ -573,7 +573,7 @@ export async function injetarItemNoRoteiro(
             preco_diario: (item as Hospedagem).preco_diario,
             link: item.link
           }),
-          4000,
+          15000,
           "Tempo limite esgotado ao salvar hospedagem no Firestore."
         );
       } else {
@@ -588,7 +588,7 @@ export async function injetarItemNoRoteiro(
             link: item.link,
             criado_em: Timestamp.now()
           }),
-          4000,
+          15000,
           "Tempo limite esgotado ao salvar atividade no Firestore."
         );
       }
@@ -634,7 +634,7 @@ export async function removerAtividadeDia(viagemId: string, dataDia: string, ati
     try {
       const snapshot = await withTimeout(
         getDocs(collection(db, "viagens", viagemId, "passeios")),
-        4000,
+        15000,
         "Tempo limite esgotado ao ler atividades para remoção."
       );
 
@@ -669,7 +669,7 @@ export async function removerAtividadeDia(viagemId: string, dataDia: string, ati
       if (atividadeIndex >= 0 && atividadeIndex < diaPasseios.length) {
         const passeioParaDeletar = diaPasseios[atividadeIndex];
         const docRef = doc(db, "viagens", viagemId, "passeios", passeioParaDeletar.id);
-        await withTimeout(deleteDoc(docRef), 4500, "Erro ao remover do Firestore.");
+        await withTimeout(deleteDoc(docRef), 15000, "Erro ao remover do Firestore.");
         emitLog(`FIRESTORE: Atividade removida com sucesso no Firestore.`);
       }
     } catch (error) {
@@ -702,7 +702,7 @@ export async function removerHospedagemDia(viagemId: string, dataDia: string): P
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId, "hoteis", dataDia);
-      await withTimeout(deleteDoc(docRef), 4000, "Erro ao remover hospedagem do Firestore.");
+      await withTimeout(deleteDoc(docRef), 15000, "Erro ao remover hospedagem do Firestore.");
       emitLog(`FIRESTORE: Hospedagem desvinculada no Firestore.`);
     } catch (error) {
       console.error(error);
@@ -975,7 +975,7 @@ export async function adicionarDespesaDia(
           categoria: despesa.categoria,
           criado_em: Timestamp.now()
         }),
-        4000,
+        15000,
         "Erro ao salvar despesa no Firestore."
       );
       emitLog("FIRESTORE: Despesa sincronizada com sucesso.");

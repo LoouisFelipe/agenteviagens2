@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -26,16 +24,14 @@
 body {
   color: var(--text-primary);
   background-color: var(--bg-primary);
-  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
-  letter-spacing: -0.01em;
 }
 
 /* Títulos usando a fonte Outfit de alto impacto */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -148,7 +144,7 @@ body::after {
 
 /* Classes utilitárias para fontes monoespaçadas premium */
 .font-mono-tech {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
 }
 
