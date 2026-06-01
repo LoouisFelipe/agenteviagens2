@@ -67,7 +67,17 @@ export default function Home() {
   const [isModoFoco, setIsModoFoco] = useState(true);
 
   // Controle de Abas no Sidebar
-  const [activeTab, setActiveTab] = useState<"dashboard" | "cronograma" | "banco" | "logs">("dashboard");
+  const [activeTab, setActiveTab] = useState<"visao-geral" | "financas" | "cronograma" | "banco" | "logs">("visao-geral");
+
+  // Estados para inclusão de despesa rápida na aba Finanças
+  const [finAddNome, setFinAddNome] = useState("");
+  const [finAddValor, setFinAddValor] = useState("");
+  const [finAddCategoria, setFinAddCategoria] = useState("Alimentação");
+  const [finAddCustomCategoria, setFinAddCustomCategoria] = useState("");
+  const [finAddIsCustom, setFinAddIsCustom] = useState(false);
+  const [finAddVinculo, setFinAddVinculo] = useState("global");
+  const [finAddErro, setFinAddErro] = useState("");
+  const [finAddSalvando, setFinAddSalvando] = useState(false);
 
   // Escuta alterações de Autenticação em tempo real
   useEffect(() => {
@@ -369,7 +379,7 @@ export default function Home() {
       }
       const roteiro = await obterRoteiroDiario(selecionada.id);
       setRoteiroDiario(roteiro);
-      setActiveTab("dashboard"); // Reseta para a dashboard ao focar
+      setActiveTab("visao-geral"); // Reseta para a visão geral ao focar
     }
   };
 
@@ -597,6 +607,49 @@ export default function Home() {
     } catch {
       setRoteiroDiario(backupRoteiro);
       emitLog("OPTIMISTIC ERROR: Falha ao remover despesa do banco. Ação revertida.");
+    }
+  };
+
+  // Handler para submeter despesa rápida em Finanças
+  const handleSubmeterFinDespesa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFinAddErro("");
+    if (!finAddNome.trim() || !finAddValor.trim()) {
+      setFinAddErro("Preencha todos os campos.");
+      return;
+    }
+    const val = Number(finAddValor);
+    if (isNaN(val) || val <= 0) {
+      setFinAddErro("Valor inválido.");
+      return;
+    }
+
+    const finalCategory = finAddIsCustom && finAddCustomCategoria.trim()
+      ? finAddCustomCategoria.trim()
+      : finAddCategoria;
+
+    if (finAddIsCustom && !finAddCustomCategoria.trim()) {
+      setFinAddErro("Insira o nome da categoria.");
+      return;
+    }
+
+    setFinAddSalvando(true);
+    try {
+      await handleInjetarDespesa(finAddVinculo, {
+        nome: finAddNome.trim(),
+        valor: val,
+        categoria: finalCategory
+      });
+      setFinAddNome("");
+      setFinAddValor("");
+      setFinAddCustomCategoria("");
+      setFinAddIsCustom(false);
+      setFinAddCategoria("Alimentação");
+      setFinAddVinculo("global");
+    } catch {
+      setFinAddErro("Falha ao salvar a despesa.");
+    } finally {
+      setFinAddSalvando(false);
     }
   };
 
@@ -1006,15 +1059,27 @@ export default function Home() {
             {/* Navegador de Abas */}
             <nav className="flex flex-col space-y-2.5">
               <button
-                onClick={() => setActiveTab("dashboard")}
+                onClick={() => setActiveTab("visao-geral")}
                 className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
-                  activeTab === "dashboard"
+                  activeTab === "visao-geral"
                     ? "active-sidebar-capsule font-black"
                     : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
                 }`}
               >
-                <span>📊 Visão Geral & Finanças</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "dashboard" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
+                <span>📊 Visão Geral</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "visao-geral" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
+              </button>
+
+              <button
+                onClick={() => setActiveTab("financas")}
+                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
+                  activeTab === "financas"
+                    ? "active-sidebar-capsule font-black"
+                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
+                }`}
+              >
+                <span>💸 Finanças</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "financas" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
               </button>
 
               <button
@@ -1141,10 +1206,10 @@ export default function Home() {
             </div>
           </header>
 
-          {/* =======================================
-              ABA 1: Visão Geral & Finanças (Dashboard)
+              {/* =======================================
+              ABA 1: Visão Geral
               ======================================= */}
-          {activeTab === "dashboard" && (
+          {activeTab === "visao-geral" && (
             <div className="space-y-5 flex-1 flex flex-col min-h-0">
               {/* KPIs de Orçamento Redesenhados de forma Ultra Premium */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
@@ -1219,7 +1284,14 @@ export default function Home() {
                 }}
                 diaAtivoWorkspace={diaAtivoWorkspace}
               />
+            </div>
+          )}
 
+          {/* =======================================
+              ABA 1.2: Finanças e Relatórios
+              ======================================= */}
+          {activeTab === "financas" && (
+            <div className="space-y-5 flex-1 flex flex-col min-h-0">
               {/* Grid Central Dashboard: Gráficos e Extrato */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 items-stretch">
                 
@@ -1265,7 +1337,7 @@ export default function Home() {
                     {/* Grid labels */}
                     <div className="grid grid-cols-3 gap-3 text-[9.5px]">
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-indigo-450 font-bold">
+                        <div className="flex items-center gap-1.5 text-indigo-455 font-bold">
                           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                           <span>Hospedagem: {percentualHospedagem}%</span>
                         </div>
@@ -1342,89 +1414,198 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Lado Direito: Extrato Consolidado (col-span-5) */}
-                <div className="lg:col-span-5 flex flex-col h-full glass-panel p-5 rounded-2xl relative space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
-                    <span>🧾 Extrato Consolidado</span>
-                    <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2 py-0.5 rounded text-[8px] leading-none uppercase">
-                      {statementItems.length} itens
-                    </span>
-                  </h3>
-
-                  {/* Scrollable list of statement items */}
-                  <div className="flex-1 overflow-y-auto max-h-[350px] pr-1.5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                    {statementItems.length === 0 ? (
-                      <div className="py-24 text-center text-slate-600 font-bold uppercase tracking-wider text-[9px] select-none">
-                        Nenhum lançamento registrado
-                      </div>
-                    ) : (
-                      statementItems.map((item) => {
-                        let colorBadge = "bg-slate-900 border-slate-800 text-slate-450";
-                        if (item.tipo === "hospedagem") {
-                          colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
-                        } else if (item.tipo === "passeio") {
-                          colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-450";
-                        } else if (item.tipo === "despesa") {
-                          colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
-                        }
-
-                        return (
-                          <div
-                            key={item.key}
-                            className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
+                {/* Lado Direito: Inclusão de Despesas & Extrato Consolidado (col-span-5) */}
+                <div className="lg:col-span-5 flex flex-col space-y-4 h-full">
+                  
+                  {/* Formulário Premium de Registro de Despesa */}
+                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-md border border-slate-800/60 select-none">
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                      <span>💸 Registrar Nova Despesa</span>
+                      <span className="text-[8px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded uppercase font-mono-tech font-bold leading-none">
+                        lançamento direto
+                      </span>
+                    </h3>
+                    <form onSubmit={handleSubmeterFinDespesa} className="space-y-3 text-[10px]">
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Vincular a:</label>
+                          <select
+                            value={finAddVinculo}
+                            onChange={(e) => setFinAddVinculo(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
                           >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {item.diaIdx >= 0 ? (
-                                  <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
-                                    D{String(item.diaIdx + 1).padStart(2, "0")}
-                                  </span>
-                                ) : (
-                                  <span className="font-bold text-amber-500 font-mono-tech text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
-                                    GERAL
-                                  </span>
-                                )}
-                                <span className="text-slate-500 text-[9px]">|</span>
-                                <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
-                                  {item.tipo}
-                                </span>
-                                <span className="text-[8px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
-                                  {item.detalhe}
-                                </span>
-                              </div>
+                            <option value="global">Geral (Sem conexão)</option>
+                            {datasViagem.map((dia, idx) => (
+                              <option key={dia} value={dia}>
+                                Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Categoria:</label>
+                          <select
+                            value={finAddCategoria}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setFinAddCategoria(val);
+                              if (val === "Outros") {
+                                setFinAddIsCustom(true);
+                              } else {
+                                setFinAddIsCustom(false);
+                              }
+                            }}
+                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
+                          >
+                            <option value="Alimentação">Alimentação 🍽️</option>
+                            <option value="Transporte">Transporte 🚗</option>
+                            <option value="Lazer">Lazer 🪁</option>
+                            <option value="Compras">Compras 🛍️</option>
+                            <option value="Outros">Outros 💰</option>
+                          </select>
+                        </div>
+                      </div>
 
-                              <div className="font-bold text-slate-200 truncate uppercase text-[10px] mt-1 tracking-wide">
-                                {item.nome}
-                              </div>
-                            </div>
+                      {finAddIsCustom && (
+                        <div className="space-y-1 animate-fade-in">
+                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Nome da Nova Categoria:</label>
+                          <input
+                            type="text"
+                            placeholder="Nome da categoria"
+                            value={finAddCustomCategoria}
+                            onChange={(e) => setFinAddCustomCategoria(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                            autoComplete="off"
+                          />
+                        </div>
+                      )}
 
-                            <div className="flex items-center gap-2 select-none">
-                              <span className="text-[#10b981] font-mono-tech font-bold text-[10px]">
-                                R$ {item.valor.toLocaleString("pt-BR")}
-                              </span>
-                              <button
-                                onClick={async () => {
-                                  if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
-                                    await item.onDelete();
-                                  }
-                                }}
-                                className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[11px] cursor-pointer"
-                                title="Excluir Lançamento"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Item/Descrição:</label>
+                          <input
+                            type="text"
+                            placeholder="ex: Passagem Aérea"
+                            value={finAddNome}
+                            onChange={(e) => setFinAddNome(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                            autoComplete="off"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Valor (R$):</label>
+                          <input
+                            type="number"
+                            placeholder="0,00"
+                            value={finAddValor}
+                            onChange={(e) => setFinAddValor(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] font-mono-tech"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 pt-1 select-none">
+                        {finAddErro ? (
+                          <span className="text-[8.5px] text-rose-450 font-mono-tech font-bold">⚠️ {finAddErro}</span>
+                        ) : (
+                          <span />
+                        )}
+                        <button
+                          type="submit"
+                          disabled={finAddSalvando}
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold text-[9px] rounded-lg uppercase cursor-pointer border-0 shadow-md transition-all active:scale-95 disabled:opacity-50"
+                        >
+                          {finAddSalvando ? "SALVANDO..." : "SALVAR DESPESA"}
+                        </button>
+                      </div>
+                    </form>
                   </div>
 
-                  {/* Dashboard Totalizer Footer */}
-                  <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono-tech select-none">
-                    <span className="text-slate-450 uppercase font-sans font-bold">Total Consolidado:</span>
-                    <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+                  {/* Extrato Consolidado */}
+                  <div className="flex flex-col flex-1 glass-panel p-5 rounded-2xl relative space-y-4">
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
+                      <span>🧾 Extrato Consolidado</span>
+                      <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2 py-0.5 rounded text-[8px] leading-none uppercase">
+                        {statementItems.length} itens
+                      </span>
+                    </h3>
+
+                    {/* Scrollable list of statement items */}
+                    <div className="flex-1 overflow-y-auto max-h-[280px] pr-1.5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                      {statementItems.length === 0 ? (
+                        <div className="py-24 text-center text-slate-650 font-bold uppercase tracking-wider text-[9px] select-none">
+                          Nenhum lançamento registrado
+                        </div>
+                      ) : (
+                        statementItems.map((item) => {
+                          let colorBadge = "bg-slate-900 border-slate-800 text-slate-450";
+                          if (item.tipo === "hospedagem") {
+                            colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
+                          } else if (item.tipo === "passeio") {
+                            colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-450";
+                          } else if (item.tipo === "despesa") {
+                            colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
+                          }
+
+                          return (
+                            <div
+                              key={item.key}
+                              className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {item.diaIdx >= 0 ? (
+                                    <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
+                                      D{String(item.diaIdx + 1).padStart(2, "0")}
+                                    </span>
+                                  ) : (
+                                    <span className="font-bold text-amber-500 font-mono-tech text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
+                                      GERAL
+                                    </span>
+                                  )}
+                                  <span className="text-slate-500 text-[9px]">|</span>
+                                  <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
+                                    {item.tipo}
+                                  </span>
+                                  <span className="text-[8px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
+                                    {item.detalhe}
+                                  </span>
+                                </div>
+
+                                <div className="font-bold text-slate-200 truncate uppercase text-[10px] mt-1 tracking-wide">
+                                  {item.nome}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 select-none">
+                                <span className="text-[#10b981] font-mono-tech font-bold text-[10px]">
+                                  R$ {item.valor.toLocaleString("pt-BR")}
+                                </span>
+                                <button
+                                  onClick={async () => {
+                                    if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
+                                      await item.onDelete();
+                                    }
+                                  }}
+                                  className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[11px] cursor-pointer"
+                                  title="Excluir Lançamento"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Dashboard Totalizer Footer */}
+                    <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono-tech select-none">
+                      <span className="text-slate-450 uppercase font-sans font-bold">Total Consolidado:</span>
+                      <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+                    </div>
                   </div>
+
                 </div>
 
               </div>
@@ -1551,13 +1732,22 @@ export default function Home() {
       {/* Mobile Bottom Navigation (inspired by Image 5) */}
       <div className="lg:hidden fixed bottom-5 left-5 right-5 z-[999] glass-panel rounded-2xl p-2.5 flex justify-around items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-slate-800/80">
         <button
-          onClick={() => setActiveTab("dashboard")}
+          onClick={() => setActiveTab("visao-geral")}
           className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-            activeTab === "dashboard" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+            activeTab === "visao-geral" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
           }`}
         >
           <span className="text-base select-none">📊</span>
-          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Painel</span>
+          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Visão</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("financas")}
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
+            activeTab === "financas" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+          }`}
+        >
+          <span className="text-base select-none">💸</span>
+          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Finanças</span>
         </button>
         <button
           onClick={() => setActiveTab("cronograma")}
