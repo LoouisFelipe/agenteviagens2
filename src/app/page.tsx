@@ -212,10 +212,11 @@ export default function Home() {
       const combinarRoteiroReativo = () => {
         const novoRoteiro: Record<string, RoteiroDiario> = {};
         
-        // Inicializa todas as datas do período de viagem
+        // Inicializa todas as datas do período de viagem e a chave global
         datasViagem.forEach((dia) => {
           novoRoteiro[dia] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
         });
+        novoRoteiro["global"] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
 
         // Preenche hotéis
         Object.keys(localHoteis).forEach((diaId) => {
@@ -806,6 +807,11 @@ export default function Home() {
     }
   });
 
+  // Somar despesas gerais/globais
+  const despesasGlobais = roteiroDiario["global"]?.despesas || [];
+  const totalDespesasGlobais = despesasGlobais.reduce((acc, exp) => acc + exp.valor, 0);
+  totalDespesas += totalDespesasGlobais;
+
   const custoTotal = totalHospedagem + totalPasseios + totalDespesas;
   const orcamento = viagemAtiva.orcamento_maximo || 0;
   const saldo = orcamento - custoTotal;
@@ -816,11 +822,9 @@ export default function Home() {
   const percentualPasseios = custoTotal > 0 ? Math.round((totalPasseios / custoTotal) * 100) : 0;
   const percentualDespesas = custoTotal > 0 ? Math.round((totalDespesas / custoTotal) * 100) : 0;
 
-
-
-  // Montagem do gráfico diário acumulativo
+  // Montagem do gráfico diário acumulativo (iniciando com o acumulado de despesas gerais)
   const dadosGrafico: { diaLabel: string; diaData: string; custoDia: number; acumulado: number }[] = [];
-  let somaAcumulada = 0;
+  let somaAcumulada = totalDespesasGlobais;
   datasViagem.forEach((dia, idx) => {
     const diario = roteiroDiario[dia];
     let custoDia = 0;
@@ -849,6 +853,20 @@ export default function Home() {
     detalhe?: string;
     onDelete: () => Promise<void>;
   }[] = [];
+
+  // Primeiro adiciona as despesas gerais/globais
+  despesasGlobais.forEach((exp) => {
+    statementItems.push({
+      key: `e-global-${exp.id}`,
+      diaIdx: -1, // Representação especial para despesa geral
+      diaData: "global",
+      tipo: "despesa",
+      nome: exp.nome,
+      valor: exp.valor,
+      detalhe: `Geral (${exp.categoria})`,
+      onDelete: () => handleRemoverDespesa("global", exp.id || "")
+    });
+  });
 
   datasViagem.forEach((dia, idx) => {
     const diario = roteiroDiario[dia];
@@ -1307,9 +1325,15 @@ export default function Home() {
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
-                                  D{String(item.diaIdx + 1).padStart(2, "0")}
-                                </span>
+                                {item.diaIdx >= 0 ? (
+                                  <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
+                                    D{String(item.diaIdx + 1).padStart(2, "0")}
+                                  </span>
+                                ) : (
+                                  <span className="font-bold text-amber-500 font-mono-tech text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
+                                    GERAL
+                                  </span>
+                                )}
                                 <span className="text-slate-500 text-[9px]">|</span>
                                 <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
                                   {item.tipo}

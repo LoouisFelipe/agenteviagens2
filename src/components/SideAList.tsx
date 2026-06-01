@@ -91,6 +91,7 @@ export default function SideAList({
   const [despesaCategoria, setDespesaCategoria] = useState("Alimentação");
   const [despesaDiasSelecionados, setDespesaDiasSelecionados] = useState<string[]>([]);
   const [despesaFormError, setDespesaFormError] = useState("");
+  const [isGlobalDespesa, setIsGlobalDespesa] = useState(false);
 
   const toggleDespesaDiaSelecionado = (dia: string) => {
     setDespesaDiasSelecionados((prev) =>
@@ -409,12 +410,38 @@ export default function SideAList({
               <span>💰 Registro de Nova Despesa</span>
             </div>
 
+            {/* Seletor Premium de Tipo de Despesa */}
+            <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1 select-none">
+              <button
+                type="button"
+                onClick={() => setIsGlobalDespesa(false)}
+                className={`flex-1 py-1.5 rounded-md font-bold text-[9.5px] uppercase transition-all duration-200 cursor-pointer ${
+                  !isGlobalDespesa
+                    ? "bg-amber-500/10 text-amber-550 border border-amber-500/20"
+                    : "text-slate-500 hover:text-slate-350 bg-transparent border-0"
+                }`}
+              >
+                📅 Vincular a Dias
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsGlobalDespesa(true)}
+                className={`flex-1 py-1.5 rounded-md font-bold text-[9.5px] uppercase transition-all duration-200 cursor-pointer ${
+                  isGlobalDespesa
+                    ? "bg-amber-500/10 text-amber-550 border border-amber-500/20"
+                    : "text-slate-500 hover:text-slate-350 bg-transparent border-0"
+                }`}
+              >
+                ✈️ Despesa Geral (Orçamento)
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div className="flex flex-col">
                 <label className="text-[10px] font-semibold text-slate-400 mb-1">Nome da Despesa</label>
                 <input
                   type="text"
-                  placeholder="Ex: Almoço no Chile"
+                  placeholder="Ex: Passagens Aéreas"
                   value={despesaNome}
                   onChange={(e) => setDespesaNome(e.target.value)}
                   className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-medium"
@@ -424,7 +451,7 @@ export default function SideAList({
                 <label className="text-[10px] font-semibold text-slate-400 mb-1">Valor Unitário (R$)</label>
                 <input
                   type="number"
-                  placeholder="Ex: 50"
+                  placeholder="Ex: 1500"
                   value={despesaPreco}
                   onChange={(e) => setDespesaPreco(e.target.value)}
                   className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
@@ -437,7 +464,7 @@ export default function SideAList({
               <select
                 value={despesaCategoria}
                 onChange={(e) => setDespesaCategoria(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg cursor-pointer font-bold"
+                className="w-full bg-slate-900 border border-slate-800 text-slate-355 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg cursor-pointer font-bold"
               >
                 <option value="Alimentação">Alimentação 🍽️</option>
                 <option value="Transporte">Transporte 🚗</option>
@@ -447,48 +474,54 @@ export default function SideAList({
               </select>
             </div>
 
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[10px] font-semibold text-slate-400">Dias de Lançamento ({despesaDiasSelecionados.length} selecionados)</label>
-                <div className="flex gap-2.5">
-                  <button
-                    type="button"
-                    onClick={selecionarTodosDespesaDias}
-                    className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer bg-transparent border-0 p-0"
-                  >
-                    Selecionar Todos
-                  </button>
-                  <button
-                    type="button"
-                    onClick={limparDespesaDias}
-                    className="text-[9px] font-bold text-slate-500 hover:text-slate-400 cursor-pointer bg-transparent border-0 p-0"
-                  >
-                    Limpar
-                  </button>
+            {!isGlobalDespesa ? (
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[10px] font-semibold text-slate-400">Dias de Lançamento ({despesaDiasSelecionados.length} selecionados)</label>
+                  <div className="flex gap-2.5">
+                    <button
+                      type="button"
+                      onClick={selecionarTodosDespesaDias}
+                      className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Selecionar Todos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={limparDespesaDias}
+                      className="text-[9px] font-bold text-slate-500 hover:text-slate-400 cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Limpar
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/60 rounded-xl border border-slate-800/60 max-h-36 overflow-y-auto">
+                  {datasViagem.map((dia, dIdx) => {
+                    const isSelected = despesaDiasSelecionados.includes(dia);
+                    const dateObj = new Date(dia + "T12:00:00");
+                    return (
+                      <button
+                        key={dia}
+                        type="button"
+                        onClick={() => toggleDespesaDiaSelecionado(dia)}
+                        className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-semibold transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
+                          isSelected
+                            ? "bg-amber-600 border-amber-400 text-white shadow-md shadow-amber-500/10 scale-[1.02]"
+                            : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-white animate-pulse" : "bg-slate-600"}`} />
+                        <span>Dia {String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/60 rounded-xl border border-slate-800/60 max-h-36 overflow-y-auto">
-                {datasViagem.map((dia, dIdx) => {
-                  const isSelected = despesaDiasSelecionados.includes(dia);
-                  const dateObj = new Date(dia + "T12:00:00");
-                  return (
-                    <button
-                      key={dia}
-                      type="button"
-                      onClick={() => toggleDespesaDiaSelecionado(dia)}
-                      className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-semibold transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
-                        isSelected
-                          ? "bg-amber-600 border-amber-400 text-white shadow-md shadow-amber-500/10 scale-[1.02]"
-                          : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
-                      }`}
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-white animate-pulse" : "bg-slate-600"}`} />
-                      <span>Dia {String(dIdx + 1).padStart(2, "0")} - {dateObj.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</span>
-                    </button>
-                  );
-                })}
+            ) : (
+              <div className="bg-amber-500/5 border border-amber-500/20 p-3 rounded-lg text-slate-400 font-semibold text-[9.5px] tracking-wide leading-relaxed">
+                💡 <strong>Despesa Geral:</strong> Este custo (ex: passagens, chip de viagem, etc.) será adicionado como um valor geral ao orçamento final, sem vínculo com dias específicos no cronograma.
               </div>
-            </div>
+            )}
 
             {despesaFormError && (
               <div className="text-[9.5px] text-rose-450 font-mono-tech leading-none">
@@ -499,8 +532,8 @@ export default function SideAList({
             <button
               onClick={async () => {
                 setDespesaFormError("");
-                if (!despesaNome.trim() || !despesaPreco.trim() || despesaDiasSelecionados.length === 0) {
-                  setDespesaFormError("Preencha todos os campos e selecione pelo menos um dia.");
+                if (!despesaNome.trim() || !despesaPreco.trim() || (!isGlobalDespesa && despesaDiasSelecionados.length === 0)) {
+                  setDespesaFormError(isGlobalDespesa ? "Preencha todos os campos." : "Preencha todos os campos e selecione pelo menos um dia.");
                   return;
                 }
                 const precoVal = Number(despesaPreco);
@@ -510,24 +543,32 @@ export default function SideAList({
                 }
 
                 try {
-                  emitLog(`SYSTEM: Sincronizando despesa [${despesaNome.trim()}] nos dias [${despesaDiasSelecionados.join(", ")}]...`);
-                  
-                  await Promise.all(
-                    despesaDiasSelecionados.map((dia) =>
-                      onInjetarDespesa(dia, {
-                        nome: despesaNome.trim(),
-                        valor: precoVal,
-                        categoria: despesaCategoria
-                      })
-                    )
-                  );
+                  if (isGlobalDespesa) {
+                    emitLog(`SYSTEM: Sincronizando despesa geral [${despesaNome.trim()}]...`);
+                    await onInjetarDespesa("global", {
+                      nome: despesaNome.trim(),
+                      valor: precoVal,
+                      categoria: despesaCategoria
+                    });
+                  } else {
+                    emitLog(`SYSTEM: Sincronizando despesa [${despesaNome.trim()}] nos dias [${despesaDiasSelecionados.join(", ")}]...`);
+                    await Promise.all(
+                      despesaDiasSelecionados.map((dia) =>
+                        onInjetarDespesa(dia, {
+                          nome: despesaNome.trim(),
+                          valor: precoVal,
+                          categoria: despesaCategoria
+                        })
+                      )
+                    );
+                  }
 
                   // Limpar
                   setDespesaNome("");
                   setDespesaPreco("");
                   setDespesaCategoria("Alimentação");
                   setDespesaDiasSelecionados([]);
-                  emitLog(`SYSTEM: Despesa vinculada com sucesso para ${despesaDiasSelecionados.length} dias.`);
+                  emitLog("SYSTEM: Despesa vinculada com sucesso.");
                 } catch (e) {
                   console.error(e);
                   setDespesaFormError("Erro ao registrar gasto.");

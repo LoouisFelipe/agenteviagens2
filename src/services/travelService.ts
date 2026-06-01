@@ -931,7 +931,7 @@ export async function atualizarCronogramaHorario(
   if (isFirebaseConfigured && db) {
     try {
       const docRef = doc(db, "viagens", viagemId, "roteiros", dataDia);
-      await withTimeout(setDoc(docRef, { cronograma_horario: cronograma }, { merge: true }), 15000, "Erro ao salvar cronograma.");
+      await withTimeout(setDoc(docRef, { cronograma_horario: cronograma }), 15000, "Erro ao salvar cronograma.");
       emitLog(`FIRESTORE: Cronograma horário salvo com sucesso.`);
     } catch (error) {
       console.error(error);
