@@ -13,6 +13,8 @@ function InlineAddExpenseForm({
   const [nome, setNome] = React.useState("");
   const [valor, setValor] = React.useState("");
   const [categoria, setCategoria] = React.useState("Alimentação");
+  const [customCategoria, setCustomCategoria] = React.useState("");
+  const [isCustomCategoria, setIsCustomCategoria] = React.useState(false);
   const [estaAberto, setEstaAberto] = React.useState(false);
   const [erro, setErro] = React.useState("");
 
@@ -28,10 +30,23 @@ function InlineAddExpenseForm({
       setErro("Valor inválido.");
       return;
     }
+    
+    const finalCategoria = isCustomCategoria && customCategoria.trim()
+      ? customCategoria.trim()
+      : categoria;
+
+    if (isCustomCategoria && !customCategoria.trim()) {
+      setErro("Insira o nome da categoria.");
+      return;
+    }
+
     try {
-      await onAddExpense(nome.trim(), val, categoria);
+      await onAddExpense(nome.trim(), val, finalCategoria);
       setNome("");
       setValor("");
+      setCustomCategoria("");
+      setIsCustomCategoria(false);
+      setCategoria("Alimentação");
       setEstaAberto(false);
     } catch {
       setErro("Falha ao salvar.");
@@ -58,7 +73,7 @@ function InlineAddExpenseForm({
           placeholder="Item (ex: Almoço)"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#f59e0b] uppercase font-semibold w-full"
+          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#007aff] uppercase font-semibold w-full"
           autoComplete="off"
         />
         <input
@@ -66,13 +81,33 @@ function InlineAddExpenseForm({
           placeholder="Valor (R$)"
           value={valor}
           onChange={(e) => setValor(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#f59e0b] font-mono-tech w-full"
+          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#007aff] font-mono-tech w-full"
         />
       </div>
+      
+      {isCustomCategoria && (
+        <input
+          type="text"
+          placeholder="Nome da Nova Categoria"
+          value={customCategoria}
+          onChange={(e) => setCustomCategoria(e.target.value)}
+          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#007aff] uppercase font-semibold w-full mt-0.5"
+          autoComplete="off"
+        />
+      )}
+
       <div className="flex items-center gap-2">
         <select
           value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setCategoria(val);
+            if (val === "Outros") {
+              setIsCustomCategoria(true);
+            } else {
+              setIsCustomCategoria(false);
+            }
+          }}
           className="flex-1 bg-slate-900 border border-slate-800 text-slate-300 px-2 py-1 text-[9px] rounded focus:outline-none cursor-pointer uppercase font-bold"
         >
           <option value="Alimentação">Alimentação 🍽️</option>
@@ -91,6 +126,9 @@ function InlineAddExpenseForm({
           type="button"
           onClick={() => {
             setEstaAberto(false);
+            setCustomCategoria("");
+            setIsCustomCategoria(false);
+            setCategoria("Alimentação");
             setErro("");
           }}
           className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-[9px] rounded-lg uppercase cursor-pointer border-0 transition-colors"
