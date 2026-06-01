@@ -904,6 +904,7 @@ export default function Home() {
     nome: string;
     valor: number;
     detalhe?: string;
+    categoria: string;
     onDelete: () => Promise<void>;
   }[] = [];
 
@@ -917,6 +918,7 @@ export default function Home() {
       nome: exp.nome,
       valor: exp.valor,
       detalhe: `Geral (${exp.categoria})`,
+      categoria: exp.categoria || "Outros",
       onDelete: () => handleRemoverDespesa("global", exp.id || "")
     });
   });
@@ -934,6 +936,7 @@ export default function Home() {
           nome: hotel.nome,
           valor: hotel.preco_diario,
           detalhe: "Diária de Hotel",
+          categoria: "Hospedagem",
           onDelete: () => handleRemoverHospedagem(dia)
         });
       }
@@ -947,6 +950,7 @@ export default function Home() {
             nome: atv.nome,
             valor: atv.valor,
             detalhe: "Atividade/Passeio",
+            categoria: "Lazer/Passeios",
             onDelete: () => handleRemoverAtividade(dia, atvIdx)
           });
         });
@@ -961,11 +965,22 @@ export default function Home() {
             nome: exp.nome,
             valor: exp.valor,
             detalhe: `Despesa (${exp.categoria})`,
+            categoria: exp.categoria || "Outros",
             onDelete: () => handleRemoverDespesa(dia, exp.id || "")
           });
         });
       }
     }
+  });
+
+  // Agrupar itens por categoria para o Extrato
+  const groupedItems: Record<string, typeof statementItems> = {};
+  statementItems.forEach((item) => {
+    const cat = item.categoria || "Outros";
+    if (!groupedItems[cat]) {
+      groupedItems[cat] = [];
+    }
+    groupedItems[cat].push(item);
   });
 
   const financialGlowClass = ultrapassou
@@ -1530,68 +1545,92 @@ export default function Home() {
                       </span>
                     </h3>
 
-                    {/* Scrollable list of statement items */}
-                    <div className="flex-1 overflow-y-auto max-h-[280px] pr-1.5 space-y-2.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                    {/* Scrollable list of statement items grouped by category */}
+                    <div className="flex-1 overflow-y-auto max-h-[300px] pr-1.5 space-y-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                       {statementItems.length === 0 ? (
                         <div className="py-24 text-center text-slate-650 font-bold uppercase tracking-wider text-[9px] select-none">
                           Nenhum lançamento registrado
                         </div>
                       ) : (
-                        statementItems.map((item) => {
-                          let colorBadge = "bg-slate-900 border-slate-800 text-slate-450";
-                          if (item.tipo === "hospedagem") {
-                            colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
-                          } else if (item.tipo === "passeio") {
-                            colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-450";
-                          } else if (item.tipo === "despesa") {
-                            colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
-                          }
+                        Object.keys(groupedItems).map((categoria) => {
+                          const items = groupedItems[categoria];
+                          const totalCategoria = items.reduce((acc, it) => acc + it.valor, 0);
 
                           return (
-                            <div
-                              key={item.key}
-                              className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  {item.diaIdx >= 0 ? (
-                                    <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
-                                      D{String(item.diaIdx + 1).padStart(2, "0")}
-                                    </span>
-                                  ) : (
-                                    <span className="font-bold text-amber-500 font-mono-tech text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
-                                      GERAL
-                                    </span>
-                                  )}
-                                  <span className="text-slate-500 text-[9px]">|</span>
-                                  <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
-                                    {item.tipo}
-                                  </span>
-                                  <span className="text-[8px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
-                                    {item.detalhe}
-                                  </span>
-                                </div>
-
-                                <div className="font-bold text-slate-200 truncate uppercase text-[10px] mt-1 tracking-wide">
-                                  {item.nome}
-                                </div>
+                            <div key={categoria} className="space-y-2">
+                              {/* Category Header */}
+                              <div className="flex items-center justify-between border-b border-slate-850 pb-1.5 px-1 select-none">
+                                <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
+                                  📁 {categoria}
+                                </span>
+                                <span className="font-mono-tech text-slate-500 text-[8px] font-bold uppercase">
+                                  Subtotal: <span className="text-slate-400">R$ {totalCategoria.toLocaleString("pt-BR")}</span>
+                                </span>
                               </div>
 
-                              <div className="flex items-center gap-2 select-none">
-                                <span className="text-[#10b981] font-mono-tech font-bold text-[10px]">
-                                  R$ {item.valor.toLocaleString("pt-BR")}
-                                </span>
-                                <button
-                                  onClick={async () => {
-                                    if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
-                                      await item.onDelete();
-                                    }
-                                  }}
-                                  className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[11px] cursor-pointer"
-                                  title="Excluir Lançamento"
-                                >
-                                  ✕
-                                </button>
+                              {/* Items under this category */}
+                              <div className="space-y-2">
+                                {items.map((item) => {
+                                  let colorBadge = "bg-slate-900 border-slate-800 text-slate-450";
+                                  if (item.tipo === "hospedagem") {
+                                    colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
+                                  } else if (item.tipo === "passeio") {
+                                    colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-450";
+                                  } else if (item.tipo === "despesa") {
+                                    colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
+                                  }
+
+                                  return (
+                                    <div
+                                      key={item.key}
+                                      className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
+                                    >
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          {item.diaIdx >= 0 ? (
+                                            <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
+                                              D{String(item.diaIdx + 1).padStart(2, "0")}
+                                            </span>
+                                          ) : (
+                                            <span className="font-bold text-amber-500 font-mono-tech text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
+                                              GERAL
+                                            </span>
+                                          )}
+                                          <span className="text-slate-500 text-[9px]">|</span>
+                                          <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
+                                            {item.tipo}
+                                          </span>
+                                          {item.detalhe && (
+                                            <span className="text-[8px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
+                                              {item.detalhe}
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="font-bold text-slate-200 truncate uppercase text-[10px] mt-1 tracking-wide">
+                                          {item.nome}
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 select-none">
+                                        <span className="text-[#10b981] font-mono-tech font-bold text-[10px]">
+                                          R$ {item.valor.toLocaleString("pt-BR")}
+                                        </span>
+                                        <button
+                                          onClick={async () => {
+                                            if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
+                                              await item.onDelete();
+                                            }
+                                          }}
+                                          className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[11px] cursor-pointer"
+                                          title="Excluir Lançamento"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           );
