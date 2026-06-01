@@ -245,17 +245,17 @@ body::after {
 }
 .glow-card-3d:hover {
   transform: translateY(-4px);
-  box-shadow: 0 15px 35px -5px rgba(99, 102, 241, 0.12), 
-              0 8px 15px -6px rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: 0 15px 35px -5px rgba(0, 122, 255, 0.15), 
+              0 8px 15px -6px rgba(0, 122, 255, 0.15);
+  border-color: rgba(0, 122, 255, 0.4) !important;
 }
 
-/* Estado de Dia Focado (Neon Indigo Glow) */
+/* Estado de Dia Focado (Neon Electric Blue Glow) */
 .active-focused-day-card {
-  border-color: rgba(99, 102, 241, 0.7) !important;
-  background: rgba(99, 102, 241, 0.05) !important;
-  box-shadow: 0 0 15px rgba(99, 102, 241, 0.15), 
-              inset 0 0 8px rgba(99, 102, 241, 0.08) !important;
+  border-color: rgba(0, 122, 255, 0.7) !important;
+  background: rgba(0, 122, 255, 0.05) !important;
+  box-shadow: 0 0 15px rgba(0, 122, 255, 0.2), 
+              inset 0 0 8px rgba(0, 122, 255, 0.08) !important;
 }
 
 /* Transição de Workspace */
@@ -285,3 +285,56 @@ body::after {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+
+/* Redesign Premium Highlights (SaaS Active States) */
+.active-sidebar-capsule {
+  background: #007aff !important;
+  border-color: #007aff !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 18px rgba(0, 122, 255, 0.45);
+  transform: scale(1.01);
+}
+
+.active-bottom-tab-capsule {
+  border: 1px solid #007aff !important;
+  background: rgba(0, 122, 255, 0.15) !important;
+  box-shadow: 0 0 12px rgba(0, 122, 255, 0.3);
+}
+
+.active-dropdown-item {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* Animações e Pulso de Corações/Indicadores */
+@keyframes pulseHeartbeat {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.6));
+  }
+}
+
+.animate-pulse-heartbeat {
+  animation: pulseHeartbeat 1.6s infinite ease-in-out;
+}
+
+@keyframes pulseLightning {
+  0%, 100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.85));
+  }
+}
+
+.animate-pulse-lightning {
+  animation: pulseLightning 1.2s infinite ease-in-out;
+}
+

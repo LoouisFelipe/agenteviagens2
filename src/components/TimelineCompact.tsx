@@ -72,7 +72,7 @@ export default function TimelineCompact({
       <div 
         onClick={() => setIsExpanded(!isExpanded)}
         className={`w-full glass-panel shadow-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer rounded-2xl border transition-all duration-300 relative overflow-hidden select-none hover:scale-[1.005] active:scale-[0.995] ${
-          isExpanded ? "border-indigo-500/50 shadow-indigo-500/5" : "border-slate-800 hover:border-slate-750"
+          isExpanded ? "border-blue-500/50 shadow-blue-500/5" : "border-slate-800 hover:border-slate-750"
         }`}
       >
         {/* Linha decorativa no topo */}
@@ -88,7 +88,7 @@ export default function TimelineCompact({
                 {noAtivo ? `DIA ${String(noAtivo.diaNumero).padStart(2, "0")}` : "NENHUM DIA SELECIONADO"}
               </span>
               <span className="text-slate-750 font-normal">|</span>
-              <span className="text-indigo-400 font-bold font-mono-tech text-[10.5px]">
+              <span className="text-blue-400 font-bold font-mono-tech text-[10.5px]">
                 {noAtivo ? noAtivo.labelData : ""}
               </span>
               {noAtivo && (
@@ -123,7 +123,7 @@ export default function TimelineCompact({
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 py-1.5 px-3.5 bg-indigo-600/10 border border-indigo-500/35 text-indigo-400 hover:text-indigo-300 font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer select-none">
+          <div className="flex items-center gap-1.5 py-1.5 px-3.5 bg-blue-600/10 border border-blue-500/35 text-blue-400 hover:text-blue-300 font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer select-none">
             <span>{isExpanded ? "Recolher Grade" : "Selecionar outro dia"}</span>
             <span className="text-[10px] font-bold">{isExpanded ? "▲" : "▼"}</span>
           </div>
@@ -174,7 +174,7 @@ export default function TimelineCompact({
 
                   {/* Linha 1: Dia e Data */}
                   <div className="flex items-center justify-between text-[10px]">
-                    <span className={`font-black ${isFocado ? "text-indigo-400" : "text-slate-400"}`}>
+                    <span className={`font-black ${isFocado ? "text-blue-400" : "text-slate-400"}`}>
                       DIA {String(no.diaNumero).padStart(2, "0")}
                     </span>
                     <span className="text-slate-500 font-bold font-mono-tech text-[9px]">{no.labelData}</span>
@@ -215,7 +215,7 @@ export default function TimelineCompact({
                     <div className="w-full h-[3px] bg-slate-950 rounded-full overflow-hidden flex select-none mt-1.5 relative border border-slate-900/50">
                       <div
                         className={`h-full transition-all duration-300 rounded-full ${
-                          no.estourouOrcamento ? "bg-rose-500" : "bg-indigo-500"
+                          no.estourouOrcamento ? "bg-rose-500" : "bg-blue-500"
                         }`}
                         style={{ width: `${Math.min(100, Math.round((no.runningTotal / orcamentoMaximo) * 100))}%` }}
                       />

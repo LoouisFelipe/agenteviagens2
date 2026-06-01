@@ -933,30 +933,30 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch flex-1">
         
         {/* COLUNA 1: SIDEBAR LATERAL DE CONTROLE */}
-        <aside className="lg:col-span-3 flex flex-col justify-between glass-panel p-5 rounded-2xl relative overflow-hidden h-fit lg:h-[calc(100vh-3rem)] sticky lg:top-6 select-none">
+        <aside className="hidden lg:flex lg:col-span-3 flex-col justify-between glass-panel p-5 rounded-2xl relative overflow-hidden h-fit lg:h-[calc(100vh-3rem)] sticky lg:top-6 select-none">
           <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
           
           <div className="space-y-5">
             {/* Botão de Retorno Central */}
             <button
               onClick={() => setViagemAtiva(null)}
-              className="w-full h-10 px-4 flex items-center justify-center font-bold tracking-widest uppercase transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-450 hover:text-slate-200 cursor-pointer rounded-xl text-[9px] hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full h-10 px-4 flex items-center justify-center font-bold tracking-widest uppercase transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 cursor-pointer rounded-xl text-[9px] hover:scale-[1.01] active:scale-[0.99] shadow-inner"
             >
               Voltar para a Central
             </button>
 
             {/* Info Rota Compact Box */}
-            <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-xl text-center space-y-2">
+            <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-xl text-center space-y-2 shadow-inner">
               <span className="text-[8px] font-bold font-mono-tech text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded uppercase">
                 Workspace Ativo
               </span>
-              <h2 className="text-xs font-black text-slate-100 uppercase tracking-wide truncate pt-1">
+              <h2 className="text-xs font-black text-slate-100 uppercase tracking-wide truncate pt-1 font-heading">
                 {viagemAtiva.destino.replace(/ \(.*\)/, "")}
               </h2>
               <p className="text-[9.5px] font-mono-tech text-slate-400 font-semibold">
                 {viagemAtiva.data_inicio} até {viagemAtiva.data_fim}
               </p>
-              <div className="text-[8.5px] font-mono-tech text-slate-600 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-900 truncate">
+              <div className="text-[8.5px] font-mono-tech text-slate-650 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-900 truncate shadow-inner">
                 REG: {viagemAtiva.id}
               </div>
             </div>
@@ -1009,48 +1009,48 @@ export default function Home() {
                 onClick={() => setActiveTab("dashboard")}
                 className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "dashboard"
-                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    ? "active-sidebar-capsule font-black"
                     : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
                 }`}
               >
                 <span>📊 Visão Geral & Finanças</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "dashboard" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "dashboard" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
               </button>
 
               <button
                 onClick={() => setActiveTab("cronograma")}
                 className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "cronograma"
-                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    ? "active-sidebar-capsule font-black"
                     : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
                 }`}
               >
                 <span>📅 Cronograma Diário</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "cronograma" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "cronograma" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
               </button>
 
               <button
                 onClick={() => setActiveTab("banco")}
                 className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "banco"
-                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    ? "active-sidebar-capsule font-black"
                     : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
                 }`}
               >
                 <span>🛍️ Banco de Alocações</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "banco" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "banco" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
               </button>
 
               <button
                 onClick={() => setActiveTab("logs")}
                 className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "logs"
-                    ? "bg-indigo-600/15 border-indigo-500/40 text-indigo-400 shadow-md shadow-indigo-500/5 font-black"
+                    ? "active-sidebar-capsule font-black"
                     : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
                 }`}
               >
                 <span>📋 Logs do Terminal</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "logs" ? "bg-indigo-500 led-blue animate-pulse" : "bg-slate-800"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "logs" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
               </button>
             </nav>
           </div>
@@ -1080,80 +1080,130 @@ export default function Home() {
             <div className="flex gap-2">
               <button
                 onClick={() => setIsFormEdicaoAberto(true)}
-                className="flex-1 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-750 text-slate-400 hover:text-slate-200 transition-colors uppercase font-bold text-[9px] rounded-lg cursor-pointer shadow-sm active:scale-95"
+                className="flex-1 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-750 text-slate-450 hover:text-slate-200 transition-colors uppercase font-bold text-[9px] rounded-lg cursor-pointer shadow-sm active:scale-95"
               >
                 Editar
               </button>
               <button
                 onClick={(e) => handleDeletarViagem(e, viagemAtiva.id, viagemAtiva.destino)}
-                className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-500 transition-colors rounded-lg cursor-pointer"
+                className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-500 transition-colors rounded-lg cursor-pointer flex items-center justify-center"
                 title="Excluir Viagem definitivamente"
               >
                 🗑️
               </button>
             </div>
 
-            {/* Time/Status indicator */}
-            <div className="flex items-center justify-between font-mono-tech text-[8px] text-slate-600 px-1 pt-1">
-              <span className="flex items-center gap-1">
-                <span className="w-1 h-1 bg-[#10b981] rounded-full led-green animate-pulse" />
-                ONLINE
-              </span>
-              <span>SYS: 2026-05-30</span>
+            {/* Time/Status indicator - Redesenhado como na Imagem 2 */}
+            <div className="bg-slate-950/50 border border-slate-850 rounded-xl p-2.5 flex items-center justify-between font-mono-tech text-[8px] select-none shadow-inner">
+              <div className="flex items-center gap-1.5 font-bold">
+                <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
+                <span className="text-[#10b981]">ONLINE</span>
+              </div>
+              <span className="text-slate-800">|</span>
+              <span className="text-slate-400 font-bold uppercase tracking-wider">STABLE</span>
+              <span className="text-slate-800">|</span>
+              <span className="text-slate-500">SYS: 2026-05-30</span>
             </div>
           </div>
         </aside>
 
         {/* COLUNA 2: WORKSPACE DE CONTEÚDO ATIVO */}
-        <main className="lg:col-span-9 flex flex-col space-y-4 min-h-0 workspace-fade-in">
+        <main className="lg:col-span-9 flex flex-col space-y-4 min-h-0 workspace-fade-in pb-24 lg:pb-0">
           
+          {/* Header de Acompanhamento no Workspace - Premium Status Node */}
+          <header className="w-full glass-panel p-4.5 flex items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none shadow-xl border border-slate-800/80">
+            <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-blue-500 to-indigo-600" />
+            <div className="flex items-center space-x-3.5">
+              <button
+                onClick={() => setViagemAtiva(null)}
+                className="lg:hidden w-8 h-8 flex items-center justify-center bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-slate-100 rounded-xl text-xs transition-colors cursor-pointer shadow-inner"
+                title="Voltar para a Central"
+              >
+                ◀
+              </button>
+              <div>
+                <h1 className="text-xs font-black tracking-wider text-slate-100 uppercase font-heading leading-tight pt-0.5">
+                  {viagemAtiva.destino.replace(/ \(.*\)/, "")}
+                </h1>
+                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider font-mono-tech mt-0.5">
+                  ROTA DE PLANEJAMENTO ATIVA
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 font-mono-tech text-[8px] select-none">
+              <div className="flex items-center space-x-1.5 bg-slate-950/60 px-3 py-1.5 border border-slate-850 rounded-xl shadow-inner font-bold">
+                <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
+                <span className="text-[#10b981]">ONLINE</span>
+                <span className="text-slate-800">|</span>
+                <span className="text-slate-400">STABLE</span>
+              </div>
+            </div>
+          </header>
+
           {/* =======================================
               ABA 1: Visão Geral & Finanças (Dashboard)
               ======================================= */}
           {activeTab === "dashboard" && (
             <div className="space-y-5 flex-1 flex flex-col min-h-0">
-              {/* KPIs de Orçamento */}
+              {/* KPIs de Orçamento Redesenhados de forma Ultra Premium */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
                 {/* KPI Orçamento Máximo */}
-                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300">
-                  <div className="absolute top-0 left-0 w-[4px] h-full bg-slate-700" />
-                  <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Teto Orçamentário</div>
-                  <div className="text-sm font-black text-slate-100 mt-1 font-mono-tech">
-                    R$ {orcamento.toLocaleString("pt-BR")}
+                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                  <div>
+                    <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Teto Orçamentário</div>
+                    <div className="text-sm font-black text-slate-100 mt-1 font-heading">
+                      R$ {orcamento.toLocaleString("pt-BR")}
+                    </div>
+                    <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
+                      definido pelo planejamento
+                    </div>
                   </div>
-                  <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
-                    definido pelo planejamento
+                  <div className="text-2xl text-slate-600 bg-slate-950/45 p-2.5 rounded-xl border border-slate-850 shadow-inner select-none">
+                    🔑
                   </div>
                 </div>
 
                 {/* KPI Consumido */}
-                <div className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 border ${financialGlowClass}`}>
-                  <div className={`absolute top-0 left-0 w-[4px] h-full ${ultrapassou ? "bg-rose-500" : percentualConsumido > 80 ? "bg-amber-500" : "bg-emerald-500"}`} />
-                  <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Consumo Consolidado</div>
-                  <div className={`text-sm font-black mt-1 font-mono-tech ${ultrapassou ? "text-rose-400" : "text-[#10b981]"}`}>
-                    R$ {custoTotal.toLocaleString("pt-BR")}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1 select-none leading-none">
-                    <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#10b981]"}`}>
-                      {percentualConsumido}% CONSUMIDO
-                    </span>
-                    {ultrapassou && (
-                      <span className="text-[7.5px] bg-rose-500/20 text-rose-500 font-bold px-1 py-0.2 rounded uppercase led-red font-sans">
-                        OVER_BUDGET
+                <div className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between`}>
+                  <div>
+                    <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Consumo Consolidado</div>
+                    <div className={`text-sm font-black mt-1 font-heading ${ultrapassou ? "text-rose-400" : "text-[#10b981]"}`}>
+                      R$ {custoTotal.toLocaleString("pt-BR")}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1.5 select-none leading-none">
+                      <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#10b981]"}`}>
+                        {percentualConsumido}% CONSUMIDO
                       </span>
-                    )}
+                      {ultrapassou && (
+                        <span className="text-[7px] bg-rose-500/20 text-rose-500 font-bold px-1.5 py-0.5 rounded uppercase led-red font-sans">
+                          EXCEDIDO
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-2xl animate-pulse-lightning text-amber-500 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 shadow-inner select-none">
+                    ⚡
                   </div>
                 </div>
 
                 {/* KPI Saldo Restante */}
-                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300">
-                  <div className={`absolute top-0 left-0 w-[4px] h-full ${saldo < 0 ? "bg-rose-500" : "bg-emerald-500"}`} />
-                  <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Saldo Financeiro</div>
-                  <div className={`text-sm font-black mt-1 font-mono-tech ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
-                    R$ {saldo.toLocaleString("pt-BR")}
+                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                  <div>
+                    <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Saldo Financeiro</div>
+                    <div className={`text-sm font-black mt-1 font-heading ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
+                      R$ {saldo.toLocaleString("pt-BR")}
+                    </div>
+                    <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
+                      {saldo < 0 ? "saldo devedor da rota" : "saldo livre disponível"}
+                    </div>
                   </div>
-                  <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
-                    {saldo < 0 ? "saldo devedor da rota" : "saldo livre disponível"}
+                  <div className={`text-2xl animate-pulse-heartbeat p-2.5 rounded-xl border shadow-inner select-none ${
+                    saldo < 0 
+                      ? "text-rose-500 bg-rose-500/10 border-rose-500/20" 
+                      : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
+                  }`}>
+                    💚
                   </div>
                 </div>
               </div>
@@ -1496,6 +1546,46 @@ export default function Home() {
           )}
 
         </main>
+      </div>
+
+      {/* Mobile Bottom Navigation (inspired by Image 5) */}
+      <div className="lg:hidden fixed bottom-5 left-5 right-5 z-[999] glass-panel rounded-2xl p-2.5 flex justify-around items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-slate-800/80">
+        <button
+          onClick={() => setActiveTab("dashboard")}
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
+            activeTab === "dashboard" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+          }`}
+        >
+          <span className="text-base select-none">📊</span>
+          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Painel</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("cronograma")}
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
+            activeTab === "cronograma" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+          }`}
+        >
+          <span className="text-base select-none">📅</span>
+          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Agenda</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("banco")}
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
+            activeTab === "banco" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+          }`}
+        >
+          <span className="text-base select-none">🛍️</span>
+          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Alocar</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("logs")}
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
+            activeTab === "logs" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+          }`}
+        >
+          <span className="text-base select-none">📋</span>
+          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Logs</span>
+        </button>
       </div>
 
       {/* Modal de Edição (Overlay) */}

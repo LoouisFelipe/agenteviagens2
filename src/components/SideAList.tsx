@@ -195,7 +195,7 @@ export default function SideAList({
           }}
           className={`flex-1 py-2.5 font-bold tracking-wide text-center transition-all duration-200 cursor-pointer rounded-lg text-[10px] ${
             tabAtiva === "hospedagem"
-              ? "bg-slate-900 text-indigo-400 shadow-md shadow-black/20"
+              ? "bg-slate-900 text-blue-400 shadow-md shadow-black/20"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
@@ -242,7 +242,7 @@ export default function SideAList({
               setFiltro(e.target.value);
               setMenuAbertoIndex(null);
             }}
-            className="w-full bg-slate-950 border border-slate-800/80 text-slate-200 px-3.5 py-2 pl-9 focus:border-indigo-500 focus:outline-none placeholder-slate-750 text-[11px] rounded-lg shadow-inner font-medium"
+            className="w-full bg-slate-950 border border-slate-800/80 text-slate-200 px-3.5 py-2 pl-9 focus:border-blue-500 focus:outline-none placeholder-slate-750 text-[11px] rounded-lg shadow-inner font-medium"
           />
           <span className="absolute left-3.5 top-2.5 text-slate-650 text-xs">🔎</span>
         </div>
@@ -260,7 +260,7 @@ export default function SideAList({
               setCustomFormError("");
             }}
             disabled={datasViagem.length === 0}
-            className="w-full py-2 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 hover:border-indigo-400/50 text-indigo-400 font-bold transition-all text-[10.5px] rounded-lg cursor-pointer flex items-center justify-center gap-1.5 shadow-md animate-fade-in"
+            className="w-full py-2 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 hover:border-blue-400/50 text-blue-400 font-bold transition-all text-[10.5px] rounded-lg cursor-pointer flex items-center justify-center gap-1.5 shadow-md animate-fade-in"
           >
             <span>{isCustomFormOpen ? "▲ Fechar Formulário" : "➕ Inserir Hospedagem Personalizada"}</span>
           </button>
@@ -279,7 +279,7 @@ export default function SideAList({
                     placeholder="Ex: Airbnb Providencia"
                     value={customNome}
                     onChange={(e) => setCustomNome(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-medium"
+                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-blue-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-medium"
                   />
                 </div>
                 <div className="flex flex-col">
@@ -289,7 +289,7 @@ export default function SideAList({
                     placeholder="Ex: 300"
                     value={customPreco}
                     onChange={(e) => setCustomPreco(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
+                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-blue-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
                   />
                 </div>
               </div>
@@ -301,7 +301,7 @@ export default function SideAList({
                   placeholder="Ex: https://airbnb.com.br/rooms/..."
                   value={customLink}
                   onChange={(e) => setCustomLink(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none text-[10px] rounded-lg shadow-inner w-full"
+                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-blue-500 focus:outline-none text-[10px] rounded-lg shadow-inner w-full"
                 />
               </div>
 
@@ -312,7 +312,7 @@ export default function SideAList({
                     <button
                       type="button"
                       onClick={selecionarTodosCustomDias}
-                      className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer bg-transparent border-0 p-0"
+                      className="text-[9px] font-bold text-blue-400 hover:text-blue-300 cursor-pointer bg-transparent border-0 p-0"
                     >
                       Selecionar Todos
                     </button>
@@ -336,7 +336,7 @@ export default function SideAList({
                         onClick={() => toggleCustomDiaSelecionado(dia)}
                         className={`px-2.5 py-1.5 rounded-lg text-[9.5px] font-semibold transition-all duration-150 flex items-center gap-1.5 border cursor-pointer ${
                           isSelected
-                            ? "bg-indigo-600 border-indigo-400 text-white shadow-md shadow-indigo-500/10 scale-[1.02]"
+                            ? "bg-blue-600 border-blue-400 text-white shadow-md shadow-blue-500/10 scale-[1.02]"
                             : "bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200"
                         }`}
                       >
@@ -394,7 +394,7 @@ export default function SideAList({
                     setCustomFormError("Falha ao salvar hospedagem.");
                   }
                 }}
-                className="w-full py-2 bg-indigo-650 hover:bg-indigo-600 text-white font-bold text-[10.5px] transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1 shadow-md hover:scale-[1.01]"
+                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10.5px] transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1 shadow-md hover:scale-[1.01]"
               >
                 Vincular Hospedagem Fechada
               </button>
@@ -482,7 +482,7 @@ export default function SideAList({
                     <button
                       type="button"
                       onClick={selecionarTodosDespesaDias}
-                      className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer bg-transparent border-0 p-0"
+                      className="text-[9px] font-bold text-blue-400 hover:text-blue-300 cursor-pointer bg-transparent border-0 p-0"
                     >
                       Selecionar Todos
                     </button>
@@ -613,7 +613,7 @@ export default function SideAList({
                 {/* Dados da Coluna Esquerda */}
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-slate-200 group-hover:text-indigo-400 transition-colors text-[11px] font-sans tracking-wide">
+                    <span className="font-bold text-slate-200 group-hover:text-blue-400 transition-colors text-[11px] font-sans tracking-wide">
                       {item.nome}
                     </span>
                     <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded border font-mono-tech select-none leading-none ${badge.style}`}>
@@ -662,7 +662,7 @@ export default function SideAList({
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-indigo-400 hover:text-indigo-300 font-bold hover:underline transition-colors text-[9.5px]"
+                          className="text-blue-400 hover:text-blue-300 font-bold hover:underline transition-colors text-[9.5px]"
                           onClick={(e) => e.stopPropagation()}
                         >
                           Viator ↗
@@ -691,7 +691,7 @@ export default function SideAList({
                     disabled={datasViagem.length === 0}
                     className={`px-4 py-1.5 font-bold border-0 transition-all duration-200 cursor-pointer rounded-lg text-[10.5px] shadow-md flex items-center gap-1 ${
                       tabAtiva === "hospedagem"
-                        ? "bg-indigo-600/10 hover:bg-indigo-600/25 text-indigo-400 hover:text-indigo-300"
+                        ? "bg-blue-600/10 hover:bg-blue-600/25 text-blue-400 hover:text-blue-300"
                         : "bg-emerald-600/10 hover:bg-emerald-600/25 text-emerald-400 hover:text-emerald-300"
                     } disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:scale-100 hover:scale-[1.02] active:scale-[0.98]`}
                   >
@@ -715,10 +715,10 @@ export default function SideAList({
                               <button
                                 key={dataDia}
                                 onClick={() => handleInjetar(item, dataDia)}
-                                className="w-full text-left px-3 py-2 text-[10.5px] text-slate-300 hover:bg-indigo-600/10 hover:text-white transition-colors cursor-pointer font-semibold flex items-center justify-between rounded-lg border-0"
+                                className="w-full text-left px-3 py-2 text-[10.5px] text-slate-300 hover:bg-blue-600/10 hover:text-white transition-colors cursor-pointer font-semibold flex items-center justify-between rounded-lg border-0"
                               >
                                 <span>{labelDia}</span>
-                                <span className="text-slate-650 text-[9px] group-hover:text-indigo-400">➔</span>
+                                <span className="text-slate-650 text-[9px] group-hover:text-blue-400">➔</span>
                               </button>
                             );
                           })}

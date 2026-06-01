@@ -305,7 +305,7 @@ export default function SideBItinerary({
           <span className="text-slate-650 font-normal">|</span>
           <span className="text-slate-300 font-bold uppercase tracking-wide">{destino}</span>
         </div>
-        <div className="bg-indigo-600/10 border border-indigo-500/30 px-3.5 py-1.5 rounded-lg font-bold text-indigo-400 font-mono-tech shadow-md">
+        <div className="bg-blue-600/10 border border-blue-500/30 px-3.5 py-1.5 rounded-lg font-bold text-blue-400 font-mono-tech shadow-md">
           Custo Estimado Total: <span className="font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
         </div>
       </div>
@@ -341,7 +341,7 @@ export default function SideBItinerary({
                   ? "bg-gradient-to-r from-rose-500 to-rose-600 shadow-[0_0_8px_rgba(244,63,94,0.4)]"
                   : percentualConsumido > 80
                   ? "bg-gradient-to-r from-amber-500 to-amber-600 shadow-[0_0_8px_rgba(245,158,11,0.4)]"
-                  : "bg-gradient-to-r from-[#6366f1] to-indigo-600 shadow-[0_0_8px_rgba(99,102,241,0.4)]"
+                  : "bg-gradient-to-r from-[#007aff] to-blue-600 shadow-[0_0_8px_rgba(0,122,255,0.4)]"
               }`}
               style={{ width: `${percentualConsumido}%` }}
             />
@@ -473,7 +473,7 @@ export default function SideBItinerary({
                   key={dataDia}
                   className={`bg-slate-900/60 backdrop-blur-sm border flex flex-col relative group/day transition-all duration-305 shadow-md rounded-xl ${
                     isWorkspaceDia 
-                      ? "border-indigo-500/80 shadow-lg shadow-indigo-500/5 bg-slate-900/85" 
+                      ? "border-blue-500/80 shadow-lg shadow-blue-500/5 bg-slate-900/85" 
                       : "border-slate-800/80 hover:border-slate-750"
                   }`}
                 >
@@ -507,7 +507,7 @@ export default function SideBItinerary({
                       <span className="text-slate-500 font-normal">|</span>
                       <span className="text-slate-200 font-sans tracking-wide">{labelData} ({dataDia})</span>
                       {isWorkspaceDia && (
-                        <span className="bg-indigo-500/20 text-indigo-400 text-[8px] font-black px-1.5 py-0.5 rounded tracking-wider scale-95 shadow">
+                        <span className="bg-blue-500/20 text-blue-400 text-[8px] font-black px-1.5 py-0.5 rounded tracking-wider scale-95 shadow">
                           Ativo no Workspace
                         </span>
                       )}
@@ -681,7 +681,7 @@ export default function SideBItinerary({
 
                         {/* Coluna 2: Cronograma Horário Editável Inline (Sem Modais) */}
                         <div className="xl:col-span-7 border border-slate-850/60 bg-slate-950/30 p-3.5 rounded-xl flex flex-col space-y-3.5 relative">
-                          <div className="text-[9.5px] font-bold text-indigo-400 tracking-wider flex items-center justify-between border-b border-slate-850 pb-1.5 select-none font-sans">
+                          <div className="text-[9.5px] font-bold text-blue-400 tracking-wider flex items-center justify-between border-b border-slate-850 pb-1.5 select-none font-sans">
                             <span className="flex items-center gap-1">🕒 Agenda do Dia</span>
                             <span className="text-slate-500 text-[8.5px] lowercase font-normal italic">campos editáveis</span>
                           </div>
@@ -690,7 +690,7 @@ export default function SideBItinerary({
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[175px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                             {Object.keys(agendaDia).sort().map((hora) => (
                               <div key={hora} className="flex items-center gap-2 group/hour">
-                                <span className="w-12 text-center py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold font-mono-tech text-[9.5px] rounded-lg shadow-sm select-none">
+                                <span className="w-12 text-center py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold font-mono-tech text-[9.5px] rounded-lg shadow-sm select-none">
                                   {hora}
                                 </span>
                                 <input
@@ -699,7 +699,7 @@ export default function SideBItinerary({
                                   value={agendaDia[hora] || ""}
                                   onChange={(e) => handleInputChange(dataDia, hora, e.target.value)}
                                   onBlur={() => handleSalvarDia(dataDia)}
-                                  className="flex-1 bg-slate-950 border border-slate-850/80 text-slate-100 px-2.5 py-1 focus:border-indigo-500 focus:outline-none placeholder-slate-800 text-[10px] font-medium rounded-lg shadow-inner tracking-wide transition-all"
+                                  className="flex-1 bg-slate-950 border border-slate-850/80 text-slate-100 px-2.5 py-1 focus:border-blue-500 focus:outline-none placeholder-slate-800 text-[10px] font-medium rounded-lg shadow-inner tracking-wide transition-all"
                                   autoComplete="off"
                                 />
                                 <button
@@ -719,7 +719,7 @@ export default function SideBItinerary({
                             <input
                               type="time"
                               id={`new-time-${dataDia}`}
-                              className="bg-slate-950 border border-slate-850 text-indigo-400 px-2.5 py-1 text-[10px] font-mono-tech font-bold rounded-lg focus:outline-none focus:border-indigo-500 cursor-pointer shadow-inner"
+                              className="bg-slate-950 border border-slate-850 text-blue-400 px-2.5 py-1 text-[10px] font-mono-tech font-bold rounded-lg focus:outline-none focus:border-blue-500 cursor-pointer shadow-inner"
                             />
                             <button
                               type="button"
@@ -731,7 +731,7 @@ export default function SideBItinerary({
                                   inputEl.value = "";
                                 }
                               }}
-                              className="px-3 py-1 bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-400 font-bold text-[9px] rounded-lg uppercase cursor-pointer transition-all active:scale-95"
+                              className="px-3 py-1 bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 font-bold text-[9px] rounded-lg uppercase cursor-pointer transition-all active:scale-95"
                             >
                               Adicionar Horário
                             </button>
@@ -743,7 +743,7 @@ export default function SideBItinerary({
                               type="button"
                               onClick={() => handleSalvarDia(dataDia)}
                               disabled={salvandoDia[dataDia]}
-                              className="w-full sm:w-auto px-4.5 py-1.5 bg-indigo-600/10 border border-indigo-500/35 hover:bg-indigo-650/20 text-indigo-400 font-bold transition-all cursor-pointer rounded-lg text-[9px] shadow-sm disabled:opacity-40"
+                              className="w-full sm:w-auto px-4.5 py-1.5 bg-blue-600/10 border border-blue-500/35 hover:bg-blue-650/20 text-blue-400 font-bold transition-all cursor-pointer rounded-lg text-[9px] shadow-sm disabled:opacity-40"
                             >
                               {salvandoDia[dataDia] ? "⚡ Salvando..." : "⚡ Auto-salvar ativo (salva ao sair do campo)"}
                             </button>
