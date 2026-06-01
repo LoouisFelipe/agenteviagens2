@@ -21,6 +21,7 @@ import {
   Atividade,
   Despesa,
   emitLog,
+  subscribeToLogs,
 } from "@/services/travelService";
 
 import TripForm from "@/components/TripForm";
@@ -78,6 +79,21 @@ export default function Home() {
   const [finAddVinculo, setFinAddVinculo] = useState("global");
   const [finAddErro, setFinAddErro] = useState("");
   const [finAddSalvando, setFinAddSalvando] = useState(false);
+
+  // Estados para mini logs preview na aba Visão Geral
+  const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
+
+  useEffect(() => {
+    setConsoleLogs([
+      `[SYSTEM] BOOT INITIALIZED...`,
+      `[SYSTEM] CONSOLE PREVIEW READY.`
+    ]);
+
+    const unsubscribe = subscribeToLogs((newLog) => {
+      setConsoleLogs((prev) => [...prev, newLog].slice(-3)); // Manteem as últimas 3 mensagens
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Escuta alterações de Autenticação em tempo real
   useEffect(() => {
@@ -1299,6 +1315,146 @@ export default function Home() {
                 }}
                 diaAtivoWorkspace={diaAtivoWorkspace}
               />
+
+              {/* Painel de Resumo das Abas (Dashboard Integrado) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full select-none">
+                
+                {/* 1. Resumo da Agenda e Itinerário */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                      <span>📅</span>
+                      <span>Resumo da Agenda</span>
+                    </h3>
+                    <div className="space-y-2 text-[10px] text-slate-300">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 uppercase font-bold">Duração Total:</span>
+                        <span className="font-mono-tech font-bold">{datasViagem.length} dias</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 uppercase font-bold">Hospedagem reservada:</span>
+                        <span className="font-mono-tech font-bold text-emerald-450">
+                          {datasViagem.filter(dia => roteiroDiario[dia]?.hospedagem).length} de {datasViagem.length} noites
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 uppercase font-bold">Passeios & Atividades:</span>
+                        <span className="font-mono-tech font-bold text-amber-500">
+                          {datasViagem.reduce((acc, dia) => acc + (roteiroDiario[dia]?.atividades?.length || 0), 0)} itens agendados
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("cronograma")}
+                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                  >
+                    Acessar Agenda Completa ➔
+                  </button>
+                </div>
+
+                {/* 2. Resumo de Finanças */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                      <span>💸</span>
+                      <span>Resumo de Finanças</span>
+                    </h3>
+                    
+                    {/* Segmented mini-bar */}
+                    <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-900 shadow-inner">
+                      {totalHospedagem > 0 && (
+                        <div style={{ width: `${percentualHospedagem}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600" />
+                      )}
+                      {totalPasseios > 0 && (
+                        <div style={{ width: `${percentualPasseios}%` }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950" />
+                      )}
+                      {totalDespesas > 0 && (
+                        <div style={{ width: `${percentualDespesas}%` }} className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950" />
+                      )}
+                      {custoTotal === 0 && (
+                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[7px] text-slate-650 font-bold uppercase tracking-wider">
+                          Nenhum gasto
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1 text-[8px] font-bold">
+                      <div className="text-center">
+                        <span className="text-indigo-455 block">Acomodação</span>
+                        <span className="text-slate-500 font-mono-tech block mt-0.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-emerald-455 block">Atividades</span>
+                        <span className="text-slate-500 font-mono-tech block mt-0.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-amber-450 block">Despesas</span>
+                        <span className="text-slate-500 font-mono-tech block mt-0.5">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("financas")}
+                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                  >
+                    Acessar Finanças ➔
+                  </button>
+                </div>
+
+                {/* 3. Banco de Alocações (Itens Livres) */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                      <span>🛍️</span>
+                      <span>Banco de Alocações</span>
+                    </h3>
+                    <div className="text-[10px] text-slate-450 leading-relaxed font-sans font-medium uppercase tracking-wide">
+                      Pesquise hotéis recomendados ou crie passeios customizados e injete-os em qualquer dia da viagem ativa.
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("banco")}
+                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                  >
+                    Abrir Banco de Alocações ➔
+                  </button>
+                </div>
+
+                {/* 4. Console Real-Time Monitor Preview */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span>📋</span>
+                        <span>Monitor de Logs</span>
+                      </div>
+                      <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
+                    </h3>
+                    <div className="bg-slate-950/70 border border-slate-850 rounded-xl p-3 font-mono-tech text-[8.5px] space-y-1.5 h-14 overflow-y-auto select-none shadow-inner leading-normal">
+                      {consoleLogs.map((log, index) => {
+                        let colorClass = "text-slate-455";
+                        if (log.includes("[SYSTEM]")) colorClass = "text-cyan-400/90 font-bold";
+                        else if (log.includes("FIRESTORE:")) colorClass = "text-[#10b981] font-semibold";
+                        else if (log.includes("OPTIMISTIC:")) colorClass = "text-indigo-455 font-bold";
+                        else if (log.includes("ERROR")) colorClass = "text-rose-400 animate-pulse";
+                        return (
+                          <div key={index} className={colorClass}>
+                            {log}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("logs")}
+                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                  >
+                    Abrir Console de Logs ➔
+                  </button>
+                </div>
+
+              </div>
             </div>
           )}
 
