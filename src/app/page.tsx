@@ -33,7 +33,7 @@ import TimelineCompact from "@/components/TimelineCompact";
 // Firebase Imports
 import { db, isFirebaseConfigured, auth } from "@/lib/firebase";
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
-import { onSnapshot, query, collection, orderBy } from "firebase/firestore";
+import { onSnapshot, query, collection, orderBy, doc, updateDoc, deleteDoc, setDoc, getDocs } from "firebase/firestore";
 
 // Helper para gerar as datas cronologicamente entre início e fim sem bugs de timezone
 function gerarDiasPeriodo(dataInicio: string, dataFim: string): string[] {
@@ -94,6 +94,23 @@ export default function Home() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Estados para edição e filtros de Extrato Consolidado
+  const [editingItemKey, setEditingItemKey] = useState<string | null>(null);
+  const [editNome, setEditNome] = useState("");
+  const [editValor, setEditValor] = useState("");
+  const [editCategoria, setEditCategoria] = useState("Alimentação");
+  const [editCustomCategoria, setEditCustomCategoria] = useState("");
+  const [editIsCustom, setEditIsCustom] = useState(false);
+  const [editVinculo, setEditVinculo] = useState("global");
+  const [editSalvando, setEditSalvando] = useState(false);
+  const [editErro, setEditErro] = useState("");
+
+  const [filtroVinculo, setFiltroVinculo] = useState<"todos" | "global" | "dias">("todos");
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("todas");
+
+  // Estado para clique no gráfico de progressão
+  const [selectedGraphDay, setSelectedGraphDay] = useState<string | null>(null);
 
   // Escuta alterações de Autenticação em tempo real
   useEffect(() => {
@@ -669,6 +686,147 @@ export default function Home() {
     }
   };
 
+  // Handler para salvar edição de item no Extrato Consolidado
+  const handleSalvarEdicaoItem = async (item: {
+    key: string;
+    diaIdx: number;
+    diaData: string;
+    tipo: "hospedagem" | "passeio" | "despesa";
+    nome: string;
+    valor: number;
+    detalhe?: string;
+    categoria: string;
+    onDelete: () => Promise<void>;
+  }) => {
+    setEditErro("");
+    if (!editNome.trim() || !editValor.trim()) {
+      setEditErro("Preencha todos os campos.");
+      return;
+    }
+    const val = Number(editValor);
+    if (isNaN(val) || val <= 0) {
+      setEditErro("Valor inválido.");
+      return;
+    }
+
+    const finalCategory = editIsCustom && editCustomCategoria.trim()
+      ? editCustomCategoria.trim()
+      : editCategoria;
+
+    if (editIsCustom && !editCustomCategoria.trim()) {
+      setEditErro("Insira o nome da categoria.");
+      return;
+    }
+
+    setEditSalvando(true);
+    try {
+      if (item.tipo === "despesa") {
+        const docId = item.key.replace("e-global-", "").replace(`e-${item.diaData}-`, "");
+        if (isFirebaseConfigured && db && viagemAtiva) {
+          const docRef = doc(db, "viagens", viagemAtiva.id, "despesas", docId);
+          await updateDoc(docRef, {
+            nome: editNome.trim(),
+            valor: val,
+            categoria: finalCategory,
+            diaId: editVinculo
+          });
+        }
+        if (typeof window !== "undefined" && viagemAtiva) {
+          const key = `chilinho_itinerary_${viagemAtiva.id}`;
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const roteiro = JSON.parse(raw);
+            if (roteiro[item.diaData] && roteiro[item.diaData].despesas) {
+              roteiro[item.diaData].despesas = roteiro[item.diaData].despesas.filter((d: Despesa) => d.id !== docId);
+            }
+            if (!roteiro[editVinculo]) {
+              roteiro[editVinculo] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
+            }
+            if (!roteiro[editVinculo].despesas) roteiro[editVinculo].despesas = [];
+            roteiro[editVinculo].despesas.push({
+              id: docId,
+              diaId: editVinculo,
+              nome: editNome.trim(),
+              valor: val,
+              categoria: finalCategory
+            });
+            localStorage.setItem(key, JSON.stringify(roteiro));
+          }
+        }
+        emitLog(`SYSTEM: Despesa '${editNome}' atualizada com sucesso.`);
+      } else if (item.tipo === "hospedagem") {
+        if (isFirebaseConfigured && db && viagemAtiva) {
+          if (item.diaData !== editVinculo && editVinculo !== "global") {
+            await deleteDoc(doc(db, "viagens", viagemAtiva.id, "hoteis", item.diaData));
+          }
+          if (editVinculo !== "global") {
+            await setDoc(doc(db, "viagens", viagemAtiva.id, "hoteis", editVinculo), {
+              nome: editNome.trim(),
+              preco_diario: val,
+              link: ""
+            });
+          }
+        }
+        if (typeof window !== "undefined" && viagemAtiva) {
+          const key = `chilinho_itinerary_${viagemAtiva.id}`;
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const roteiro = JSON.parse(raw);
+            if (roteiro[item.diaData]) roteiro[item.diaData].hospedagem = null;
+            if (editVinculo !== "global") {
+              if (!roteiro[editVinculo]) roteiro[editVinculo] = { hospedagem: null, atividades: [] };
+              roteiro[editVinculo].hospedagem = { nome: editNome.trim(), preco_diario: val, link: "" };
+            }
+            localStorage.setItem(key, JSON.stringify(roteiro));
+          }
+        }
+        emitLog(`SYSTEM: Hospedagem '${editNome}' atualizada com sucesso.`);
+      } else if (item.tipo === "passeio") {
+        if (isFirebaseConfigured && db && viagemAtiva) {
+          const snapshot = await getDocs(collection(db, "viagens", viagemAtiva.id, "passeios"));
+          const matchDoc = snapshot.docs.find(d => d.data().diaId === item.diaData && d.data().nome === item.nome);
+          if (matchDoc) {
+            await updateDoc(doc(db, "viagens", viagemAtiva.id, "passeios", matchDoc.id), {
+              nome: editNome.trim(),
+              valor: val,
+              diaId: editVinculo === "global" ? item.diaData : editVinculo
+            });
+          }
+        }
+        if (typeof window !== "undefined" && viagemAtiva) {
+          const key = `chilinho_itinerary_${viagemAtiva.id}`;
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const roteiro = JSON.parse(raw);
+            const idx = Number(item.key.split("-").pop());
+            if (roteiro[item.diaData] && roteiro[item.diaData].atividades && !isNaN(idx)) {
+              const [removed] = roteiro[item.diaData].atividades.splice(idx, 1);
+              const targetDia = editVinculo === "global" ? item.diaData : editVinculo;
+              if (!roteiro[targetDia]) roteiro[targetDia] = { hospedagem: null, atividades: [] };
+              roteiro[targetDia].atividades.push({
+                nome: editNome.trim(),
+                valor: val,
+                link: removed?.link || ""
+              });
+              localStorage.setItem(key, JSON.stringify(roteiro));
+            }
+          }
+        }
+        emitLog(`SYSTEM: Atividade '${editNome}' atualizada com sucesso.`);
+      }
+
+      setEditingItemKey(null);
+      if (!isFirebaseConfigured) {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error(err);
+      setEditErro("Falha ao salvar as alterações.");
+    } finally {
+      setEditSalvando(false);
+    }
+  };
+
   // Dispara o JOB transacional de atualização de preços sob demanda
   const handleAtualizarCotacoes = async () => {
     if (!viagemAtiva) return;
@@ -891,9 +1049,12 @@ export default function Home() {
   const percentualPasseios = custoTotal > 0 ? Math.round((totalPasseios / custoTotal) * 100) : 0;
   const percentualDespesas = custoTotal > 0 ? Math.round((totalDespesas / custoTotal) * 100) : 0;
 
-  // Montagem do gráfico diário acumulativo (iniciando com o acumulado de despesas gerais)
+  const orcamentoAjustado = orcamento - totalDespesasGlobais;
+  const mediaDiariaDisponivel = datasViagem.length > 0 ? (orcamentoAjustado / datasViagem.length) : 0;
+
+  // Montagem do gráfico diário acumulativo (iniciando com 0 para conter somente o vinculado no dia)
   const dadosGrafico: { diaLabel: string; diaData: string; custoDia: number; acumulado: number }[] = [];
-  let somaAcumulada = totalDespesasGlobais;
+  let somaAcumulada = 0;
   datasViagem.forEach((dia, idx) => {
     const diario = roteiroDiario[dia];
     let custoDia = 0;
@@ -989,9 +1150,21 @@ export default function Home() {
     }
   });
 
-  // Agrupar itens por categoria para o Extrato
-  const groupedItems: Record<string, typeof statementItems> = {};
-  statementItems.forEach((item) => {
+  // Aplicar filtros reativos ao Extrato Consolidado
+  const filteredStatementItems = statementItems.filter((item) => {
+    // Filtro por Vínculo (Conexão)
+    if (filtroVinculo === "global" && item.diaData !== "global") return false;
+    if (filtroVinculo === "dias" && item.diaData === "global") return false;
+
+    // Filtro por Categoria
+    if (filtroCategoria !== "todas" && item.categoria !== filtroCategoria) return false;
+
+    return true;
+  });
+
+  // Agrupar itens filtrados por categoria para o Extrato
+  const groupedItems: Record<string, typeof filteredStatementItems> = {};
+  filteredStatementItems.forEach((item) => {
     const cat = item.categoria || "Outros";
     if (!groupedItems[cat]) {
       groupedItems[cat] = [];
@@ -1461,138 +1634,20 @@ export default function Home() {
           {/* =======================================
               ABA 1.2: Finanças e Relatórios
               ======================================= */}
-          {activeTab === "financas" && (
+             {activeTab === "financas" && (
             <div className="space-y-5 flex-1 flex flex-col min-h-0">
-              {/* Grid Central Dashboard: Gráficos e Extrato */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 items-stretch">
+              {/* Grid Central Dashboard: Duas Colunas Invertidas */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 items-start">
                 
-                {/* Lado Esquerdo: Gráficos de Divisão e Progressão (col-span-7) */}
-                <div className="lg:col-span-7 space-y-5 flex flex-col justify-between">
-                  {/* Category Division breakdown */}
-                  <div className="glass-panel p-5 rounded-2xl space-y-4">
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
-                      <span>🏷️ Distribuição por Categoria</span>
-                      <span className="text-[8px] text-slate-500 lowercase italic">divisão percentual</span>
-                    </h3>
-
-                    {/* Single Combined Segmented Bar */}
-                    <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-850 shadow-inner">
-                      {totalHospedagem > 0 && (
-                        <div
-                          style={{ width: `${percentualHospedagem}%` }}
-                          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all"
-                          title={`Hospedagem: ${percentualHospedagem}%`}
-                        />
-                      )}
-                      {totalPasseios > 0 && (
-                        <div
-                          style={{ width: `${percentualPasseios}%` }}
-                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950 transition-all"
-                          title={`Passeios: ${percentualPasseios}%`}
-                        />
-                      )}
-                      {totalDespesas > 0 && (
-                        <div
-                          style={{ width: `${percentualDespesas}%` }}
-                          className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950 transition-all"
-                          title={`Despesas: ${percentualDespesas}%`}
-                        />
-                      )}
-                      {custoTotal === 0 && (
-                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[8px] text-slate-650 font-bold uppercase tracking-wider">
-                          Nenhum gasto registrado
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Grid labels */}
-                    <div className="grid grid-cols-3 gap-3 text-[9.5px]">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-indigo-455 font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                          <span>Hospedagem: {percentualHospedagem}%</span>
-                        </div>
-                        <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-emerald-455 font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span>Passeios: {percentualPasseios}%</span>
-                        </div>
-                        <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 text-amber-450 font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          <span>Despesas: {percentualDespesas}%</span>
-                        </div>
-                        <span className="text-slate-500 font-mono-tech pl-3.5">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Progression Graph */}
-                  <div className="glass-panel p-5 rounded-2xl space-y-4 flex-1 flex flex-col justify-between relative min-h-[220px]">
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider select-none flex items-center justify-between">
-                      <span>📈 Progressão de Gastos</span>
-                      <span className="text-[8px] text-slate-500 lowercase italic">passe o mouse nas barras</span>
-                    </h3>
-
-                    {/* Graph Container */}
-                    <div className="flex items-end gap-1.5 md:gap-2.5 h-40 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none flex-1 mt-4">
-                      {/* Budget Limit Line */}
-                      {orcamento > 0 && (
-                        <div className="absolute left-0 right-0 border-t border-dashed border-rose-500/30 text-[7.5px] font-black text-rose-500/60 uppercase tracking-widest pl-2 pt-0.5 pointer-events-none z-10" style={{ bottom: "80%" }}>
-                          Limite do Orçamento
-                        </div>
-                      )}
-
-                      {dadosGrafico.map((d) => {
-                        const heightPercent = orcamento > 0 ? Math.min(100, Math.round((d.acumulado / orcamento) * 80)) : 0;
-                        const isOver = orcamento > 0 && d.acumulado > orcamento;
-
-                        return (
-                          <div key={d.diaData} className="flex-1 flex flex-col items-center group/bar relative">
-                            {/* Hover tooltip */}
-                            <div className="absolute bottom-full mb-2 bg-slate-950 border border-indigo-500/50 text-[8.5px] p-2 rounded shadow-2xl hidden group-hover/bar:flex flex-col text-center w-24 pointer-events-none z-50 transition-all font-sans font-semibold">
-                              <span className="text-amber-500 uppercase tracking-wider">{d.diaLabel}</span>
-                              <span className="text-slate-400 font-mono-tech mt-0.5 text-[8px]">{d.diaData.slice(5)}</span>
-                              <span className="text-indigo-400 font-mono-tech mt-1">Dia: R$ {d.custoDia}</span>
-                              <span className="text-[#10b981] font-mono-tech">Cum: R$ {d.acumulado}</span>
-                            </div>
-
-                            {/* Bar Graph */}
-                            <div className="w-full bg-slate-950/50 rounded-t h-28 flex flex-col justify-end relative shadow-inner overflow-hidden border border-slate-900">
-                              <div
-                                style={{ height: `${heightPercent}%` }}
-                                className={`w-full rounded-t transition-all duration-300 ${isOver
-                                    ? "bg-gradient-to-t from-rose-600 to-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.3)]"
-                                    : d.acumulado > orcamento * 0.8
-                                      ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.3)]"
-                                      : "bg-gradient-to-t from-indigo-600 to-indigo-400 shadow-[0_0_6px_rgba(99,102,241,0.3)]"
-                                  }`}
-                              />
-                            </div>
-
-                            {/* Label */}
-                            <span className="text-[8.5px] font-mono-tech font-bold text-slate-500 mt-1.5 uppercase select-none">{d.diaLabel.replace("DIA ", "D")}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Lado Direito: Inclusão de Despesas & Extrato Consolidado (col-span-5) */}
-                <div className="lg:col-span-5 flex flex-col space-y-4 h-full">
+                {/* COLUNA ESQUERDA (lg:col-span-5) - Lançamento & Categorias */}
+                <div className="lg:col-span-5 space-y-5 flex flex-col">
                   
                   {/* Formulário Premium de Registro de Despesa */}
-                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-md border border-slate-800/60 select-none">
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-xl border border-slate-800/80 select-none">
+                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-amber-500 to-orange-500" />
+                    <h3 className="text-[10px] font-black uppercase text-slate-350 tracking-wider flex items-center justify-between">
                       <span>💸 Registrar Nova Despesa</span>
-                      <span className="text-[8px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded uppercase font-mono-tech font-bold leading-none">
+                      <span className="text-[8px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-mono-tech font-bold leading-none">
                         lançamento direto
                       </span>
                     </h3>
@@ -1677,7 +1732,7 @@ export default function Home() {
 
                       <div className="flex items-center justify-between gap-3 pt-1 select-none">
                         {finAddErro ? (
-                          <span className="text-[8.5px] text-rose-450 font-mono-tech font-bold">⚠️ {finAddErro}</span>
+                          <span className="text-[8.5px] text-rose-455 font-mono-tech font-bold">⚠️ {finAddErro}</span>
                         ) : (
                           <span />
                         )}
@@ -1692,20 +1747,157 @@ export default function Home() {
                     </form>
                   </div>
 
-                  {/* Extrato Consolidado */}
-                  <div className="flex flex-col flex-1 glass-panel p-5 rounded-2xl relative space-y-4">
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between select-none">
-                      <span>🧾 Extrato Consolidado</span>
-                      <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2 py-0.5 rounded text-[8px] leading-none uppercase">
-                        {statementItems.length} itens
-                      </span>
+                  {/* Distribuição por Categoria */}
+                  <div className="glass-panel p-5 rounded-2xl space-y-4 shadow-xl border border-slate-800/80 select-none relative">
+                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-indigo-500 to-blue-500" />
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                      <span>🏷️ Distribuição por Categoria</span>
+                      <span className="text-[8px] text-slate-550 lowercase italic">divisão percentual</span>
                     </h3>
 
+                    {/* Single Combined Segmented Bar */}
+                    <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-850 shadow-inner">
+                      {totalHospedagem > 0 && (
+                        <div
+                          style={{ width: `${percentualHospedagem}%` }}
+                          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all"
+                          title={`Hospedagem: ${percentualHospedagem}%`}
+                        />
+                      )}
+                      {totalPasseios > 0 && (
+                        <div
+                          style={{ width: `${percentualPasseios}%` }}
+                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950 transition-all"
+                          title={`Passeios: ${percentualPasseios}%`}
+                        />
+                      )}
+                      {totalDespesas > 0 && (
+                        <div
+                          style={{ width: `${percentualDespesas}%` }}
+                          className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950 transition-all"
+                          title={`Despesas: ${percentualDespesas}%`}
+                        />
+                      )}
+                      {custoTotal === 0 && (
+                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[8px] text-slate-650 font-bold uppercase tracking-wider">
+                          Nenhum gasto registrado
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Grid labels */}
+                    <div className="grid grid-cols-3 gap-2.5 text-[9px] pt-1">
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1 text-indigo-455 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          <span>Acomodação</span>
+                        </div>
+                        <span className="text-slate-400 font-mono-tech pl-2.5 font-bold">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
+                        <span className="text-slate-550 font-mono-tech pl-2.5 text-[7.5px] font-semibold">{percentualHospedagem}%</span>
+                      </div>
+
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1 text-emerald-455 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>Passeios</span>
+                        </div>
+                        <span className="text-slate-400 font-mono-tech pl-2.5 font-bold">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
+                        <span className="text-slate-550 font-mono-tech pl-2.5 text-[7.5px] font-semibold">{percentualPasseios}%</span>
+                      </div>
+
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1 text-amber-450 font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <span>Despesas</span>
+                        </div>
+                        <span className="text-slate-400 font-mono-tech pl-2.5 font-bold">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
+                        <span className="text-slate-550 font-mono-tech pl-2.5 text-[7.5px] font-semibold">{percentualDespesas}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* COLUNA DIREITA (lg:col-span-7) - Extrato & Gráfico Acumulativo */}
+                <div className="lg:col-span-7 space-y-5 flex flex-col h-full">
+                  
+                  {/* Extrato Consolidado */}
+                  <div className="flex flex-col glass-panel p-5 rounded-2xl relative space-y-4 shadow-xl border border-slate-800/80">
+                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-indigo-500 to-purple-600" />
+                    <div className="flex items-center justify-between select-none">
+                      <h3 className="text-[10px] font-black uppercase text-slate-355 tracking-wider flex items-center gap-2">
+                        <span>🧾 Extrato Consolidado</span>
+                        <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2 py-0.5 rounded text-[8px] leading-none uppercase">
+                          {filteredStatementItems.length} itens {filteredStatementItems.length !== statementItems.length && `filtrados (de ${statementItems.length})`}
+                        </span>
+                      </h3>
+                    </div>
+
+                    {/* interactive accessible clickable filters pills */}
+                    <div className="space-y-2">
+                      {/* Connection filter pills */}
+                      <div className="flex items-center gap-2 pb-1 border-b border-slate-850/60 overflow-x-auto select-none scrollbar-none">
+                        <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Conexão:</span>
+                        <button
+                          type="button"
+                          onClick={() => setFiltroVinculo("todos")}
+                          className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                            filtroVinculo === "todos"
+                              ? "bg-indigo-600/20 border-indigo-500/60 text-indigo-300 font-extrabold shadow-sm"
+                              : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
+                          }`}
+                        >
+                          📑 Todos
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFiltroVinculo("global")}
+                          className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                            filtroVinculo === "global"
+                              ? "bg-amber-600/20 border-amber-500/60 text-amber-300 font-extrabold shadow-sm"
+                              : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
+                          }`}
+                        >
+                          🌍 Globais/Gerais
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFiltroVinculo("dias")}
+                          className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                            filtroVinculo === "dias"
+                              ? "bg-emerald-600/20 border-emerald-500/60 text-emerald-300 font-extrabold shadow-sm"
+                              : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
+                          }`}
+                        >
+                          📅 Por Dia
+                        </button>
+                      </div>
+
+                      {/* Category filter pills */}
+                      <div className="flex items-center gap-2 pb-1.5 border-b border-slate-850/40 overflow-x-auto select-none scrollbar-none">
+                        <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Categoria:</span>
+                        {["todas", "Hospedagem", "Lazer/Passeios", ...Array.from(new Set(statementItems.map((item) => item.categoria).filter(c => c && c !== "Hospedagem" && c !== "Lazer/Passeios"))).sort()].map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setFiltroCategoria(cat)}
+                            className={`px-2.5 py-1 text-[8px] uppercase font-bold rounded-full border transition-all whitespace-nowrap cursor-pointer ${
+                              filtroCategoria === cat
+                                ? "bg-indigo-500/20 border-indigo-400 text-indigo-300 shadow-sm"
+                                : "bg-slate-950/40 border-slate-850/60 text-slate-500 hover:text-slate-355"
+                            }`}
+                          >
+                            {cat === "todas" ? "📁 TODAS" : cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     {/* Scrollable list of statement items grouped by category */}
-                    <div className="flex-1 overflow-y-auto max-h-[300px] pr-1.5 space-y-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                      {statementItems.length === 0 ? (
-                        <div className="py-24 text-center text-slate-650 font-bold uppercase tracking-wider text-[9px] select-none">
-                          Nenhum lançamento registrado
+                    <div className="flex-1 overflow-y-auto max-h-[340px] pr-1.5 space-y-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                      {filteredStatementItems.length === 0 ? (
+                        <div className="py-16 text-center text-slate-650 font-bold uppercase tracking-wider text-[9px] select-none">
+                          Nenhum lançamento corresponde aos filtros
                         </div>
                       ) : (
                         Object.keys(groupedItems).map((categoria) => {
@@ -1727,11 +1919,127 @@ export default function Home() {
                               {/* Items under this category */}
                               <div className="space-y-2">
                                 {items.map((item) => {
-                                  let colorBadge = "bg-slate-900 border-slate-800 text-slate-450";
+                                  const isEditing = editingItemKey === item.key;
+
+                                  if (isEditing) {
+                                    return (
+                                      <div
+                                        key={item.key}
+                                        className="bg-slate-950/90 border border-amber-500/50 p-3 rounded-xl space-y-3.5 animate-workspace-fade-in shadow-lg shadow-amber-500/5"
+                                      >
+                                        <div className="text-[8.5px] font-bold text-amber-500 uppercase tracking-widest border-b border-slate-900 pb-1 flex items-center justify-between">
+                                          <span>📝 Editando Item ({item.tipo})</span>
+                                          <span className="text-[7.5px] font-mono-tech text-slate-500">{item.key}</span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                          <div className="space-y-1">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Descrição:</label>
+                                            <input
+                                              type="text"
+                                              value={editNome}
+                                              onChange={(e) => setEditNome(e.target.value)}
+                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                                            />
+                                          </div>
+                                          <div className="space-y-1">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Valor (R$):</label>
+                                            <input
+                                              type="number"
+                                              value={editValor}
+                                              onChange={(e) => setEditValor(e.target.value)}
+                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] font-mono-tech"
+                                            />
+                                          </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                          <div className="space-y-1">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Vínculo:</label>
+                                            <select
+                                              value={editVinculo}
+                                              onChange={(e) => setEditVinculo(e.target.value)}
+                                              className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
+                                            >
+                                              <option value="global">Geral (Sem conexão)</option>
+                                              {datasViagem.map((dia, idx) => (
+                                                <option key={dia} value={dia}>
+                                                  Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                          {item.tipo === "despesa" && (
+                                            <div className="space-y-1">
+                                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Categoria:</label>
+                                              <select
+                                                value={editCategoria}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  setEditCategoria(val);
+                                                  if (val === "Outros") {
+                                                    setEditIsCustom(true);
+                                                  } else {
+                                                    setEditIsCustom(false);
+                                                  }
+                                                }}
+                                                className="w-full bg-slate-900 border border-slate-800 text-slate-355 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
+                                              >
+                                                <option value="Alimentação">Alimentação 🍽️</option>
+                                                <option value="Transporte">Transporte 🚗</option>
+                                                <option value="Lazer">Lazer 🪁</option>
+                                                <option value="Compras">Compras 🛍️</option>
+                                                <option value="Outros">Outros 💰</option>
+                                              </select>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {editIsCustom && item.tipo === "despesa" && (
+                                          <div className="space-y-1 text-[10px] animate-fade-in">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Nome da Categoria:</label>
+                                            <input
+                                              type="text"
+                                              value={editCustomCategoria}
+                                              onChange={(e) => setEditCustomCategoria(e.target.value)}
+                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                                            />
+                                          </div>
+                                        )}
+
+                                        <div className="flex items-center justify-between pt-1 select-none">
+                                          {editErro ? (
+                                            <span className="text-[8px] text-rose-400 font-mono-tech font-bold">⚠️ {editErro}</span>
+                                          ) : (
+                                            <span />
+                                          )}
+                                          <div className="flex items-center gap-2">
+                                            <button
+                                              type="button"
+                                              onClick={() => setEditingItemKey(null)}
+                                              className="px-2.5 py-1 bg-slate-900 hover:bg-slate-850 border border-slate-850 text-slate-450 hover:text-slate-300 font-bold text-[8.5px] rounded uppercase cursor-pointer transition-colors"
+                                            >
+                                              Cancelar
+                                            </button>
+                                            <button
+                                              type="button"
+                                              disabled={editSalvando}
+                                              onClick={() => handleSalvarEdicaoItem(item)}
+                                              className="px-3 py-1 bg-[#10b981] hover:bg-emerald-500 border-0 text-slate-950 font-black text-[8.5px] rounded uppercase cursor-pointer shadow-md shadow-emerald-500/10 transition-colors disabled:opacity-40"
+                                            >
+                                              {editSalvando ? "Salvando..." : "Salvar"}
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  let colorBadge = "bg-slate-900 border-slate-800 text-slate-455";
                                   if (item.tipo === "hospedagem") {
                                     colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
                                   } else if (item.tipo === "passeio") {
-                                    colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-450";
+                                    colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-455";
                                   } else if (item.tipo === "despesa") {
                                     colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
                                   }
@@ -1768,17 +2076,33 @@ export default function Home() {
                                         </div>
                                       </div>
 
-                                      <div className="flex items-center gap-2 select-none">
-                                        <span className="text-[#10b981] font-mono-tech font-bold text-[10px]">
+                                      <div className="flex items-center gap-2 select-none font-sans font-semibold">
+                                        <span className="text-[#10b981] font-mono-tech font-bold text-[10px] mr-1">
                                           R$ {item.valor.toLocaleString("pt-BR")}
                                         </span>
+                                        <button
+                                          onClick={() => {
+                                            setEditingItemKey(item.key);
+                                            setEditNome(item.nome);
+                                            setEditValor(item.valor.toString());
+                                            setEditVinculo(item.diaData);
+                                            setEditCategoria(item.categoria);
+                                            setEditIsCustom(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
+                                            setEditCustomCategoria(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
+                                            setEditErro("");
+                                          }}
+                                          className="w-5 h-5 flex items-center justify-center border-0 bg-indigo-500/10 hover:bg-indigo-500/25 text-indigo-400 rounded-lg transition-all text-[9.5px] cursor-pointer"
+                                          title="Editar Lançamento"
+                                        >
+                                          ✏️
+                                        </button>
                                         <button
                                           onClick={async () => {
                                             if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
                                               await item.onDelete();
                                             }
                                           }}
-                                          className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[11px] cursor-pointer"
+                                          className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[9.5px] cursor-pointer"
                                           title="Excluir Lançamento"
                                         >
                                           ✕
@@ -1796,9 +2120,152 @@ export default function Home() {
 
                     {/* Dashboard Totalizer Footer */}
                     <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono-tech select-none">
-                      <span className="text-slate-450 uppercase font-sans font-bold">Total Consolidado:</span>
+                      <span className="text-slate-455 uppercase font-sans font-bold">Total Consolidado:</span>
                       <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
                     </div>
+                  </div>
+
+                  {/* Progression Graph */}
+                  <div className="glass-panel p-5 rounded-2xl space-y-4 flex-1 flex flex-col justify-between relative min-h-[260px] shadow-xl border border-slate-800/80">
+                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-emerald-500 to-teal-500" />
+                    <div className="flex items-center justify-between select-none">
+                      <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                        <span>📈 Progressão de Gastos (Somente no Dia)</span>
+                      </h3>
+                      <span className="text-[8px] text-slate-550 lowercase italic">clique nas barras para detalhar os itens</span>
+                    </div>
+
+                    {/* Graph Container */}
+                    <div className="flex items-end gap-1.5 md:gap-2.5 h-36 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none flex-1 mt-4">
+                      
+                      {/* Budget Limit Line based on Adjusted Budget */}
+                      {orcamentoAjustado > 0 && (
+                        <div className="absolute left-0 right-0 border-t border-dashed border-rose-500/40 text-[7.5px] font-black text-rose-450 uppercase tracking-widest pl-2 pt-0.5 pointer-events-none z-10 select-none" style={{ bottom: "80%" }}>
+                          Teto Ajustado: R$ {orcamentoAjustado.toLocaleString("pt-BR")} ({mediaDiariaDisponivel > 0 ? `R$ ${Math.round(mediaDiariaDisponivel).toLocaleString("pt-BR")}/dia` : ""})
+                        </div>
+                      )}
+
+                      {dadosGrafico.map((d, idx) => {
+                        const targetLimit = orcamentoAjustado > 0 ? orcamentoAjustado : orcamento;
+                        const heightPercent = targetLimit > 0 ? Math.min(100, Math.round((d.acumulado / targetLimit) * 80)) : 0;
+                        const isOver = targetLimit > 0 && d.acumulado > targetLimit;
+                        const isSelected = selectedGraphDay === d.diaData;
+
+                        return (
+                          <div
+                            key={d.diaData}
+                            onClick={() => setSelectedGraphDay(isSelected ? null : d.diaData)}
+                            className="flex-1 flex flex-col items-center group/bar relative cursor-pointer"
+                          >
+                            {/* Hover tooltip */}
+                            <div className="absolute bottom-full mb-2 bg-slate-950 border border-indigo-500/50 text-[8.5px] p-2 rounded shadow-2xl hidden group-hover/bar:flex flex-col text-center w-24 pointer-events-none z-50 transition-all font-sans font-semibold">
+                              <span className="text-amber-500 uppercase tracking-wider">{d.diaLabel}</span>
+                              <span className="text-slate-400 font-mono-tech mt-0.5 text-[8px]">{d.diaData.slice(5).replace("-", "/")}</span>
+                              <span className="text-indigo-400 font-mono-tech mt-1">Dia: R$ {d.custoDia}</span>
+                              <span className="text-[#10b981] font-mono-tech">Acum: R$ {d.acumulado}</span>
+                            </div>
+
+                            {/* Bar Graph */}
+                            <div className={`w-full bg-slate-950/50 rounded-t h-24 flex flex-col justify-end relative shadow-inner overflow-hidden border transition-all ${
+                              isSelected ? "border-amber-500 scale-[1.03] shadow-[0_0_8px_rgba(245,158,11,0.2)]" : "border-slate-900 hover:border-slate-700"
+                            }`}>
+                              <div
+                                style={{ height: `${heightPercent}%` }}
+                                className={`w-full rounded-t transition-all duration-300 ${isOver
+                                    ? "bg-gradient-to-t from-rose-600 to-rose-450 shadow-[0_0_6px_rgba(244,63,94,0.3)]"
+                                    : d.acumulado > targetLimit * 0.8
+                                      ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.3)]"
+                                      : "bg-gradient-to-t from-indigo-600 to-indigo-455 shadow-[0_0_6px_rgba(99,102,241,0.3)]"
+                                  }`}
+                              />
+                            </div>
+
+                            {/* Label */}
+                            <span className={`text-[8.5px] font-mono-tech font-bold mt-1.5 uppercase select-none transition-colors ${
+                              isSelected ? "text-amber-500 font-extrabold" : "text-slate-500 group-hover/bar:text-slate-300"
+                            }`}>
+                              D{String(idx + 1).padStart(2, "0")}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Breakdown Panel for the Selected Graph Day */}
+                    {selectedGraphDay && (() => {
+                      const dayItems = statementItems.filter(item => item.diaData === selectedGraphDay);
+                      const dayTotal = dayItems.reduce((acc, it) => acc + it.valor, 0);
+                      const activeDiaIndex = datasViagem.indexOf(selectedGraphDay);
+
+                      return (
+                        <div className="bg-slate-950/80 border border-indigo-500/35 rounded-xl p-3.5 space-y-3 animate-workspace-fade-in shadow-lg shadow-indigo-500/5 select-none mt-2">
+                          <div className="flex items-center justify-between border-b border-slate-900 pb-1.5">
+                            <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
+                              🔍 Detalhamento: Dia {activeDiaIndex + 1} ({selectedGraphDay.slice(5).replace("-", "/")})
+                            </span>
+                            <span className="font-mono-tech text-slate-350 text-[8.5px] font-bold">
+                              Subtotal do Dia: <span className="text-[#10b981]">R$ {dayTotal.toLocaleString("pt-BR")}</span>
+                            </span>
+                          </div>
+
+                          <div className="max-h-[140px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-slate-900 scrollbar-track-transparent">
+                            {dayItems.length === 0 ? (
+                              <div className="py-4 text-center text-slate-650 font-bold uppercase text-[7.5px] tracking-wider animate-pulse">
+                                Nenhuma despesa ou hotel vinculado a este dia.
+                              </div>
+                            ) : (
+                              dayItems.map(item => (
+                                <div
+                                  key={`detail-${item.key}`}
+                                  className="bg-slate-900/60 border border-slate-850 p-2 flex items-center justify-between gap-3.5 rounded-lg text-[9px] hover:border-slate-800 transition-colors"
+                                >
+                                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                                    <span className="px-1.5 py-0.2 uppercase border text-[7.5px] font-black leading-none rounded bg-slate-950 border-slate-850 text-slate-500">
+                                      {item.tipo}
+                                    </span>
+                                    <span className="font-bold text-slate-200 truncate uppercase mt-0.5">
+                                      {item.nome}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 select-none shrink-0 font-sans font-semibold">
+                                    <span className="text-slate-300 font-mono-tech font-bold text-[9.5px]">
+                                      R$ {item.valor.toLocaleString("pt-BR")}
+                                    </span>
+                                    <button
+                                      onClick={() => {
+                                        setEditingItemKey(item.key);
+                                        setEditNome(item.nome);
+                                        setEditValor(item.valor.toString());
+                                        setEditVinculo(item.diaData);
+                                        setEditCategoria(item.categoria);
+                                        setEditIsCustom(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
+                                        setEditCustomCategoria(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
+                                        setEditErro("");
+                                      }}
+                                      className="text-indigo-400 hover:text-indigo-350 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
+                                      title="Editar Lançamento"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
+                                          await item.onDelete();
+                                        }
+                                      }}
+                                      className="text-rose-500 hover:text-rose-455 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
+                                      title="Excluir Lançamento"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                 </div>
