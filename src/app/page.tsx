@@ -1637,10 +1637,10 @@ export default function Home() {
              {activeTab === "financas" && (
             <div className="space-y-5 flex-1 flex flex-col min-h-0">
               {/* Grid Central Dashboard: Duas Colunas Invertidas */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 flex-1 min-h-0 items-start w-full">
                 
-                {/* COLUNA ESQUERDA (lg:col-span-5) - Lançamento & Categorias */}
-                <div className="lg:col-span-5 space-y-5 flex flex-col">
+                {/* COLUNA ESQUERDA (md:col-span-5) - Lançamento & Categorias */}
+                <div className="md:col-span-5 space-y-5 flex flex-col w-full">
                   
                   {/* Formulário Premium de Registro de Despesa */}
                   <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-xl border border-slate-800/80 select-none">
@@ -1818,8 +1818,8 @@ export default function Home() {
 
                 </div>
 
-                {/* COLUNA DIREITA (lg:col-span-7) - Extrato & Gráfico Acumulativo */}
-                <div className="lg:col-span-7 space-y-5 flex flex-col h-full">
+                {/* COLUNA DIREITA (md:col-span-7) - Extrato & Gráfico Acumulativo */}
+                <div className="md:col-span-7 space-y-5 flex flex-col h-full w-full">
                   
                   {/* Extrato Consolidado */}
                   <div className="flex flex-col glass-panel p-5 rounded-2xl relative space-y-4 shadow-xl border border-slate-800/80">
