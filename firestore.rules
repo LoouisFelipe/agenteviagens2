@@ -131,7 +131,7 @@ service cloud.firestore {
     function isValidDespesa(data) {
       return hasRequiredFields(['diaId', 'nome', 'valor', 'categoria', 'criado_em']) &&
              hasOnlyAllowedFields(['diaId', 'nome', 'valor', 'categoria', 'criado_em']) &&
-             isValidDateString(data.diaId) &&
+             (isValidDateString(data.diaId) || data.diaId == "global") &&
              data.nome is string && data.nome.size() >= 1 && data.nome.size() <= 100 &&
              data.valor is number && data.valor >= 0 &&
              data.categoria is string && data.categoria.size() >= 1 && data.categoria.size() <= 50 &&
