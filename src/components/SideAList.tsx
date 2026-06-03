@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Hospedagem, Atividade, emitLog } from "@/services/travelService";
-import { obterPrecosLocais } from "@/services/priceService";
+import { obterPrecosLocais, obterPrecosComIA } from "@/services/priceService";
 
 interface SideAListProps {
   datasViagem: string[]; // Lista de datas do roteiro gerado
@@ -170,30 +170,55 @@ export default function SideAList({
     setDuracaoAtividade(2);
   };
 
-  useEffect(() => {
-    let active = true;
-    const fetchPrecos = () => {
-      setIsLoading(true);
+  const [isAISearchActive, setIsAISearchActive] = useState(false);
+
+  const carregarCotacoes = useCallback(async (usarIA = false, searchQuery = "") => {
+    setIsLoading(true);
+    if (usarIA) {
+      if (tabAtiva === "despesa") {
+        setIsLoading(false);
+        return;
+      }
+      emitLog(`SYSTEM: Acionando IA para buscar '${searchQuery || "tudo"}' em [${viagemDestino}]...`);
+      try {
+        const results = await obterPrecosComIA(viagemDestino, searchQuery, tabAtiva);
+        if (tabAtiva === "hospedagem") {
+          setHospedagens(results as Hospedagem[]);
+        } else if (tabAtiva === "atividade") {
+          setAtividades(results as Atividade[]);
+        }
+        setIsAISearchActive(true);
+        emitLog(`SYSTEM: Busca inteligente por IA concluída. ${results.length} opções geradas.`);
+      } catch (err) {
+        console.error(err);
+        emitLog("SYSTEM ERROR: Falha na busca de cotações por IA.");
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
       emitLog(`SYSTEM: Conectando ao robô de scraping para pesquisar custos em [${viagemDestino}]...`);
+      // Simula delay de rede sutil
       setTimeout(() => {
         try {
           const data = obterPrecosLocais(viagemDestino);
-          if (active) {
-            setHospedagens(data.hospedagens);
-            setAtividades(data.atividades);
-            emitLog(`SYSTEM: Scraping finalizado. ${data.hospedagens.length} hotéis e ${data.atividades.length} passeios importados.`);
-          }
+          setHospedagens(data.hospedagens);
+          setAtividades(data.atividades);
+          setIsAISearchActive(false);
+          emitLog(`SYSTEM: Scraping finalizado. ${data.hospedagens.length} hotéis e ${data.atividades.length} passeios importados.`);
         } catch (err) {
           console.error("Falha ao carregar cotações:", err);
           emitLog("SYSTEM WARNING: Falha ao carregar cotações do banco local.");
         } finally {
-          if (active) setIsLoading(false);
+          setIsLoading(false);
         }
       }, 500);
-    };
-    fetchPrecos();
-    return () => { active = false; };
-  }, [viagemDestino]);
+    }
+  }, [viagemDestino, tabAtiva]);
+
+  useEffect(() => {
+    carregarCotacoes(false, "");
+  }, [viagemDestino, carregarCotacoes]);
+
 
   const listaAtual = tabAtiva === "hospedagem" ? hospedagens : tabAtiva === "atividade" ? atividades : [];
   const itensFiltrados = listaAtual.filter((item) =>
@@ -258,25 +283,76 @@ export default function SideAList({
         </button>
       </div>
 
-      {/* Caixa de Busca Industrial */}
-      <div className="p-3.5 bg-slate-950/10 border-b border-slate-800/40 flex items-center justify-between gap-3">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder={`Filtrar por ${tabAtiva === "hospedagem" ? "nome da hospedagem" : "nome da atividade"}...`}
-            value={filtro}
-            onChange={(e) => {
-              setFiltro(e.target.value);
-              setMenuAbertoIndex(null);
-            }}
-            className="w-full bg-slate-950 border border-slate-800/80 text-slate-200 px-3.5 py-2 pl-9 focus:border-blue-500 focus:outline-none placeholder-slate-750 text-[11px] rounded-lg shadow-inner font-medium"
-          />
-          <span className="absolute left-3.5 top-2.5 text-slate-650 text-xs">🔎</span>
+      {/* Caixa de Busca Industrial e Botão de IA */}
+      {tabAtiva !== "despesa" && (
+        <div className="p-3.5 bg-slate-950/10 border-b border-slate-800/40 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder={tabAtiva === "hospedagem" ? "Pesquise hotéis (ex: airbnb, luxo, colorado)..." : "Pesquise passeios (ex: ski, vinícola, city tour)..."}
+                value={filtro}
+                onChange={(e) => {
+                  setFiltro(e.target.value);
+                  setMenuAbertoIndex(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    carregarCotacoes(true, filtro);
+                  }
+                }}
+                className="w-full bg-slate-950 border border-slate-800/80 text-slate-200 px-3.5 py-2.5 pl-9 focus:border-blue-500 focus:outline-none placeholder-slate-750 text-[11px] rounded-lg shadow-inner font-medium"
+              />
+              <span className="absolute left-3.5 top-3 text-slate-650 text-xs">🔎</span>
+            </div>
+
+            <button
+              onClick={() => carregarCotacoes(true, filtro)}
+              disabled={isLoading}
+              className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[10.5px] transition-all rounded-lg cursor-pointer flex items-center justify-center gap-1.5 shadow-md border-0 hover:scale-[1.02] disabled:opacity-40"
+              title="Usar Inteligência Artificial para buscar tudo disponível"
+            >
+              <span>✨ Buscar com IA</span>
+            </button>
+
+            {isAISearchActive && (
+              <button
+                onClick={() => {
+                  setFiltro("");
+                  carregarCotacoes(false, "");
+                }}
+                className="px-3 py-2.5 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 text-[10.5px] font-bold transition-all rounded-lg cursor-pointer flex items-center justify-center border-0 shadow-md"
+                title="Limpar busca IA e restaurar padrão"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] font-mono-tech select-none">
+            <div className="text-slate-500">
+              {isAISearchActive ? (
+                <span className="text-purple-400 font-bold uppercase">✨ Modo IA Ativo</span>
+              ) : (
+                <span className="text-slate-600 uppercase font-bold">Filtro Local Ativo</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => carregarCotacoes(true, filtro)}
+                disabled={isLoading}
+                className="text-cyan-400 hover:text-cyan-300 font-bold bg-transparent border-0 cursor-pointer p-0 text-[9.5px] uppercase font-mono-tech flex items-center gap-1"
+              >
+                <span>🔄 Atualizar Preços via IA</span>
+              </button>
+              <span className="text-slate-850">|</span>
+              <div className="text-slate-500 font-bold">
+                Resultados: {itensFiltrados.length}
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="text-[10px] text-slate-500 font-bold hidden sm:block font-mono-tech select-none">
-          Resultados: {itensFiltrados.length}
-        </div>
-      </div>
+      )}
 
       {/* Formulário de Hospedagem Fechada/Personalizada */}
       {tabAtiva === "hospedagem" && (
@@ -702,11 +778,16 @@ export default function SideAList({
       {/* Lista de Registros */}
       <div className="flex-1 overflow-y-auto max-h-[460px] divide-y divide-slate-900/60 bg-slate-950/5 rounded-b-2xl scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
         {isLoading ? (
-          <div className="p-16 text-center text-[#f59e0b] font-bold uppercase space-y-3.5 animate-pulse font-sans">
-            <div className="text-sm font-black tracking-wider">⚙️ Captura Online Ativa</div>
+          <div className="p-16 text-center text-[#c49eff] font-bold uppercase space-y-3.5 animate-pulse font-sans">
+            <div className="text-sm font-black tracking-wider">
+              {isAISearchActive ? "✨ IA Processando Dados" : "⚙️ Coleta & Scraping via IA"}
+            </div>
             <div className="text-[10px] text-slate-500 font-mono-tech tracking-widest leading-relaxed">
-              Executando coleta em tempo real...<br/>
-              Carregando cotações de {viagemDestino}...
+              {isAISearchActive 
+                ? "Executando varredura semântica na web..." 
+                : "Acessando robô de scraping e cotações..."}
+              <br/>
+              Processando cotações em tempo real para {viagemDestino}...
             </div>
           </div>
         ) : itensFiltrados.length === 0 ? (

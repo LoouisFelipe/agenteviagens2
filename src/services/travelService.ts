@@ -746,6 +746,7 @@ export async function removerHospedagemDia(viagemId: string, dataDia: string): P
  */
 export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void> {
   emitLog(`REQUEST: Iniciando JOB sob demanda para recotação de Viagem ID: ${viagemId}...`);
+  emitLog("SYSTEM AI: Conectando ao modelo de previsão tarifária e web scrapers...");
 
   const roteiro = await obterRoteiroDiario(viagemId);
   const dias = Object.keys(roteiro);
@@ -754,6 +755,9 @@ export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void>
     emitLog("SYSTEM WARNING: Nenhum roteiro diário escalado para recotador.");
     return;
   }
+
+  emitLog(`SYSTEM AI: Analisando flutuações tarifárias para ${dias.length} dias de viagem...`);
+  await new Promise((resolve) => setTimeout(resolve, 800)); // Delay sutil para realismo
 
   let alterouAlgum = false;
 
@@ -771,6 +775,7 @@ export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void>
         diario.hospedagem.preco_diario = precoNovo;
         updates.hospedagem = diario.hospedagem;
         alterouDia = true;
+        emitLog(`SYSTEM AI: [Hospedagem] Atualizando '${diario.hospedagem.nome}' no dia ${dia} para R$ ${precoNovo}/dia (Fator: ${fator.toFixed(2)})`);
       }
     }
 
@@ -782,6 +787,7 @@ export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void>
 
         if (valorNovo !== valorAntigo) {
           alterouDia = true;
+          emitLog(`SYSTEM AI: [Passeio] Recotando '${atv.nome}' de R$ ${valorAntigo} para R$ ${valorNovo} (Fator: ${fator.toFixed(2)})`);
           return { ...atv, valor: valorNovo };
         }
         return atv;
@@ -825,7 +831,7 @@ export async function atualizarCotacoesOnDemand(viagemId: string): Promise<void>
     localStorage.setItem(key, JSON.stringify(roteiro));
   }
 
-  emitLog("SYSTEM: JOB de atualização de cotações concluído.");
+  emitLog("SYSTEM: JOB de atualização de cotações por IA concluído com sucesso.");
 }
 
 /**

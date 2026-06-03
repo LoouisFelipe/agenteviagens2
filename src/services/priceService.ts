@@ -126,3 +126,128 @@ export function obterPrecosLocais(destino: string): PrecosResultado {
     })),
   };
 }
+
+/**
+ * Realiza uma busca semântica simulada por IA, gerando opções dinâmicas
+ * baseadas no destino e termo pesquisado (queryStr).
+ */
+export async function obterPrecosComIA(
+  destino: string,
+  queryStr: string,
+  tipo: "hospedagem" | "atividade"
+): Promise<(Hospedagem | Atividade)[]> {
+  // Simulamos um pequeno delay de processamento da IA (0.8s a 1.5s)
+  await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 700));
+
+  const q = queryStr.trim().toLowerCase();
+  const formattedDest = destino.split("(")[0].trim().toUpperCase();
+
+  // Flutuação de preço padrão
+  const baseRandom = () => Math.round(100 + Math.random() * 800);
+
+  if (tipo === "hospedagem") {
+    // Lista base de hospedagens se a query for vazia
+    if (!q) {
+      const padrao = obterPrecosLocais(destino).hospedagens;
+      return padrao;
+    }
+
+    // Gerador semântico para Hospedagens
+    const results: Hospedagem[] = [];
+    const queryEscaped = encodeURIComponent(`${queryStr} hotel ${destino}`);
+    const googleTravelUrl = `https://www.google.com/travel/search?q=${queryEscaped}`;
+
+    // Heurísticas de palavras-chave
+    if (q.includes("colorado") || q.includes("farellones") || q.includes("neve") || q.includes("ski")) {
+      results.push(
+        { nome: `Hotel Colorado Farellones [IA]`, preco_diario: 580, link: googleTravelUrl },
+        { nome: `Apartamento Valle Nevado Ski Resort [IA]`, preco_diario: 890, link: googleTravelUrl },
+        { nome: `Chalé de Montanha Colorado Premium [IA]`, preco_diario: 950, link: googleTravelUrl },
+        { nome: `EcoLodge Cordilheira Refúgio [IA]`, preco_diario: 420, link: googleTravelUrl }
+      );
+    } else if (q.includes("luxo") || q.includes("luxury") || q.includes("5 estrelas") || q.includes("palace") || q.includes("singular")) {
+      results.push(
+        { nome: `Grand Hyatt Luxury Residence [IA]`, preco_diario: 1450, link: googleTravelUrl },
+        { nome: `The Singular Palace Hotel & Spa [IA]`, preco_diario: 1890, link: googleTravelUrl },
+        { nome: `W Santiago Boutique Luxury [IA]`, preco_diario: 1100, link: googleTravelUrl },
+        { nome: `Hotel Ritz Carlton Premium [IA]`, preco_diario: 1650, link: googleTravelUrl }
+      );
+    } else if (q.includes("barato") || q.includes("budget") || q.includes("hostel") || q.includes("albergue") || q.includes("compartilhado")) {
+      results.push(
+        { nome: `Backpackers Eco Hostel [IA]`, preco_diario: 120, link: googleTravelUrl },
+        { nome: `Santiago Central Shared Rooms [IA]`, preco_diario: 95, link: googleTravelUrl },
+        { nome: `Providencia Budget Inn [IA]`, preco_diario: 140, link: googleTravelUrl },
+        { nome: `Hostal Bellavista Nomad [IA]`, preco_diario: 110, link: googleTravelUrl }
+      );
+    } else if (q.includes("airbnb") || q.includes("apartamento") || q.includes("apto") || q.includes("loft")) {
+      results.push(
+        { nome: `Loft Design com Vista para Cordilheira [IA]`, preco_diario: 350, link: googleTravelUrl },
+        { nome: `Apartamento Studio em Providencia [IA]`, preco_diario: 280, link: googleTravelUrl },
+        { nome: `Duplex Premium Las Condes Airbnb [IA]`, preco_diario: 520, link: googleTravelUrl },
+        { nome: `Studio aconchegante no Centro Histórico [IA]`, preco_diario: 210, link: googleTravelUrl }
+      );
+    } else {
+      // Fallback genérico inteligente
+      const titleQuery = queryStr.charAt(0).toUpperCase() + queryStr.slice(1);
+      results.push(
+        { nome: `Hotel ${titleQuery} ${formattedDest} [IA]`, preco_diario: Math.max(180, baseRandom() - 100), link: googleTravelUrl },
+        { nome: `Boutique Residence ${titleQuery} [IA]`, preco_diario: Math.max(220, baseRandom() + 150), link: googleTravelUrl },
+        { nome: `Acomodação Customizada ${titleQuery} [IA]`, preco_diario: Math.max(150, baseRandom()), link: googleTravelUrl },
+        { nome: `Hostal & Suites ${titleQuery} [IA]`, preco_diario: Math.max(110, Math.round(baseRandom() / 3)), link: googleTravelUrl }
+      );
+    }
+
+    return results;
+  } else {
+    // Tipo: atividade / passeio
+    if (!q) {
+      const padrao = obterPrecosLocais(destino).atividades;
+      return padrao;
+    }
+
+    const results: Atividade[] = [];
+    const viatorUrl = (term: string) => `https://www.viator.com/search/${encodeURIComponent(`${term} ${destino}`)}`;
+
+    if (q.includes("colorado") || q.includes("farellones") || q.includes("neve") || q.includes("ski") || q.includes("esqui")) {
+      results.push(
+        { nome: `Tour de Esqui Valle Nevado & El Colorado [IA]`, valor: 450, link: viatorUrl("Ski Colorado Farellones") },
+        { nome: `Ski & Snowboard Equipamentos Rental Colorado [IA]`, valor: 180, link: viatorUrl("Ski Rental Colorado") },
+        { nome: `Aula Particular de Ski no Colorado (2h) [IA]`, valor: 390, link: viatorUrl("Ski School Colorado") },
+        { nome: `Translado Exclusivo Farellones & Colorado [IA]`, valor: 250, link: viatorUrl("Transfer Colorado") }
+      );
+    } else if (q.includes("vinicula") || q.includes("vinícola") || q.includes("vinho") || q.includes("wine") || q.includes("concha") || q.includes("toro")) {
+      results.push(
+        { nome: `Tour Sommelier Premium Concha y Toro [IA]`, valor: 350, link: viatorUrl("Concha y Toro Premium") },
+        { nome: `Tour Privado Vinícola Undurraga & Santa Rita [IA]`, valor: 420, link: viatorUrl("Undurraga Santa Rita Tour") },
+        { nome: `Boutique Wine Tasting no Vale de Casablanca [IA]`, valor: 580, link: viatorUrl("Casablanca Wine Tasting") },
+        { nome: `Sunset & Vinho no Vale do Maipo [IA]`, valor: 310, link: viatorUrl("Maipo Valley Sunset Wine") }
+      );
+    } else if (q.includes("cajon") || q.includes("cajón") || q.includes("maipo") || q.includes("embalse") || q.includes("yeso") || q.includes("termas") || q.includes("colina")) {
+      results.push(
+        { nome: `Cajón del Maipo & Embalse El Yeso PicNic [IA]`, valor: 380, link: viatorUrl("Cajon del Maipo Embalse") },
+        { nome: `Tour Termas de Colina & Banho Vulcânico [IA]`, valor: 480, link: viatorUrl("Termas de Colina") },
+        { nome: `Trekking na Cascata de las Ánimas [IA]`, valor: 290, link: viatorUrl("Cascata de las Animas Trekking") },
+        { nome: `Rafting Aventura no Rio Maipo [IA]`, valor: 320, link: viatorUrl("Rafting Rio Maipo") }
+      );
+    } else if (q.includes("city") || q.includes("tour") || q.includes("historico") || q.includes("histórico") || q.includes("centro") || q.includes("museu")) {
+      results.push(
+        { nome: `City Tour Histórico Privado com Guia [IA]`, valor: 150, link: viatorUrl("City Tour Santiago") },
+        { nome: `Tour Palácio de La Moneda & Museu Pré-Colombino [IA]`, valor: 110, link: viatorUrl("La Moneda Museum Tour") },
+        { nome: `Passeio Cerro Santa Lucía & San Cristóbal [IA]`, valor: 95, link: viatorUrl("Cerro San Cristobal Tour") },
+        { nome: `Free Walking Tour Santiago Centro [IA]`, valor: 40, link: viatorUrl("Walking Tour Santiago") }
+      );
+    } else {
+      // Fallback genérico inteligente
+      const titleQuery = queryStr.charAt(0).toUpperCase() + queryStr.slice(1);
+      results.push(
+        { nome: `Passeio Guiado ${titleQuery} [IA]`, valor: Math.max(90, Math.round(baseRandom() / 2)), link: viatorUrl(queryStr) },
+        { nome: `Excursão Aventura ${titleQuery} em ${formattedDest} [IA]`, valor: Math.max(180, Math.round(baseRandom() / 1.5)), link: viatorUrl(queryStr) },
+        { nome: `Experiência Gastronômica & Cultural ${titleQuery} [IA]`, valor: Math.max(120, Math.round(baseRandom() / 1.8)), link: viatorUrl(queryStr) },
+        { nome: `Tour Privado Exclusivo: ${titleQuery} [IA]`, valor: Math.max(250, baseRandom()), link: viatorUrl(queryStr) }
+      );
+    }
+
+    return results;
+  }
+}
+

@@ -715,17 +715,17 @@ export default function Home() {
               <button
                 onClick={handleAtualizarCotacoes}
                 disabled={isUpdatingPrices}
-                className="w-full py-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-[#c49eff]/35 hover:border-[#c49eff] text-[#c49eff] hover:text-[#eeeaf6] text-[9.5px] font-bold uppercase transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:hover:bg-transparent rounded-lg font-mono shadow-md"
+                className="w-full py-2.5 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 hover:from-purple-800/60 hover:to-indigo-800/60 border border-purple-500/35 hover:border-purple-400 text-purple-300 hover:text-white text-[9.5px] font-bold uppercase transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:hover:bg-transparent rounded-lg font-mono shadow-md hover:shadow-purple-500/10 hover:scale-[1.01]"
               >
                 {isUpdatingPrices ? (
                   <>
-                    <span className="w-1.5 h-1.5 bg-[#c49eff] led-blue rounded-full animate-ping" />
-                    Atualizando...
+                    <span className="w-1.5 h-1.5 bg-purple-400 led-purple rounded-full animate-ping" />
+                    Analisando Tarifas IA...
                   </>
                 ) : (
                   <>
-                    <span>🔄</span>
-                    <span>Re-cotar Valores</span>
+                    <span>✨</span>
+                    <span>Atualizar Preços via IA</span>
                   </>
                 )}
               </button>
