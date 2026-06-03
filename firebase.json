@@ -14,5 +14,9 @@
       "**/node_modules/**"
     ],
     "cleanUrls": true
+  },
+  "apphosting": {
+    "backendId": "agenteviagens2",
+    "rootDir": "/"
   }
 }
