@@ -394,180 +394,8 @@ export default function Home() {
   };
 
   // ==========================================
-  // LAYOUT 1: Central de Viagens (Home Grid)
+  // Cálculos de orçamento consolidados (para a aba de dashboard/ KPIs da sidebar)
   // ==========================================
-  if (!viagemAtiva) {
-    return (
-      <div className="flex flex-col min-h-screen p-4 md:p-6 space-y-6 max-w-7xl mx-auto relative selection:bg-indigo-500/30">
-        {/* Pulsating Gradient Mesh BG */}
-        <div className="gradient-mesh-bg" />
-
-        {/* Header Premium Central */}
-        <header className="w-full glass-panel-evolution shadow-xl shadow-slate-950/20 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-400 via-indigo-500 to-purple-500" />
-          <div className="flex items-center space-x-3.5">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-3 rounded-xl font-black text-sm tracking-widest shadow-lg shadow-indigo-500/30 animate-pulse">
-              EVO
-            </div>
-            <div>
-              <h1 className="text-sm font-black tracking-widest text-slate-100 uppercase font-sans">
-                EVOLUÇÃO DE VIAGENS
-              </h1>
-              <p className="text-[10px] text-teal-400 font-bold uppercase tracking-wider mt-0.5 font-mono-tech">
-                Plataforma de Coordenação e Roteiros
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5 flex-wrap">
-            {/* Bloco de Auth no Header */}
-            {isAuthLoading ? (
-              <div className="flex items-center gap-1.5 bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner text-[10px] text-slate-500 font-mono-tech font-bold">
-                Carregando...
-              </div>
-            ) : user ? (
-              <div className="flex items-center gap-3 bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner">
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt="Foto" className="w-5 h-5 rounded-full border border-indigo-500/40" />
-                ) : (
-                  <span className="w-5 h-5 flex items-center justify-center bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full font-bold text-[9px]">👤</span>
-                )}
-                <span className="text-slate-200 font-mono-tech text-[10px] font-bold uppercase truncate max-w-[120px]" title={user.email || ""}>
-                  {user.displayName || user.email}
-                </span>
-                <span className="text-slate-800">|</span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-transparent hover:text-rose-400 text-slate-450 text-[10px] font-bold uppercase border-0 cursor-pointer transition-colors"
-                >
-                  Sair
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleLoginGoogle}
-                className="h-10 px-4 flex items-center gap-2 font-black tracking-wide uppercase transition-all bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/10 cursor-pointer rounded-xl text-[10px] border-0"
-              >
-                🔑 Entrar com Google
-              </button>
-            )}
-
-            <div className="flex items-center space-x-3.5 font-mono-tech text-[10px] bg-slate-950/50 px-4 py-2 border border-slate-800/80 rounded-xl h-10 shadow-inner">
-              <div className="flex items-center space-x-1.5">
-                <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
-                <span className="text-[#10b981] font-bold">CONECTADO</span>
-              </div>
-              <span className="text-slate-800">|</span>
-              <span className="text-slate-450">DATA: 2026-05-30</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Introdução / Subtitle */}
-        <div className="text-center py-6 select-none max-w-2xl mx-auto space-y-2.5">
-          <h2 className="text-base font-black text-slate-100 tracking-wider uppercase font-sans">
-            Selecione uma Viagem
-          </h2>
-          <p className="text-[10px] text-slate-450 uppercase tracking-widest font-bold font-mono-tech">
-            Acesse o workspace de planejamento focado ou crie uma nova rota
-          </p>
-        </div>
-
-        {/* Grid de Viagens */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pb-12">
-          {viagens.map((v, index) => {
-            // Escolhe gradiente de destaque do card baseado no índice/nome
-            const colors = [
-              { border: "hover:border-indigo-500/60", badge: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20", glow: "glow-card-indigo" },
-              { border: "hover:border-emerald-500/60", badge: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", glow: "glow-card-emerald" },
-              { border: "hover:border-amber-500/60", badge: "text-amber-400 bg-amber-500/10 border-amber-500/20", glow: "glow-card-amber" }
-            ];
-            const theme = colors[index % colors.length];
-
-            return (
-              <div
-                key={v.id}
-                onClick={() => handleSelecionarViagem(v.id)}
-                className={`glass-panel-light p-6 rounded-3xl border border-slate-800/80 cursor-pointer flex flex-col justify-between min-h-[220px] relative overflow-hidden group transition-all duration-300 hover:scale-[1.01] ${theme.border} ${theme.glow}`}
-              >
-                {/* Indicador Neon sutil de Atividade */}
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-indigo-500/10 to-transparent blur-md rounded-bl-full pointer-events-none" />
-
-                {/* Cabeçalho do Card */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[8.5px] font-bold font-mono-tech uppercase border px-2 py-0.5 rounded ${theme.badge}`}>
-                      ROTA ATIVA
-                    </span>
-                    <button
-                      onClick={(e) => handleDeletarViagem(e, v.id, v.destino)}
-                      className="w-7 h-7 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/25 border-0 text-rose-500 rounded-lg transition-colors cursor-pointer z-10 scale-90"
-                      title="Excluir Rota definitivamente"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                  <h3 className="text-base font-black text-slate-100 uppercase tracking-wide truncate pt-2">
-                    {v.destino.replace(/ \(.*\)/, "")}
-                  </h3>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-mono-tech mt-0.5">
-                    Saída: <span className="text-slate-400">{v.origem.replace(/ \(.*\)/, "")}</span>
-                  </p>
-                </div>
-
-                {/* Datas e Orçamento */}
-                <div className="pt-6 border-t border-slate-850 space-y-3.5">
-                  <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-slate-500 font-bold uppercase">Período</span>
-                    <span className="font-mono-tech text-slate-300 font-semibold">{v.data_inicio} a {v.data_fim}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-slate-500 font-bold uppercase">Orçamento Teto</span>
-                    <span className="font-mono-tech text-[#f59e0b] font-bold">R$ {v.orcamento_maximo.toLocaleString("pt-BR")}</span>
-                  </div>
-                </div>
-
-                {/* Overlay Hover Efeito */}
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-indigo-500/40 via-blue-500/40 to-emerald-500/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            );
-          })}
-
-          {/* Card Especial de Nova Rota */}
-          <div
-            onClick={() => setIsFormCriacaoAberto(true)}
-            className="glass-panel-light p-6 rounded-3xl border border-dashed border-slate-800 hover:border-indigo-500/60 bg-slate-950/20 hover:bg-slate-950/40 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 min-h-[220px] group/new glow-card-indigo select-none hover:scale-[1.01]"
-          >
-            <span className="text-3xl text-slate-650 group-hover/new:text-indigo-400 group-hover/new:scale-110 transition-all duration-300">➕</span>
-            <span className="text-[10px] font-black tracking-widest text-slate-450 group-hover/new:text-slate-200 mt-4 uppercase">
-              Nova Viagem
-            </span>
-            <span className="text-[9px] font-mono-tech text-slate-650 mt-1 uppercase">
-              Criar nova viagem no Firestore
-            </span>
-          </div>
-        </div>
-
-        {/* Modal de Criação (Overlay) */}
-        {isFormCriacaoAberto && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-4">
-            <div className="relative w-full max-w-xl animate-workspace-fade-in">
-              <TripForm
-                onCriarViagem={handleCriarViagem}
-                onClose={() => setIsFormCriacaoAberto(false)}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ==========================================
-  // LAYOUT 2: Workspace Focado com Sidebar
-  // ==========================================
-  
-  // 1. Cálculos de orçamento consolidados (para a aba de dashboard/ KPIs da sidebar)
   let totalHospedagem = 0;
   let totalPasseios = 0;
   let totalDespesas = 0;
@@ -596,7 +424,7 @@ export default function Home() {
   });
 
   const custoTotal = totalHospedagem + totalPasseios + totalDespesas;
-  const orcamento = viagemAtiva.orcamento_maximo || 0;
+  const orcamento = viagemAtiva?.orcamento_maximo || 0;
   const saldo = orcamento - custoTotal;
   const ultrapassou = orcamento > 0 && custoTotal > orcamento;
   const percentualConsumido = orcamento > 0 ? Math.min(100, Math.round((custoTotal / orcamento) * 100)) : 0;
@@ -743,70 +571,91 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch flex-1">
         
         {/* COLUNA 1: SIDEBAR LATERAL DE CONTROLE */}
-        <aside className="hidden lg:flex lg:col-span-3 flex-col justify-between glass-panel p-5 rounded-2xl relative overflow-hidden h-fit lg:h-[calc(100vh-3rem)] sticky lg:top-6 select-none">
-          <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
+        <aside className="hidden lg:flex lg:col-span-3 flex-col justify-between glass-panel p-5 rounded-2xl relative overflow-hidden h-fit lg:h-[calc(100vh-3rem)] sticky lg:top-6 select-none bg-[#130d20] border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500" />
           
           <div className="space-y-5">
             {/* Botão de Retorno Central */}
-            <button
-              onClick={() => setViagemAtiva(null)}
-              className="w-full h-10 px-4 flex items-center justify-center font-bold tracking-widest uppercase transition-all bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 cursor-pointer rounded-xl text-[9px] hover:scale-[1.01] active:scale-[0.99] shadow-inner"
-            >
-              Voltar para a Central
-            </button>
+            {viagemAtiva && (
+              <button
+                onClick={() => setViagemAtiva(null)}
+                className="w-full h-10 px-4 flex items-center justify-center font-bold tracking-widest uppercase transition-all bg-[#1a1230] border border-white/10 hover:border-white/20 text-[#8a82a8] hover:text-[#eeeaf6] cursor-pointer rounded-xl text-[9px] hover:scale-[1.01] active:scale-[0.99] shadow-inner font-mono"
+              >
+                Voltar para a Central
+              </button>
+            )}
 
             {/* Info Rota Compact Box */}
-            <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-xl text-center space-y-2 shadow-inner">
-              <span className="text-[8px] font-bold font-mono-tech text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded uppercase">
-                Workspace Ativo
-              </span>
-              <h2 className="text-xs font-black text-slate-100 uppercase tracking-wide truncate pt-1 font-heading">
-                {viagemAtiva.destino.replace(/ \(.*\)/, "")}
-              </h2>
-              <p className="text-[9.5px] font-mono-tech text-slate-400 font-semibold">
-                {viagemAtiva.data_inicio} até {viagemAtiva.data_fim}
-              </p>
-              <div className="text-[8.5px] font-mono-tech text-slate-650 bg-slate-950/80 px-2 py-0.5 rounded border border-slate-900 truncate shadow-inner">
-                REG: {viagemAtiva.id}
-              </div>
+            <div className="bg-[#1a1230]/60 border border-white/5 p-4 rounded-xl text-center space-y-2 shadow-inner">
+              {viagemAtiva ? (
+                <>
+                  <span className="text-[8px] font-bold font-mono text-[#c49eff] bg-[#c49eff]/10 border border-[#c49eff]/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                    Workspace Ativo
+                  </span>
+                  <h2 className="text-xs font-black text-[#eeeaf6] uppercase tracking-wide truncate pt-1 font-heading">
+                    {viagemAtiva.destino.replace(/ \(.*\)/, "")}
+                  </h2>
+                  <p className="text-[9.5px] font-mono text-[#8a82a8] font-semibold">
+                    {viagemAtiva.data_inicio} até {viagemAtiva.data_fim}
+                  </p>
+                  <div className="text-[8.5px] font-mono text-[#4a4468] bg-black/40 px-2 py-0.5 rounded border border-[#1a1230] truncate shadow-inner">
+                    REG: {viagemAtiva.id}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="text-[8px] font-bold font-mono text-[#8a82a8] bg-[#8a82a8]/10 border border-[#8a82a8]/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                    Workspace Inativo
+                  </span>
+                  <h2 className="text-xs font-black text-[#8a82a8] uppercase tracking-wide truncate pt-1 font-heading">
+                    Nenhuma Viagem Ativa
+                  </h2>
+                  <p className="text-[9.5px] font-mono text-[#4a4468] font-semibold">
+                    Selecione uma rota para carregar
+                  </p>
+                  <div className="text-[8.5px] font-mono text-[#4a4468] bg-black/40 px-2 py-0.5 rounded border border-[#1a1230] truncate shadow-inner">
+                    REG: N/A
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Bloco de Auth no Sidebar */}
             {isAuthLoading ? (
-              <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-xl text-center text-[8.5px] font-mono-tech text-slate-500 font-bold uppercase tracking-wider">
+              <div className="bg-[#1a1230]/40 border border-white/5 p-3 rounded-xl text-center text-[8.5px] font-mono text-[#8a82a8] font-bold uppercase tracking-wider">
                 Verificando Conta...
               </div>
             ) : user ? (
-              <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-xl flex items-center justify-between gap-2.5 shadow-inner">
+              <div className="bg-[#1a1230]/40 border border-white/5 p-3 rounded-xl flex items-center justify-between gap-2.5 shadow-inner">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {user.photoURL ? (
-                    <img src={user.photoURL} alt="Foto" className="w-6 h-6 rounded-full border border-indigo-500/40" />
+                    <img src={user.photoURL} alt="Foto" className="w-6 h-6 rounded-full border border-purple-500/40" />
                   ) : (
-                    <span className="w-6 h-6 flex items-center justify-center bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full font-bold text-[9px]">👤</span>
+                    <span className="w-6 h-6 flex items-center justify-center bg-purple-500/10 border border-purple-500/20 text-[#c49eff] rounded-full font-bold text-[9px]">👤</span>
                   )}
                   <div className="min-w-0 flex flex-col">
-                    <span className="text-slate-200 font-bold text-[9.5px] uppercase truncate tracking-wide leading-tight">
+                    <span className="text-[#eeeaf6] font-bold text-[9.5px] uppercase truncate tracking-wide leading-tight">
                       {user.displayName || "Usuário"}
                     </span>
-                    <span className="text-slate-500 font-mono-tech text-[8px] truncate leading-none mt-0.5">
+                    <span className="text-[#8a82a8] font-mono text-[8px] truncate leading-none mt-0.5">
                       {user.email}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="bg-transparent hover:text-rose-450 text-slate-450 font-bold text-[9px] uppercase border-0 cursor-pointer transition-colors"
+                  className="bg-transparent hover:text-rose-400 text-[#8a82a8] font-bold text-[9px] uppercase border-0 cursor-pointer transition-colors"
                   title="Sair da Conta"
                 >
                   Sair
                 </button>
               </div>
             ) : (
-              <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-xl flex flex-col gap-2 text-center shadow-inner">
-                <span className="text-[8.5px] font-mono-tech text-slate-500 uppercase tracking-wider font-bold">Acesso Restrito</span>
+              <div className="bg-[#1a1230]/40 border border-white/5 p-3 rounded-xl flex flex-col gap-2 text-center shadow-inner">
+                <span className="text-[8.5px] font-mono text-[#8a82a8] uppercase tracking-wider font-bold">Acesso Restrito</span>
                 <button
                   onClick={handleLoginGoogle}
-                  className="w-full py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer border-0 shadow-md active:scale-95"
+                  className="w-full py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer border-0 shadow-md active:scale-95"
                 >
                   🔑 Entrar com Google
                 </button>
@@ -819,124 +668,98 @@ export default function Home() {
                 onClick={() => setActiveTab("visao-geral")}
                 className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "visao-geral"
-                    ? "active-sidebar-capsule font-black"
-                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
+                    ? "bg-[#007aff] border-[#007aff] text-white shadow-[0_4px_18px_rgba(0,122,255,0.45)] scale-[1.01]"
+                    : "bg-[#1a1230]/40 border-white/5 hover:border-white/10 text-[#8a82a8] hover:text-[#eeeaf6] hover:bg-[#1a1230]/60"
                 }`}
               >
                 <span>📊 Visão Geral</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "visao-geral" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "visao-geral" ? "bg-white led-blue animate-pulse" : "bg-[#4a4468]"}`} />
               </button>
 
-              <button
-                onClick={() => setActiveTab("financas")}
-                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
-                  activeTab === "financas"
-                    ? "active-sidebar-capsule font-black"
-                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
-                }`}
-              >
-                <span>💸 Finanças</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "financas" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
-              </button>
-
-              <button
-                onClick={() => setActiveTab("cronograma")}
-                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
-                  activeTab === "cronograma"
-                    ? "active-sidebar-capsule font-black"
-                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
-                }`}
-              >
-                <span>📅 Cronograma Diário</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "cronograma" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
-              </button>
-
-              <button
-                onClick={() => setActiveTab("banco")}
-                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
-                  activeTab === "banco"
-                    ? "active-sidebar-capsule font-black"
-                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
-                }`}
-              >
-                <span>🛍️ Banco de Alocações</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "banco" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
-              </button>
-
-              <button
-                onClick={() => setActiveTab("checklist")}
-                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
-                  activeTab === "checklist"
-                    ? "active-sidebar-capsule font-black"
-                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
-                }`}
-              >
-                <span>🎒 Checklist de Bagagem</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "checklist" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
-              </button>
-
-              <button
-                onClick={() => setActiveTab("logs")}
-                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
-                  activeTab === "logs"
-                    ? "active-sidebar-capsule font-black"
-                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
-                }`}
-              >
-                <span>📋 Logs do Terminal</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "logs" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
-              </button>
+              {[
+                { id: "financas" as const, label: "Finanças", icon: "💸" },
+                { id: "cronograma" as const, label: "Cronograma Diário", icon: "📅" },
+                { id: "banco" as const, label: "Banco de Alocações", icon: "🛍️" },
+                { id: "checklist" as const, label: "Checklist de Bagagem", icon: "🎒" },
+                { id: "logs" as const, label: "Logs do Terminal", icon: "📋" }
+              ].map((t) => {
+                const isDisabled = !viagemAtiva;
+                const isSelected = activeTab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => !isDisabled && setActiveTab(t.id)}
+                    disabled={isDisabled}
+                    className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl ${
+                      isDisabled
+                        ? "bg-[#1a1230]/10 border-white/5 text-[#4a4468] cursor-not-allowed opacity-40"
+                        : isSelected
+                        ? "bg-[#007aff] border-[#007aff] text-white shadow-[0_4px_18px_rgba(0,122,255,0.45)] scale-[1.01]"
+                        : "bg-[#1a1230]/40 border-white/5 hover:border-white/10 text-[#8a82a8] hover:text-[#eeeaf6] hover:bg-[#1a1230]/60 cursor-pointer"
+                    }`}
+                  >
+                    <span>{t.icon} {t.label}</span>
+                    {!isDisabled && (
+                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-blue animate-pulse" : "bg-[#4a4468]"}`} />
+                    )}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
           {/* Rodapé da Sidebar - Configurações */}
-          <div className="pt-4 border-t border-slate-850 space-y-3.5 select-none mt-6">
+          <div className="pt-4 border-t border-white/5 space-y-3.5 select-none mt-6">
             {/* Botão Re-Cotar */}
-            <button
-              onClick={handleAtualizarCotacoes}
-              disabled={isUpdatingPrices}
-              className="w-full py-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/35 hover:border-indigo-400 text-indigo-400 hover:text-indigo-300 text-[9.5px] font-bold uppercase transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:hover:bg-transparent rounded-lg font-mono-tech shadow-md"
-            >
-              {isUpdatingPrices ? (
-                <>
-                  <span className="w-1.5 h-1.5 bg-indigo-500 led-blue rounded-full animate-ping" />
-                  Atualizando...
-                </>
-              ) : (
-                <>
-                  <span>🔄</span>
-                  <span>Re-cotar Valores</span>
-                </>
-              )}
-            </button>
+            {viagemAtiva && (
+              <button
+                onClick={handleAtualizarCotacoes}
+                disabled={isUpdatingPrices}
+                className="w-full py-2.5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-[#c49eff]/35 hover:border-[#c49eff] text-[#c49eff] hover:text-[#eeeaf6] text-[9.5px] font-bold uppercase transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:hover:bg-transparent rounded-lg font-mono shadow-md"
+              >
+                {isUpdatingPrices ? (
+                  <>
+                    <span className="w-1.5 h-1.5 bg-[#c49eff] led-blue rounded-full animate-ping" />
+                    Atualizando...
+                  </>
+                ) : (
+                  <>
+                    <span>🔄</span>
+                    <span>Re-cotar Valores</span>
+                  </>
+                )}
+              </button>
+            )}
 
             {/* Ações Auxiliares */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsFormEdicaoAberto(true)}
-                className="flex-1 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-750 text-slate-450 hover:text-slate-200 transition-colors uppercase font-bold text-[9px] rounded-lg cursor-pointer shadow-sm active:scale-95"
-              >
-                Editar
-              </button>
-              <button
-                onClick={(e) => handleDeletarViagem(e, viagemAtiva.id, viagemAtiva.destino)}
-                className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-500 transition-colors rounded-lg cursor-pointer flex items-center justify-center"
-                title="Excluir Viagem definitivamente"
-              >
-                🗑️
-              </button>
-            </div>
-
-            {/* Time/Status indicator - Redesenhado como na Imagem 2 */}
-            <div className="bg-slate-950/50 border border-slate-850 rounded-xl p-2.5 flex items-center justify-between font-mono-tech text-[8px] select-none shadow-inner">
-              <div className="flex items-center gap-1.5 font-bold">
-                <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
-                <span className="text-[#10b981]">ONLINE</span>
+            {viagemAtiva && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsFormEdicaoAberto(true)}
+                  className="flex-1 py-2 bg-[#1a1230] hover:bg-[#1a1230]/80 border border-white/10 hover:border-white/20 text-[#8a82a8] hover:text-[#eeeaf6] transition-colors uppercase font-bold text-[9px] rounded-lg cursor-pointer shadow-sm active:scale-95"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={(e) => handleDeletarViagem(e, viagemAtiva.id, viagemAtiva.destino)}
+                  className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-500 transition-colors rounded-lg cursor-pointer flex items-center justify-center"
+                  title="Excluir Viagem definitivamente"
+                >
+                  🗑️
+                </button>
               </div>
-              <span className="text-slate-800">|</span>
-              <span className="text-slate-400 font-bold uppercase tracking-wider">STABLE</span>
-              <span className="text-slate-800">|</span>
-              <span className="text-slate-500">SYS: 2026-05-30</span>
+            )}
+
+            {/* Time/Status indicator */}
+            <div className="bg-[#1a1230]/50 border border-white/5 rounded-xl p-2.5 flex items-center justify-between font-mono text-[8px] select-none shadow-inner">
+              <div className="flex items-center gap-1.5 font-bold">
+                <span className="w-1.5 h-1.5 bg-[#6ee8f8] rounded-full led-green animate-pulse" />
+                <span className="text-[#6ee8f8]">ONLINE</span>
+              </div>
+              <span className="text-[#4a4468]">|</span>
+              <span className="text-[#8a82a8] font-bold uppercase tracking-wider">STABLE</span>
+              <span className="text-[#4a4468]">|</span>
+              <span className="text-[#4a4468]">SYS: 2026-06-03</span>
             </div>
           </div>
         </aside>
@@ -945,32 +768,34 @@ export default function Home() {
         <main className="lg:col-span-9 flex flex-col space-y-4 min-h-0 workspace-fade-in pb-24 lg:pb-0">
           
           {/* Header de Acompanhamento no Workspace - Premium Status Node */}
-          <header className="w-full glass-panel p-4.5 flex items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none shadow-xl border border-slate-800/80">
-            <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-blue-500 to-indigo-600" />
+          <header className="w-full glass-panel p-4.5 flex items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none shadow-xl border border-white/5 bg-[#130d20]">
+            <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-purple-600 to-indigo-600" />
             <div className="flex items-center space-x-3.5">
-              <button
-                onClick={() => setViagemAtiva(null)}
-                className="lg:hidden w-8 h-8 flex items-center justify-center bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-350 hover:text-slate-100 rounded-xl text-xs transition-colors cursor-pointer shadow-inner"
-                title="Voltar para a Central"
-              >
-                ◀
-              </button>
+              {viagemAtiva && (
+                <button
+                  onClick={() => setViagemAtiva(null)}
+                  className="lg:hidden w-8 h-8 flex items-center justify-center bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-355 hover:text-slate-100 rounded-xl text-xs transition-colors cursor-pointer shadow-inner"
+                  title="Voltar para a Central"
+                >
+                  ◀
+                </button>
+              )}
               <div>
-                <h1 className="text-xs font-black tracking-wider text-slate-100 uppercase font-heading leading-tight pt-0.5">
-                  {viagemAtiva.destino.replace(/ \(.*\)/, "")}
+                <h1 className="text-xs font-black tracking-wider text-[#eeeaf6] uppercase font-heading leading-tight pt-0.5">
+                  {viagemAtiva ? viagemAtiva.destino.replace(/ \(.*\)/, "") : "Evolução de Viagens"}
                 </h1>
-                <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider font-mono-tech mt-0.5">
-                  ROTA DE PLANEJAMENTO ATIVA
+                <p className="text-[8px] text-[#8a82a8] font-bold uppercase tracking-wider font-mono mt-0.5">
+                  {viagemAtiva ? "ROTA DE PLANEJAMENTO ATIVA" : "SELECIONE OU CRIE UMA ROTA ABAIXO"}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 font-mono-tech text-[8px] select-none">
-              <div className="flex items-center space-x-1.5 bg-slate-950/60 px-3 py-1.5 border border-slate-850 rounded-xl shadow-inner font-bold">
-                <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
-                <span className="text-[#10b981]">ONLINE</span>
-                <span className="text-slate-800">|</span>
-                <span className="text-slate-400">STABLE</span>
+            <div className="flex items-center gap-2.5 font-mono text-[8px] select-none">
+              <div className="flex items-center space-x-1.5 bg-black/40 px-3 py-1.5 border border-white/5 rounded-xl shadow-inner font-bold">
+                <span className="w-1.5 h-1.5 bg-[#6ee8f8] rounded-full led-green animate-pulse" />
+                <span className="text-[#6ee8f8]">ONLINE</span>
+                <span className="text-[#4a4468]">|</span>
+                <span className="text-[#8a82a8]">STABLE</span>
               </div>
             </div>
           </header>
@@ -979,279 +804,363 @@ export default function Home() {
               ABA 1: Visão Geral
               ======================================= */}
           {activeTab === "visao-geral" && (
-            <div className="space-y-5 flex-1 flex flex-col min-h-0">
-              {/* KPIs de Orçamento Redesenhados de forma Ultra Premium */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
-                {/* KPI Orçamento Máximo */}
-                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
-                  <div>
-                    <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Teto Orçamentário</div>
-                    <div className="text-sm font-black text-slate-100 mt-1 font-heading">
-                      R$ {orcamento.toLocaleString("pt-BR")}
+            viagemAtiva ? (
+              <div className="space-y-5 flex-1 flex flex-col min-h-0">
+                {/* KPIs de Orçamento Redesenhados de forma Ultra Premium */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
+                  {/* KPI Orçamento Máximo */}
+                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                    <div>
+                      <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Teto Orçamentário</div>
+                      <div className="text-sm font-black text-slate-100 mt-1 font-heading">
+                        R$ {orcamento.toLocaleString("pt-BR")}
+                      </div>
+                      <div className="text-[8.5px] text-[#8a82a8] font-semibold mt-1.5 uppercase font-mono leading-none">
+                        definido pelo planejamento
+                      </div>
                     </div>
-                    <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
-                      definido pelo planejamento
+                    <div className="text-2xl text-slate-600 bg-slate-950/45 p-2.5 rounded-xl border border-slate-850 shadow-inner select-none">
+                      🔑
                     </div>
                   </div>
-                  <div className="text-2xl text-slate-600 bg-slate-950/45 p-2.5 rounded-xl border border-slate-850 shadow-inner select-none">
-                    🔑
-                  </div>
-                </div>
 
-                {/* KPI Consumido */}
-                <div className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between`}>
-                  <div>
-                    <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Consumo Consolidado</div>
-                    <div className={`text-sm font-black mt-1 font-heading ${ultrapassou ? "text-rose-400" : "text-[#10b981]"}`}>
-                      R$ {custoTotal.toLocaleString("pt-BR")}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1.5 select-none leading-none">
-                      <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#10b981]"}`}>
-                        {percentualConsumido}% CONSUMIDO
-                      </span>
-                      {ultrapassou && (
-                        <span className="text-[7px] bg-rose-500/20 text-rose-500 font-bold px-1.5 py-0.5 rounded uppercase led-red font-sans">
-                          EXCEDIDO
+                  {/* KPI Consumido */}
+                  <div className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between`}>
+                    <div>
+                      <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Consumo Consolidado</div>
+                      <div className={`text-sm font-black mt-1 font-heading ${ultrapassou ? "text-rose-400" : "text-[#6ee8f8]"}`}>
+                        R$ {custoTotal.toLocaleString("pt-BR")}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1.5 select-none leading-none">
+                        <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#6ee8f8]"}`}>
+                          {percentualConsumido}% CONSUMIDO
                         </span>
-                      )}
+                        {ultrapassou && (
+                          <span className="text-[7px] bg-rose-500/20 text-rose-500 font-bold px-1.5 py-0.5 rounded uppercase led-red font-sans">
+                            EXCEDIDO
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-2xl animate-pulse-lightning text-amber-500 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 shadow-inner select-none">
+                      ⚡
                     </div>
                   </div>
-                  <div className="text-2xl animate-pulse-lightning text-amber-500 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 shadow-inner select-none">
-                    ⚡
+
+                  {/* KPI Saldo Restante */}
+                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                    <div>
+                      <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Saldo Financeiro</div>
+                      <div className={`text-sm font-black mt-1 font-heading ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
+                        R$ {saldo.toLocaleString("pt-BR")}
+                      </div>
+                      <div className="text-[8.5px] text-[#8a82a8] font-semibold mt-1.5 uppercase font-mono leading-none">
+                        {saldo < 0 ? "saldo devedor da rota" : "saldo livre disponível"}
+                      </div>
+                    </div>
+                    <div className={`text-2xl animate-pulse-heartbeat p-2.5 rounded-xl border shadow-inner select-none ${
+                      saldo < 0 
+                        ? "text-rose-500 bg-rose-500/10 border-rose-500/20" 
+                        : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
+                    }`}>
+                      ❤️
+                    </div>
                   </div>
                 </div>
 
-                {/* KPI Saldo Restante */}
-                <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
-                  <div>
-                    <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest">Saldo Financeiro</div>
-                    <div className={`text-sm font-black mt-1 font-heading ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
-                      R$ {saldo.toLocaleString("pt-BR")}
-                    </div>
-                    <div className="text-[8.5px] text-slate-500 font-semibold mt-1.5 uppercase font-mono-tech leading-none">
-                      {saldo < 0 ? "saldo devedor da rota" : "saldo livre disponível"}
-                    </div>
-                  </div>
-                  <div className={`text-2xl animate-pulse-heartbeat p-2.5 rounded-xl border shadow-inner select-none ${
-                    saldo < 0 
-                      ? "text-rose-500 bg-rose-500/10 border-rose-500/20" 
-                      : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
-                  }`}>
-                    💚
-                  </div>
-                </div>
-              </div>
+                {/* Linha do Tempo de Custos Diários */}
+                <TimelineCompact
+                  datasViagem={datasViagem}
+                  roteiroDiario={roteiroDiario}
+                  orcamentoMaximo={viagemAtiva.orcamento_maximo}
+                  onSelecionarDia={(dia) => {
+                    setDiaAtivoWorkspace(dia);
+                    setActiveTab("cronograma"); // Redireciona para focar no cronograma
+                  }}
+                  diaAtivoWorkspace={diaAtivoWorkspace}
+                />
 
-              {/* Linha do Tempo de Custos Diários */}
-              <TimelineCompact
-                datasViagem={datasViagem}
-                roteiroDiario={roteiroDiario}
-                orcamentoMaximo={viagemAtiva.orcamento_maximo}
-                onSelecionarDia={(dia) => {
-                  setDiaAtivoWorkspace(dia);
-                  setActiveTab("cronograma"); // Redireciona para focar no cronograma
-                }}
-                diaAtivoWorkspace={diaAtivoWorkspace}
-              />
+                {/* Currency Rate Widget and Flight Tracker */}
+                <CurrencyWidget destino={viagemAtiva.destino} />
 
-              {/* Currency Rate Widget and Flight Tracker */}
-              <CurrencyWidget destino={viagemAtiva.destino} />
-
-              {/* Vetor de Rota Espacial e Conexão de Viagens */}
-              <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md relative overflow-hidden select-none hover:border-indigo-500/50 transition-colors">
-                <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-teal-400 via-indigo-500 to-purple-500" />
-                <h3 className="text-[10px] font-black uppercase text-teal-400 tracking-wider flex items-center gap-1.5 mb-4">
-                  <span>🛸</span>
-                  <span>Vetor de Viagem & Rota Espacial</span>
-                </h3>
-                
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4 px-2 relative">
-                  {/* Background Starry Glow */}
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(129,140,248,0.06),transparent_70%)] pointer-events-none" />
+                {/* Vetor de Rota Espacial e Conexão de Viagens */}
+                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md relative overflow-hidden select-none hover:border-indigo-500/50 transition-colors">
+                  <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-teal-400 via-indigo-500 to-purple-500" />
+                  <h3 className="text-[10px] font-black uppercase text-teal-400 tracking-wider flex items-center gap-1.5 mb-4">
+                    <span>🛸</span>
+                    <span>Vetor de Viagem & Rota Espacial</span>
+                  </h3>
                   
-                  {/* Origem Node */}
-                  <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
-                    <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-indigo-500/60 flex items-center justify-center font-mono-tech text-xs text-indigo-300 font-extrabold shadow-[0_0_12px_rgba(99,102,241,0.3)]">
-                      {viagemAtiva.origem ? (viagemAtiva.origem.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.origem.slice(0, 3).toUpperCase()) : "GRU"}
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
-                      {viagemAtiva.origem ? viagemAtiva.origem.split("(")[0].trim() : "Origem"}
-                    </span>
-                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono-tech mt-0.5">Ponto de Partida</span>
-                  </div>
-
-                  {/* Pulsating Dotted Dotted Vector */}
-                  <div className="flex-1 flex flex-col items-center justify-center min-w-[80px] w-full py-2 z-10 select-none">
-                    <div className="text-[9px] font-mono-tech text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 mb-1 animate-pulse">
-                      <span>🚀</span>
-                      <span>Em Rota</span>
-                    </div>
-                    <div className="w-full flex items-center justify-center relative px-4">
-                      <div className="w-full h-0.5 border-t border-dashed border-indigo-500/40 relative">
-                        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-                        <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                        <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                        <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2 rounded-full bg-teal-400 animate-ping" />
-                      </div>
-                    </div>
-                    <span className="text-[8px] text-indigo-400 font-bold uppercase tracking-widest mt-1.5 font-mono-tech">
-                      Conexão Direta Reativa
-                    </span>
-                  </div>
-
-                  {/* Destino Node */}
-                  <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
-                    <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-teal-500/60 flex items-center justify-center font-mono-tech text-xs text-teal-300 font-extrabold shadow-[0_0_12px_rgba(45,212,191,0.3)]">
-                      {viagemAtiva.destino ? (viagemAtiva.destino.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.destino.slice(0, 3).toUpperCase()) : "SCL"}
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
-                      {viagemAtiva.destino ? viagemAtiva.destino.split("(")[0].trim() : "Destino"}
-                    </span>
-                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono-tech mt-0.5">Destino Final</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Painel de Resumo das Abas (Dashboard Integrado) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full select-none">
-                
-                {/* 1. Resumo da Agenda e Itinerário */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
-                      <span>📅</span>
-                      <span>Resumo da Agenda</span>
-                    </h3>
-                    <div className="space-y-2 text-[10px] text-slate-300">
-                      <div className="flex justify-between">
-                        <span className="text-slate-500 uppercase font-bold">Duração Total:</span>
-                        <span className="font-mono-tech font-bold">{datasViagem.length} dias</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500 uppercase font-bold">Hospedagem reservada:</span>
-                        <span className="font-mono-tech font-bold text-emerald-450">
-                          {datasViagem.filter(dia => roteiroDiario[dia]?.hospedagem).length} de {datasViagem.length} noites
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-500 uppercase font-bold">Passeios & Atividades:</span>
-                        <span className="font-mono-tech font-bold text-amber-500">
-                          {datasViagem.reduce((acc, dia) => acc + (roteiroDiario[dia]?.atividades?.length || 0), 0)} itens agendados
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab("cronograma")}
-                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                  >
-                    Acessar Agenda Completa ➔
-                  </button>
-                </div>
-
-                {/* 2. Resumo de Finanças */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
-                      <span>💸</span>
-                      <span>Resumo de Finanças</span>
-                    </h3>
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4 px-2 relative">
+                    {/* Background Starry Glow */}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(129,140,248,0.06),transparent_70%)] pointer-events-none" />
                     
-                    {/* Segmented mini-bar */}
-                    <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-900 shadow-inner">
-                      {totalHospedagem > 0 && (
-                        <div style={{ width: `${percentualHospedagem}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600" />
-                      )}
-                      {totalPasseios > 0 && (
-                        <div style={{ width: `${percentualPasseios}%` }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950" />
-                      )}
-                      {totalDespesas > 0 && (
-                        <div style={{ width: `${percentualDespesas}%` }} className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950" />
-                      )}
-                      {custoTotal === 0 && (
-                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[7px] text-slate-650 font-bold uppercase tracking-wider">
-                          Nenhum gasto
+                    {/* Origem Node */}
+                    <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
+                      <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-indigo-500/60 flex items-center justify-center font-mono text-xs text-indigo-300 font-extrabold shadow-[0_0_12px_rgba(99,102,241,0.3)]">
+                        {viagemAtiva.origem ? (viagemAtiva.origem.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.origem.slice(0, 3).toUpperCase()) : "GRU"}
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
+                        {viagemAtiva.origem ? viagemAtiva.origem.split("(")[0].trim() : "Origem"}
+                      </span>
+                      <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono mt-0.5">Ponto de Partida</span>
+                    </div>
+
+                    {/* Pulsating Dotted Dotted Vector */}
+                    <div className="flex-1 flex flex-col items-center justify-center min-w-[80px] w-full py-2 z-10 select-none">
+                      <div className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 mb-1 animate-pulse">
+                        <span>🚀</span>
+                        <span>Em Rota</span>
+                      </div>
+                      <div className="w-full flex items-center justify-center relative px-4">
+                        <div className="w-full h-0.5 border-t border-dashed border-indigo-500/40 relative">
+                          <div className="absolute top-1/2 left-0 -translate-y-1/2 w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                          <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                          <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2 rounded-full bg-teal-400 animate-ping" />
                         </div>
-                      )}
+                      </div>
+                      <span className="text-[8px] text-indigo-400 font-bold uppercase tracking-widest mt-1.5 font-mono">
+                        Conexão Direta Reativa
+                      </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-1 text-[8px] font-bold">
-                      <div className="text-center">
-                        <span className="text-indigo-455 block">Acomodação</span>
-                        <span className="text-slate-500 font-mono-tech block mt-0.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
+                    {/* Destino Node */}
+                    <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
+                      <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-teal-500/60 flex items-center justify-center font-mono text-xs text-teal-300 font-extrabold shadow-[0_0_12px_rgba(45,212,191,0.3)]">
+                        {viagemAtiva.destino ? (viagemAtiva.destino.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.destino.slice(0, 3).toUpperCase()) : "SCL"}
                       </div>
-                      <div className="text-center">
-                        <span className="text-emerald-455 block">Atividades</span>
-                        <span className="text-slate-500 font-mono-tech block mt-0.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
-                      </div>
-                      <div className="text-center">
-                        <span className="text-amber-450 block">Despesas</span>
-                        <span className="text-slate-500 font-mono-tech block mt-0.5">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab("financas")}
-                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                  >
-                    Acessar Finanças ➔
-                  </button>
-                </div>
-
-                {/* 3. Banco de Alocações (Itens Livres) */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
-                      <span>🛍️</span>
-                      <span>Banco de Alocações</span>
-                    </h3>
-                    <div className="text-[10px] text-slate-450 leading-relaxed font-sans font-medium uppercase tracking-wide">
-                      Pesquise hotéis recomendados ou crie passeios customizados e injete-os em qualquer dia da viagem ativa.
+                      <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
+                        {viagemAtiva.destino ? viagemAtiva.destino.split("(")[0].trim() : "Destino"}
+                      </span>
+                      <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono mt-0.5">Destino Final</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setActiveTab("banco")}
-                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                  >
-                    Abrir Banco de Alocações ➔
-                  </button>
                 </div>
 
-                {/* 4. Console Real-Time Monitor Preview */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span>📋</span>
-                        <span>Monitor de Logs</span>
+                {/* Painel de Resumo das Abas (Dashboard Integrado) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full select-none">
+                  
+                  {/* 1. Resumo da Agenda e Itinerário */}
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                        <span>📅</span>
+                        <span>Resumo da Agenda</span>
+                      </h3>
+                      <div className="space-y-2 text-[10px] text-slate-300">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 uppercase font-bold">Duração Total:</span>
+                          <span className="font-mono font-bold">{datasViagem.length} dias</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 uppercase font-bold">Hospedagem reservada:</span>
+                          <span className="font-mono font-bold text-[#6ee8f8]">
+                            {datasViagem.filter(dia => roteiroDiario[dia]?.hospedagem).length} de {datasViagem.length} noites
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500 uppercase font-bold">Passeios & Atividades:</span>
+                          <span className="font-mono font-bold text-amber-500">
+                            {datasViagem.reduce((acc, dia) => acc + (roteiroDiario[dia]?.atividades?.length || 0), 0)} itens agendados
+                          </span>
+                        </div>
                       </div>
-                      <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full led-green animate-pulse" />
-                    </h3>
-                    <div className="bg-slate-950/70 border border-slate-850 rounded-xl p-3 font-mono-tech text-[8.5px] space-y-1.5 h-14 overflow-y-auto select-none shadow-inner leading-normal">
-                      {consoleLogs.map((log, index) => {
-                        let colorClass = "text-slate-455";
-                        if (log.includes("[SYSTEM]")) colorClass = "text-cyan-400/90 font-bold";
-                        else if (log.includes("FIRESTORE:")) colorClass = "text-[#10b981] font-semibold";
-                        else if (log.includes("OPTIMISTIC:")) colorClass = "text-indigo-455 font-bold";
-                        else if (log.includes("ERROR")) colorClass = "text-rose-400 animate-pulse";
-                        return (
-                          <div key={index} className={colorClass}>
-                            {log}
+                    </div>
+                    <button
+                      onClick={() => setActiveTab("cronograma")}
+                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                    >
+                      Acessar Agenda Completa ➔
+                    </button>
+                  </div>
+
+                  {/* 2. Resumo de Finanças */}
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                        <span>💸</span>
+                        <span>Resumo de Finanças</span>
+                      </h3>
+                      
+                      {/* Segmented mini-bar */}
+                      <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-900 shadow-inner">
+                        {totalHospedagem > 0 && (
+                          <div style={{ width: `${percentualHospedagem}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600" />
+                        )}
+                        {totalPasseios > 0 && (
+                          <div style={{ width: `${percentualPasseios}%` }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950" />
+                        )}
+                        {totalDespesas > 0 && (
+                          <div style={{ width: `${percentualDespesas}%` }} className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950" />
+                        )}
+                        {custoTotal === 0 && (
+                          <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[7px] text-slate-650 font-bold uppercase tracking-wider">
+                            Nenhum gasto
                           </div>
-                        );
-                      })}
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1 text-[8px] font-bold">
+                        <div className="text-center">
+                          <span className="text-indigo-455 block">Acomodação</span>
+                          <span className="text-slate-500 font-mono block mt-0.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-emerald-455 block">Atividades</span>
+                          <span className="text-slate-500 font-mono block mt-0.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
+                        </div>
+                        <div className="text-center">
+                          <span className="text-amber-450 block">Despesas</span>
+                          <span className="text-slate-500 font-mono block mt-0.5">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
+                        </div>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setActiveTab("financas")}
+                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                    >
+                      Acessar Finanças ➔
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setActiveTab("logs")}
-                    className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                  >
-                    Abrir Console de Logs ➔
-                  </button>
+
+                  {/* 3. Banco de Alocações (Itens Livres) */}
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                        <span>🛍️</span>
+                        <span>Banco de Alocações</span>
+                      </h3>
+                      <div className="text-[10px] text-slate-455 leading-relaxed font-sans font-medium uppercase tracking-wide">
+                        Pesquise hotéis recomendados ou crie passeios customizados e injete-os em qualquer dia da viagem ativa.
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab("banco")}
+                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                    >
+                      Abrir Banco de Alocações ➔
+                    </button>
+                  </div>
+
+                  {/* 4. Console Real-Time Monitor Preview */}
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                    <div className="space-y-3">
+                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span>📋</span>
+                          <span>Monitor de Logs</span>
+                        </div>
+                        <span className="w-1.5 h-1.5 bg-[#6ee8f8] rounded-full led-green animate-pulse" />
+                      </h3>
+                      <div className="bg-slate-950/70 border border-slate-850 rounded-xl p-3 font-mono text-[8.5px] space-y-1.5 h-14 overflow-y-auto select-none shadow-inner leading-normal">
+                        {consoleLogs.map((log, index) => {
+                          let colorClass = "text-slate-455";
+                          if (log.includes("[SYSTEM]")) colorClass = "text-cyan-400/90 font-bold";
+                          else if (log.includes("FIRESTORE:")) colorClass = "text-[#6ee8f8] font-semibold";
+                          else if (log.includes("OPTIMISTIC:")) colorClass = "text-indigo-455 font-bold";
+                          else if (log.includes("ERROR")) colorClass = "text-rose-400 animate-pulse";
+                          return (
+                            <div key={index} className={colorClass}>
+                              {log}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab("logs")}
+                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                    >
+                      Abrir Console de Logs ➔
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 select-none w-full">
+                {/* Introdução / Subtitle */}
+                <div className="text-center py-4 max-w-2xl mx-auto space-y-1">
+                  <h2 className="text-sm font-black text-[#eeeaf6] tracking-wider uppercase font-sans">
+                    Selecione uma Viagem
+                  </h2>
+                  <p className="text-[9px] text-[#8a82a8] uppercase tracking-widest font-bold font-mono">
+                    Acesse o workspace de planejamento focado ou crie uma nova rota
+                  </p>
                 </div>
 
+                {/* Grid de Viagens */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full pb-12">
+                  {viagens.map((v, index) => {
+                    const colors = [
+                      { border: "hover:border-[#c49eff]/60", badge: "text-[#c49eff] bg-[#c49eff]/10 border-[#c49eff]/20", glow: "glow-card-indigo" },
+                      { border: "hover:border-[#6ee8f8]/60", badge: "text-[#6ee8f8] bg-[#6ee8f8]/10 border-[#6ee8f8]/20", glow: "glow-card-emerald" },
+                      { border: "hover:border-[#fbbf24]/60", badge: "text-[#fbbf24] bg-[#fbbf24]/10 border-[#fbbf24]/20", glow: "glow-card-amber" }
+                    ];
+                    const theme = colors[index % colors.length];
+
+                    return (
+                      <div
+                        key={v.id}
+                        onClick={() => handleSelecionarViagem(v.id)}
+                        className={`bg-[#1a1230]/40 p-5 rounded-2xl border border-white/5 cursor-pointer flex flex-col justify-between min-h-[200px] relative overflow-hidden group transition-all duration-300 hover:scale-[1.01] ${theme.border}`}
+                      >
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-transparent blur-md rounded-bl-full pointer-events-none" />
+
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`text-[8px] font-bold font-mono uppercase border px-2 py-0.5 rounded ${theme.badge}`}>
+                              ROTA ATIVA
+                            </span>
+                            <button
+                              onClick={(e) => handleDeletarViagem(e, v.id, v.destino)}
+                              className="w-6 h-6 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/25 border-0 text-rose-500 rounded-lg transition-colors cursor-pointer z-10 scale-90"
+                              title="Excluir Rota definitivamente"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                          <h3 className="text-sm font-black text-[#eeeaf6] uppercase tracking-wide truncate pt-2 font-heading">
+                            {v.destino.replace(/ \(.*\)/, "")}
+                          </h3>
+                          <p className="text-[9px] text-[#8a82a8] font-bold uppercase tracking-wider font-mono mt-0.5">
+                            Saída: <span className="text-[#eeeaf6]/85">{v.origem.replace(/ \(.*\)/, "")}</span>
+                          </p>
+                        </div>
+
+                        <div className="pt-4 border-t border-white/5 space-y-2.5">
+                          <div className="flex justify-between items-center text-[9px]">
+                            <span className="text-[#8a82a8] font-bold uppercase">Período</span>
+                            <span className="font-mono text-[#eeeaf6] font-semibold">{v.data_inicio} a {v.data_fim}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[9px]">
+                            <span className="text-[#8a82a8] font-bold uppercase">Orçamento Teto</span>
+                            <span className="font-mono text-[#fbbf24] font-bold">R$ {v.orcamento_maximo.toLocaleString("pt-BR")}</span>
+                          </div>
+                        </div>
+
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-purple-500/40 via-blue-500/40 to-emerald-500/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                    );
+                  })}
+
+                  {/* Card Especial de Nova Rota */}
+                  <div
+                    onClick={() => setIsFormCriacaoAberto(true)}
+                    className="bg-[#1a1230]/20 p-5 rounded-2xl border border-dashed border-white/10 hover:border-purple-500/60 hover:bg-[#1a1230]/40 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 min-h-[200px] group/new select-none hover:scale-[1.01]"
+                  >
+                    <span className="text-2xl text-[#8a82a8] group-hover/new:text-purple-400 group-hover/new:scale-110 transition-all duration-300">➕</span>
+                    <span className="text-[9px] font-black tracking-widest text-[#8a82a8] group-hover/new:text-[#eeeaf6] mt-3 uppercase">
+                      Nova Viagem
+                    </span>
+                    <span className="text-[8px] font-mono text-[#4a4468] mt-1 uppercase">
+                      Criar nova viagem no Firestore
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {/* =======================================
@@ -1441,7 +1350,7 @@ export default function Home() {
 
                   {/* TravelersManager Component */}
                   <TravelersManager
-                    viajantes={viagemAtiva.viajantes || []}
+                    viajantes={viagemAtiva?.viajantes || []}
                     onAtualizarViajantes={handleAtualizarViajantes}
                   />
 
@@ -1452,7 +1361,7 @@ export default function Home() {
 
                   {/* BillSplitter Component */}
                   <BillSplitter
-                    viajantes={viagemAtiva.viajantes || []}
+                    viajantes={viagemAtiva?.viajantes || []}
                     despesas={todasDespesas}
                     usuarioAtualId={user?.uid || "operator-01"}
                   />
@@ -1920,7 +1829,7 @@ export default function Home() {
               <TimelineCompact
                 datasViagem={datasViagem}
                 roteiroDiario={roteiroDiario}
-                orcamentoMaximo={viagemAtiva.orcamento_maximo}
+                orcamentoMaximo={viagemAtiva?.orcamento_maximo || 0}
                 onSelecionarDia={(dia) => setDiaAtivoWorkspace(dia)}
                 diaAtivoWorkspace={diaAtivoWorkspace}
               />
@@ -1956,12 +1865,12 @@ export default function Home() {
                   onRemoverAtividade={handleRemoverAtividade}
                   onAdicionarDespesa={handleInjetarDespesa}
                   onRemoverDespesa={handleRemoverDespesa}
-                  destino={viagemAtiva.destino}
+                  destino={viagemAtiva?.destino || ""}
                   viagemAtiva={viagemAtiva}
                   diaAtivoWorkspace={diaAtivoWorkspace}
                   isModoFoco={isModoFoco}
                   onSalvarCronogramaInline={handleSalvarCronogramaInline}
-                  viajantes={viagemAtiva.viajantes}
+                  viajantes={viagemAtiva?.viajantes || []}
                   usuarioAtualId={user?.uid || "operator-01"}
                 />
               </div>
@@ -1978,7 +1887,7 @@ export default function Home() {
               <TimelineCompact
                 datasViagem={datasViagem}
                 roteiroDiario={roteiroDiario}
-                orcamentoMaximo={viagemAtiva.orcamento_maximo}
+                orcamentoMaximo={viagemAtiva?.orcamento_maximo || 0}
                 onSelecionarDia={(dia) => setDiaAtivoWorkspace(dia)}
                 diaAtivoWorkspace={diaAtivoWorkspace}
               />
@@ -2003,8 +1912,8 @@ export default function Home() {
                   onInjetarHospedagem={handleInjetarHospedagem}
                   onInjetarAtividade={handleInjetarAtividade}
                   onInjetarDespesa={handleInjetarDespesa}
-                  viagemDestino={viagemAtiva.destino}
-                  viajantes={viagemAtiva.viajantes}
+                  viagemDestino={viagemAtiva?.destino || ""}
+                  viajantes={viagemAtiva?.viajantes || []}
                   usuarioAtualId={user?.uid || "operator-01"}
                 />
               </div>
@@ -2016,7 +1925,7 @@ export default function Home() {
               ======================================= */}
           {activeTab === "checklist" && (
             <div className="space-y-4 flex-1 flex flex-col min-h-0">
-              <PackingChecklist viagemId={viagemAtiva.id} />
+              <PackingChecklist viagemId={viagemAtiva?.id || ""} />
             </div>
           )}
 
@@ -2107,6 +2016,18 @@ export default function Home() {
               onClose={() => setIsFormEdicaoAberto(false)}
               viagemParaEditar={viagemAtiva}
               onEditarViagem={handleEditarViagem}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Criação (Overlay) */}
+      {isFormCriacaoAberto && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+          <div className="relative w-full max-w-xl animate-workspace-fade-in">
+            <TripForm
+              onCriarViagem={handleCriarViagem}
+              onClose={() => setIsFormCriacaoAberto(false)}
             />
           </div>
         </div>

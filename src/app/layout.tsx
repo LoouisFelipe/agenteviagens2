@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Outfit, JetBrains_Mono } from "next/font/google";
+import { DM_Sans, Fraunces, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-plus-jakarta",
-  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-dm-sans",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
-const outfit = Outfit({
+const fraunces = Fraunces({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-fraunces",
+  style: ["normal", "italic"],
   weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
@@ -33,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${plusJakartaSans.variable} ${outfit.variable} ${jetBrainsMono.variable} antialiased`}
+        className={`${dmSans.variable} ${fraunces.variable} ${jetBrainsMono.variable} antialiased`}
       >
         {children}
       </body>

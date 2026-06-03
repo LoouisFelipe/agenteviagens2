@@ -3,24 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #040209;
-  --bg-secondary: #0a0813;
-  --bg-tertiary: #100d1f;
-  --border-primary: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(139, 92, 246, 0.4);
+  --bg-primary: #0e0817;      /* Fundo profundo escuro */
+  --bg-secondary: #130d20;    /* Card nível 1 */
+  --bg-tertiary: #1a1230;     /* Card nível 2, inputs e dcards */
+  --border-primary: rgba(255, 255, 255, 0.07);
+  --border-active: rgba(196, 158, 255, 0.4); /* Roxo neon */
   
   --accent-amber: #fbbf24;
-  --accent-green: #2dd4bf; /* Mint/Teal */
+  --accent-green: #6ee8f8; /* Verde Menta/Teal Neon */
   --accent-red: #f43f5e;
-  --accent-blue: #38bdf8; /* Sky Blue */
-  --accent-indigo: #818cf8; /* Violet/Indigo */
-  --accent-purple: #c084fc; /* Purple */
-  --accent-teal: #14b8a6; /* Teal */
+  --accent-blue: #007aff;  /* Azul Elétrico */
+  --accent-indigo: #c49eff; /* Lilás Neon */
+  --accent-purple: #8b5cf6;
+  --accent-teal: #14b8a6;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-mono: #2dd4bf;
+  --text-primary: #eeeaf6;
+  --text-secondary: #8a82a8;
+  --text-muted: #4a4468;
+  --text-mono: #6ee8f8;
 }
 
 /* Glassmorphism Evolution */
@@ -75,15 +75,16 @@
 body {
   color: var(--text-primary);
   background-color: var(--bg-primary);
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
   position: relative;
 }
 
-/* Títulos usando a fonte Outfit de alto impacto */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.02em;
+/* Títulos usando a fonte Fraunces para um toque elegante e sofisticado */
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-fraunces), serif;
+  letter-spacing: -0.01em;
 }
 
 /* Efeito de brilho de fundo radial suave e premium */
