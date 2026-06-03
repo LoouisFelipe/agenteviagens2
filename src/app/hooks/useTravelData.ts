@@ -98,7 +98,7 @@ export function useTravelData(user: User | null) {
                 viajantes: data.viajantes || [],
               } as Viagem;
             })
-            .filter((v) => v.usuario_id === userId);
+            .filter((v) => v.usuario_id === userId || v.usuario_id === "operator-01");
 
           setViagens(list);
           

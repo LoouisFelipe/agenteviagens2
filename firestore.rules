@@ -78,9 +78,8 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly(fields);
     }
 
-    // Valida se uma string de data segue o formato estrito YYYY-MM-DD
     function isValidDateString(dateStr) {
-      return dateStr is string && dateStr.matches("^\\\\d{4}-\\\\d{2}-\\\\d{2}$");
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$");
     }
 
     // Evita modificação de chaves imutáveis em updates
