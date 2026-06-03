@@ -1,25 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  listarViagens,
-  criarViagem,
-  editarViagem,
-  obterRoteiroDiario,
-  atualizarHospedagemDia,
-  adicionarAtividadeDia,
-  removerHospedagemDia,
-  removerAtividadeDia,
-  adicionarDespesaDia,
-  removerDespesaDia,
   atualizarCotacoesOnDemand,
-  atualizarCronogramaHorario,
-  deletarViagem,
-  atualizarViajantesViagem,
-  Viagem,
-  RoteiroDiario,
-  Hospedagem,
-  Atividade,
   Despesa,
   emitLog,
   subscribeToLogs,
@@ -35,41 +18,47 @@ import BillSplitter from "@/components/BillSplitter";
 import PackingChecklist from "@/components/PackingChecklist";
 import CurrencyWidget from "@/components/CurrencyWidget";
 
+// Hook de dados unificado
+import { useTravelData } from "@/app/hooks/useTravelData";
+
 // Firebase Imports
 import { db, isFirebaseConfigured, auth } from "@/lib/firebase";
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
-import { onSnapshot, query, collection, orderBy, doc, updateDoc, deleteDoc, setDoc, getDocs } from "firebase/firestore";
-
-// Helper para gerar as datas cronologicamente entre início e fim sem bugs de timezone
-function gerarDiasPeriodo(dataInicio: string, dataFim: string): string[] {
-  if (!dataInicio || !dataFim) return [];
-  const start = new Date(dataInicio + "T12:00:00");
-  const end = new Date(dataFim + "T12:00:00");
-  const datas: string[] = [];
-
-  const current = new Date(start);
-  while (current <= end) {
-    datas.push(current.toISOString().split("T")[0]);
-    current.setDate(current.getDate() + 1);
-  }
-  return datas;
-}
+import { doc, updateDoc, deleteDoc, setDoc, getDocs, collection } from "firebase/firestore";
 
 export default function Home() {
-  const [viagens, setViagens] = useState<Viagem[]>([]);
-  const [viagemAtiva, setViagemAtiva] = useState<Viagem | null>(null);
-  const [datasViagem, setDatasViagem] = useState<string[]>([]);
-  const [roteiroDiario, setRoteiroDiario] = useState<Record<string, RoteiroDiario>>({});
-  const [isFormCriacaoAberto, setIsFormCriacaoAberto] = useState(false);
-  const [isFormEdicaoAberto, setIsFormEdicaoAberto] = useState(false);
-  const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
-
   // Estados de Autenticação
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
+  const {
+    viagens,
+    viagemAtiva,
+    datasViagem,
+    roteiroDiario,
+    diaAtivoWorkspace,
+    setDiaAtivoWorkspace,
+    setViagemAtiva,
+    carregarDadosViagens,
+    selecionarViagem,
+    criarNovaViagem,
+    editarViagemAtiva,
+    deletarViagemAtiva,
+    injetarHospedagem,
+    injetarAtividade,
+    removerHospedagem,
+    removerAtividade,
+    injetarDespesa,
+    removerDespesa,
+    salvarCronogramaInline,
+    atualizarViajantes
+  } = useTravelData(user);
+
+  const [isFormCriacaoAberto, setIsFormCriacaoAberto] = useState(false);
+  const [isFormEdicaoAberto, setIsFormEdicaoAberto] = useState(false);
+  const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
+
   // Estados para o Workspace Focado (Redesenho UX Premium)
-  const [diaAtivoWorkspace, setDiaAtivoWorkspace] = useState<string | null>(null);
   const [isModoFoco, setIsModoFoco] = useState(true);
 
   // Controle de Abas no Sidebar
@@ -154,339 +143,41 @@ export default function Home() {
       emitLog("AUTH: Desconectando usuário do sistema...");
       await signOut(auth);
       setViagemAtiva(null);
-      setDatasViagem([]);
-      setDiaAtivoWorkspace(null);
-      setRoteiroDiario({});
     } catch (err) {
       console.error(err);
       emitLog("AUTH ERROR: Falha ao efetuar logout.");
     }
   };
 
-  // Salva o cronograma horário inline diretamente do Sidebar sem modal
-  const handleSalvarCronogramaInline = async (dataDia: string, cronograma: Record<string, string>) => {
-    if (!viagemAtiva) return;
-    try {
-      await atualizarCronogramaHorario(viagemAtiva.id, dataDia, cronograma);
-      emitLog(`SYSTEM: Cronograma do dia ${dataDia} atualizado no banco.`);
-    } catch (err) {
-      console.error("Erro ao salvar cronograma inline:", err);
-      emitLog("SYSTEM ERROR: Falha ao sincronizar o cronograma de horários.");
-    }
-  };
-
-  // Carrega todas as viagens salvas (usado como fallback local ou inicialização)
-  const carregarDadosViagens = useCallback(async (activeIdToSet?: string) => {
-    try {
-      const lista = await listarViagens();
-      setViagens(lista);
-
-      if (activeIdToSet) {
-        const selecionada = lista.find((v) => v.id === activeIdToSet);
-        if (selecionada) {
-          setViagemAtiva(selecionada);
-          const dias = gerarDiasPeriodo(selecionada.data_inicio, selecionada.data_fim);
-          setDatasViagem(dias);
-          if (dias.length > 0) {
-            setDiaAtivoWorkspace(dias[0]);
-          }
-          const roteiro = await obterRoteiroDiario(selecionada.id);
-          setRoteiroDiario(roteiro);
-        }
-      }
-    } catch (err) {
-      console.error("Erro ao carregar lista de viagens:", err);
-      emitLog("SYSTEM ERROR: Falha de comunicação ao listar viagens.");
-    }
-  }, []);
-
-  // 1. Escuta Viagens em tempo real (Filtra por proprietário no cliente para máxima resiliência)
-  useEffect(() => {
-    if (isFirebaseConfigured && db) {
-      emitLog("FIRESTORE: Conectando escuta em tempo real da coleção 'viagens'...");
-      const q = query(collection(db, "viagens"), orderBy("criado_em", "desc"));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const currentUser = auth.currentUser;
-        const userId = currentUser ? currentUser.uid : "operator-01";
-        
-        const list = snapshot.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            usuario_id: data.usuario_id || "operator-01",
-            origem: data.origem || data.origen || "Não informada",
-            destino: data.destino || "Não informado",
-            data_inicio: data.data_inicio,
-            data_fim: data.data_fim,
-            criado_em: data.criado_em,
-            orcamento_maximo: Number(data.orcamento_maximo ?? data.orcamento) || 0,
-            viajantes: data.viajantes || [],
-          } as Viagem;
-        }).filter(v => v.usuario_id === userId);
-        
-        setViagens(list);
-        setViagemAtiva((prevAtiva) => {
-          if (!prevAtiva) return null;
-          const atualizada = list.find((v) => v.id === prevAtiva.id);
-          return atualizada || prevAtiva;
-        });
-        emitLog(`FIRESTORE: ${list.length} viagens hidratadas reativamente.`);
-      }, (err) => {
-        console.error("Erro ao escutar viagens:", err);
-        emitLog("FIRESTORE ERROR: Falha na escuta de viagens em tempo real.");
-      });
-      return () => unsubscribe();
-    } else {
-      carregarDadosViagens();
-    }
-  }, [user, carregarDadosViagens]);
-
-  // 2. Escuta Roteiros diários em tempo real (Hospedagem, Atividades, Cronogramas e Despesas)
-  useEffect(() => {
-    if (!viagemAtiva) {
-      setRoteiroDiario({});
-      return;
-    }
-
-    if (isFirebaseConfigured && db) {
-      emitLog(`FIRESTORE: Conectando ouvintes em tempo real para subcoleções do Roteiro ID [${viagemAtiva.id}]...`);
-      const unsubscribes: (() => void)[] = [];
-
-      const hoteisRef = collection(db, "viagens", viagemAtiva.id, "hoteis");
-      const passeiosRef = collection(db, "viagens", viagemAtiva.id, "passeios");
-      const roteirosRef = collection(db, "viagens", viagemAtiva.id, "roteiros");
-      const despesasRef = collection(db, "viagens", viagemAtiva.id, "despesas");
-
-      // Buffers locais
-      let localHoteis: Record<string, Hospedagem> = {};
-      let localPasseios: Record<string, Atividade[]> = {};
-      let localRoteiros: Record<string, Record<string, string>> = {};
-      let localDespesas: Record<string, Despesa[]> = {};
-
-      const combinarRoteiroReativo = () => {
-        const novoRoteiro: Record<string, RoteiroDiario> = {};
-        
-        // Inicializa todas as datas do período de viagem e a chave global
-        datasViagem.forEach((dia) => {
-          novoRoteiro[dia] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
-        });
-        novoRoteiro["global"] = { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
-
-        // Preenche hotéis
-        Object.keys(localHoteis).forEach((diaId) => {
-          if (novoRoteiro[diaId]) {
-             novoRoteiro[diaId].hospedagem = localHoteis[diaId];
-          }
-        });
-
-        // Preenche passeios
-        Object.keys(localPasseios).forEach((diaId) => {
-          if (novoRoteiro[diaId]) {
-             novoRoteiro[diaId].atividades = localPasseios[diaId];
-          }
-        });
-
-        // Preenche cronogramas/roteiros
-        Object.keys(localRoteiros).forEach((diaId) => {
-          if (novoRoteiro[diaId]) {
-             novoRoteiro[diaId].cronograma_horario = localRoteiros[diaId];
-          }
-        });
-
-        // Preenche despesas
-        Object.keys(localDespesas).forEach((diaId) => {
-          if (novoRoteiro[diaId]) {
-             novoRoteiro[diaId].despesas = localDespesas[diaId];
-          }
-        });
-
-        setRoteiroDiario(novoRoteiro);
-      };
-
-      // A. Ouvinte de Hotéis
-      unsubscribes.push(onSnapshot(hoteisRef, (snap) => {
-        localHoteis = {};
-        snap.docs.forEach((doc) => {
-          const data = doc.data();
-          localHoteis[doc.id] = {
-            nome: data.nome || "",
-            preco_diario: Number(data.preco_diario) || 0,
-            link: data.link || ""
-          };
-        });
-        combinarRoteiroReativo();
-      }));
-
-      // B. Ouvinte de Passeios/Atividades
-      unsubscribes.push(onSnapshot(passeiosRef, (snap) => {
-        const tempPasseios: Record<string, Array<Atividade & { criado_em?: { seconds?: number; nanoseconds?: number } | null }>> = {};
-        snap.docs.forEach((doc) => {
-          const data = doc.data();
-          const diaId = data.diaId;
-          if (diaId) {
-            if (!tempPasseios[diaId]) tempPasseios[diaId] = [];
-            tempPasseios[diaId].push({
-              id: doc.id,
-              nome: data.nome || "",
-              valor: Number(data.valor) || 0,
-              link: data.link || "",
-              criado_em: data.criado_em
-            });
-          }
-        });
-        
-        localPasseios = {};
-        Object.keys(tempPasseios).forEach((diaId) => {
-          localPasseios[diaId] = tempPasseios[diaId].sort((a, b) => {
-            const tA = a.criado_em?.seconds || 0;
-            const tB = b.criado_em?.seconds || 0;
-            return tA - tB;
-          }).map(p => ({
-            id: p.id,
-            nome: p.nome,
-            valor: p.valor,
-            link: p.link
-          }));
-        });
-        combinarRoteiroReativo();
-      }));
-
-      // C. Ouvinte de Roteiros/Cronograma de Horas
-      unsubscribes.push(onSnapshot(roteirosRef, (snap) => {
-        localRoteiros = {};
-        snap.docs.forEach((doc) => {
-          const data = doc.data();
-          localRoteiros[doc.id] = (data.cronograma_horario as Record<string, string>) || {};
-        });
-        combinarRoteiroReativo();
-      }));
-
-      // D. Ouvinte de Despesas Extras
-      unsubscribes.push(onSnapshot(despesasRef, (snap) => {
-        const tempDespesas: Record<string, Array<Despesa & { criado_em?: { seconds?: number; nanoseconds?: number } | null }>> = {};
-        snap.docs.forEach((doc) => {
-          const data = doc.data();
-          const diaId = data.diaId;
-          if (diaId) {
-            if (!tempDespesas[diaId]) tempDespesas[diaId] = [];
-            tempDespesas[diaId].push({
-              id: doc.id,
-              diaId: data.diaId,
-              nome: data.nome || "",
-              valor: Number(data.valor) || 0,
-              categoria: data.categoria || "Outros",
-              criado_em: data.criado_em
-            });
-          }
-        });
-
-        localDespesas = {};
-        Object.keys(tempDespesas).forEach((diaId) => {
-          localDespesas[diaId] = tempDespesas[diaId].sort((a, b) => {
-            const tA = a.criado_em?.seconds || 0;
-            const tB = b.criado_em?.seconds || 0;
-            return tA - tB;
-          }).map(d => ({
-            id: d.id,
-            diaId: d.diaId,
-            nome: d.nome,
-            valor: d.valor,
-            categoria: d.categoria
-          }));
-        });
-        combinarRoteiroReativo();
-      }));
-
-      return () => {
-        unsubscribes.forEach((u) => u());
-      };
-    } else {
-      // Fallback estático de LocalStorage
-      const raw = localStorage.getItem(`chilinho_itinerary_${viagemAtiva.id}`);
-      if (raw) {
-        setRoteiroDiario(JSON.parse(raw));
-      }
-    }
-  }, [viagemAtiva, datasViagem]);
-
-
-  // Handler para trocar de viagem ativa
+  // Mapeamentos e adaptadores para o hook customizado
   const handleSelecionarViagem = async (id: string) => {
-    const selecionada = viagens.find((v) => v.id === id);
-    if (selecionada) {
-      emitLog(`SYSTEM: Alternando painel operacional para a Rota: [${selecionada.destino}]`);
-      setViagemAtiva(selecionada);
-      const dias = gerarDiasPeriodo(selecionada.data_inicio, selecionada.data_fim);
-      setDatasViagem(dias);
-      if (dias.length > 0) {
-        setDiaAtivoWorkspace(dias[0]);
-      }
-      const roteiro = await obterRoteiroDiario(selecionada.id);
-      setRoteiroDiario(roteiro);
-      setActiveTab("visao-geral"); // Reseta para a visão geral ao focar
-    }
+    await selecionarViagem(id);
+    setActiveTab("visao-geral");
   };
 
-  // Handler para criar nova viagem com suporte a orçamento
-  const handleCriarViagem = async (novaViagemData: {
+  interface NovaViagemInput {
     origem: string;
     destino: string;
     data_inicio: string;
     data_fim: string;
     orcamento: number;
-  }) => {
-    const payload = {
-      usuario_id: "operator-01",
-      origem: novaViagemData.origem,
-      destino: novaViagemData.destino,
-      data_inicio: novaViagemData.data_inicio,
-      data_fim: novaViagemData.data_fim,
-      orcamento_maximo: novaViagemData.orcamento,
-    };
-    const novoId = await criarViagem(payload);
-    // Recarrega a base e seleciona automaticamente a nova viagem ativa
-    await carregarDadosViagens(novoId);
+  }
+
+  const handleCriarViagem = async (novaViagemData: NovaViagemInput) => {
+    await criarNovaViagem(novaViagemData);
     setIsFormCriacaoAberto(false);
   };
 
-  // Handler para editar viagem existente
-  const handleEditarViagem = async (
-    id: string,
-    novaViagemData: {
-      origem: string;
-      destino: string;
-      data_inicio: string;
-      data_fim: string;
-      orcamento: number;
-    }
-  ) => {
-    await editarViagem(
-      id,
-      novaViagemData.origem,
-      novaViagemData.destino,
-      novaViagemData.data_inicio,
-      novaViagemData.data_fim,
-      novaViagemData.orcamento
-    );
-    // Recarrega a base e foca na viagem editada
-    await carregarDadosViagens(id);
+  const handleEditarViagem = async (id: string, novaViagemData: NovaViagemInput) => {
+    await editarViagemAtiva(id, novaViagemData);
     setIsFormEdicaoAberto(false);
   };
 
-  // Handler para deletar uma viagem definitivamente
   const handleDeletarViagem = async (e: React.MouseEvent, id: string, destino: string) => {
     e.stopPropagation();
     if (confirm(`⚠️ Tem certeza que deseja excluir a viagem para ${destino}?\nEsta ação é permanente e apagará todos os dados associados no banco de dados.`)) {
       try {
-        await deletarViagem(id);
-        emitLog(`SYSTEM: Viagem ID ${id} excluída definitivamente do banco de dados.`);
-        if (viagemAtiva?.id === id) {
-          setViagemAtiva(null);
-          setDatasViagem([]);
-          setDiaAtivoWorkspace(null);
-          setRoteiroDiario({});
-        }
-        await carregarDadosViagens();
+        await deletarViagemAtiva(id);
       } catch (err) {
         console.error("Erro ao deletar viagem:", err);
         emitLog("SYSTEM ERROR: Falha ao excluir viagem.");
@@ -494,189 +185,14 @@ export default function Home() {
     }
   };
 
-  // Handler para atualizar viajantes (membros da viagem) reativamente
-  const handleAtualizarViajantes = async (viajantes: string[]) => {
-    if (!viagemAtiva) return;
-    try {
-      await atualizarViajantesViagem(viagemAtiva.id, viajantes);
-      setViagemAtiva((prev) => prev ? { ...prev, viajantes } : null);
-      emitLog(`SYSTEM: Lista de viajantes atualizada com sucesso.`);
-    } catch (err) {
-      console.error("Erro ao atualizar viajantes:", err);
-      emitLog("SYSTEM ERROR: Falha ao atualizar a lista de viajantes.");
-    }
-  };
-
-  // Lado A ➔ Injetar Hospedagem (Otimista)
-  const handleInjetarHospedagem = async (dataDia: string, hospedagem: Hospedagem) => {
-    if (!viagemAtiva) return;
-
-    const backupRoteiro = { ...roteiroDiario };
-    const otimistaRoteiro = { ...roteiroDiario };
-    if (!otimistaRoteiro[dataDia]) {
-      otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [] };
-    }
-    otimistaRoteiro[dataDia] = {
-      ...otimistaRoteiro[dataDia],
-      hospedagem,
-    };
-    setRoteiroDiario(otimistaRoteiro);
-    emitLog(`OPTIMISTIC: Hospedagem [${hospedagem.nome}] injetada na interface no dia ${dataDia}.`);
-
-    try {
-      await atualizarHospedagemDia(viagemAtiva.id, dataDia, hospedagem);
-      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(confirmado);
-    } catch {
-      setRoteiroDiario(backupRoteiro);
-      emitLog("OPTIMISTIC ERROR: Falha ao sincronizar hospedagem no banco. Ação revertida.");
-    }
-  };
-
-  // Lado A ➔ Injetar Atividade (Otimista)
-  const handleInjetarAtividade = async (dataDia: string, atividade: Atividade) => {
-    if (!viagemAtiva) return;
-
-    const backupRoteiro = { ...roteiroDiario };
-    const otimistaRoteiro = { ...roteiroDiario };
-    if (!otimistaRoteiro[dataDia]) {
-      otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [] };
-    }
-    otimistaRoteiro[dataDia] = {
-      ...otimistaRoteiro[dataDia],
-      atividades: [...otimistaRoteiro[dataDia].atividades, atividade],
-    };
-    setRoteiroDiario(otimistaRoteiro);
-    emitLog(`OPTIMISTIC: Atividade [${atividade.nome}] injetada na interface no dia ${dataDia}.`);
-
-    try {
-      await adicionarAtividadeDia(viagemAtiva.id, dataDia, atividade);
-      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(confirmado);
-    } catch {
-      setRoteiroDiario(backupRoteiro);
-      emitLog("OPTIMISTIC ERROR: Falha ao sincronizar atividade no banco. Ação revertida.");
-    }
-  };
-
-  // Lado B ➔ Remover Hospedagem (Otimista)
-  const handleRemoverHospedagem = async (dataDia: string) => {
-    if (!viagemAtiva) return;
-
-    const backupRoteiro = { ...roteiroDiario };
-    const otimistaRoteiro = { ...roteiroDiario };
-    if (otimistaRoteiro[dataDia]) {
-      otimistaRoteiro[dataDia] = {
-        ...otimistaRoteiro[dataDia],
-        hospedagem: null,
-      };
-    }
-    setRoteiroDiario(otimistaRoteiro);
-    emitLog(`OPTIMISTIC: Hospedagem removida da interface no dia ${dataDia}.`);
-
-    try {
-      await removerHospedagemDia(viagemAtiva.id, dataDia);
-      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(confirmado);
-    } catch {
-      setRoteiroDiario(backupRoteiro);
-      emitLog("OPTIMISTIC ERROR: Falha ao remover hospedagem do banco. Ação revertida.");
-    }
-  };
-
-  // Lado B ➔ Remover Atividade (Otimista)
-  const handleRemoverAtividade = async (dataDia: string, index: number) => {
-    if (!viagemAtiva) return;
-
-    const backupRoteiro = { ...roteiroDiario };
-    const otimistaRoteiro = { ...roteiroDiario };
-    if (otimistaRoteiro[dataDia] && otimistaRoteiro[dataDia].atividades) {
-      const novasAtividades = [...otimistaRoteiro[dataDia].atividades];
-      novasAtividades.splice(index, 1);
-      otimistaRoteiro[dataDia] = {
-        ...otimistaRoteiro[dataDia],
-        atividades: novasAtividades,
-      };
-    }
-    setRoteiroDiario(otimistaRoteiro);
-    emitLog(`OPTIMISTIC: Atividade index #${index} removida da interface no dia ${dataDia}.`);
-
-    try {
-      await removerAtividadeDia(viagemAtiva.id, dataDia, index);
-      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(confirmado);
-    } catch {
-      setRoteiroDiario(backupRoteiro);
-      emitLog("OPTIMISTIC ERROR: Falha ao remover atividade do banco. Ação revertida.");
-    }
-  };
-
-  // Lado A/B ➔ Injetar Despesa (Otimista)
-  const handleInjetarDespesa = async (
-    dataDia: string,
-    despesa: {
-      nome: string;
-      valor: number;
-      categoria: string;
-      pagoPor?: string;
-      divididoCom?: string[];
-      moedaOriginal?: string;
-      valorOriginal?: number;
-    }
-  ) => {
-    if (!viagemAtiva) return;
-
-    const backupRoteiro = { ...roteiroDiario };
-    const otimistaRoteiro = { ...roteiroDiario };
-    if (!otimistaRoteiro[dataDia]) {
-      otimistaRoteiro[dataDia] = { hospedagem: null, atividades: [], despesas: [] };
-    }
-    if (!otimistaRoteiro[dataDia].despesas) {
-      otimistaRoteiro[dataDia].despesas = [];
-    }
-
-    const tempId = "exp_" + Math.random().toString(36).substring(2, 9);
-    otimistaRoteiro[dataDia] = {
-      ...otimistaRoteiro[dataDia],
-      despesas: [...(otimistaRoteiro[dataDia].despesas || []), { id: tempId, diaId: dataDia, ...despesa }],
-    };
-    setRoteiroDiario(otimistaRoteiro);
-    emitLog(`OPTIMISTIC: Despesa [${despesa.nome}] injetada na interface no dia ${dataDia}.`);
-
-    try {
-      await adicionarDespesaDia(viagemAtiva.id, dataDia, despesa);
-      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(confirmado);
-    } catch {
-      setRoteiroDiario(backupRoteiro);
-      emitLog("OPTIMISTIC ERROR: Falha ao sincronizar despesa no banco. Ação revertida.");
-    }
-  };
-
-  // Lado B ➔ Remover Despesa (Otimista)
-  const handleRemoverDespesa = async (dataDia: string, despesaId: string) => {
-    if (!viagemAtiva) return;
-
-    const backupRoteiro = { ...roteiroDiario };
-    const otimistaRoteiro = { ...roteiroDiario };
-    if (otimistaRoteiro[dataDia] && otimistaRoteiro[dataDia].despesas) {
-      otimistaRoteiro[dataDia] = {
-        ...otimistaRoteiro[dataDia],
-        despesas: otimistaRoteiro[dataDia].despesas.filter(d => d.id !== despesaId),
-      };
-    }
-    setRoteiroDiario(otimistaRoteiro);
-    emitLog(`OPTIMISTIC: Despesa ID ${despesaId} removida da interface no dia ${dataDia}.`);
-
-    try {
-      await removerDespesaDia(viagemAtiva.id, dataDia, despesaId);
-      const confirmado = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(confirmado);
-    } catch {
-      setRoteiroDiario(backupRoteiro);
-      emitLog("OPTIMISTIC ERROR: Falha ao remover despesa do banco. Ação revertida.");
-    }
-  };
+  const handleInjetarHospedagem = injetarHospedagem;
+  const handleInjetarAtividade = injetarAtividade;
+  const handleRemoverHospedagem = removerHospedagem;
+  const handleRemoverAtividade = removerAtividade;
+  const handleInjetarDespesa = injetarDespesa;
+  const handleRemoverDespesa = removerDespesa;
+  const handleSalvarCronogramaInline = salvarCronogramaInline;
+  const handleAtualizarViajantes = atualizarViajantes;
 
   // Handler para submeter despesa rápida em Finanças
   const handleSubmeterFinDespesa = async (e: React.FormEvent) => {
@@ -868,8 +384,7 @@ export default function Home() {
     setIsUpdatingPrices(true);
     try {
       await atualizarCotacoesOnDemand(viagemAtiva.id);
-      const roteiro = await obterRoteiroDiario(viagemAtiva.id);
-      setRoteiroDiario(roteiro);
+      await carregarDadosViagens(viagemAtiva.id);
     } catch (err) {
       console.error("Falha ao rodar JOB de preços:", err);
       emitLog("SYSTEM ERROR: Falha crítica na cotação automática.");
@@ -884,25 +399,22 @@ export default function Home() {
   if (!viagemAtiva) {
     return (
       <div className="flex flex-col min-h-screen p-4 md:p-6 space-y-6 max-w-7xl mx-auto relative selection:bg-indigo-500/30">
-        {/* Glowing radial blobs no BG */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 select-none rounded-3xl">
-          <div className="glass-blob animate-drift-1 bg-indigo-600/10 w-[500px] h-[500px] -top-40 -left-40" />
-          <div className="glass-blob animate-drift-2 bg-emerald-500/5 w-[600px] h-[600px] top-[40%] -right-40" />
-        </div>
+        {/* Pulsating Gradient Mesh BG */}
+        <div className="gradient-mesh-bg" />
 
         {/* Header Premium Central */}
-        <header className="w-full glass-panel shadow-xl shadow-slate-950/20 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none">
-          <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
+        <header className="w-full glass-panel-evolution shadow-xl shadow-slate-950/20 p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-teal-400 via-indigo-500 to-purple-500" />
           <div className="flex items-center space-x-3.5">
-            <div className="bg-indigo-600 text-white p-3 rounded-xl font-black text-sm tracking-widest shadow-lg shadow-indigo-500/30">
-              CHL
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-3 rounded-xl font-black text-sm tracking-widest shadow-lg shadow-indigo-500/30 animate-pulse">
+              EVO
             </div>
             <div>
               <h1 className="text-sm font-black tracking-widest text-slate-100 uppercase font-sans">
-                CHILINHO GESTÃO DE VIAGENS
+                EVOLUÇÃO DE VIAGENS
               </h1>
-              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5 font-mono-tech">
-                Painel de Gestão e Planejamento
+              <p className="text-[10px] text-teal-400 font-bold uppercase tracking-wider mt-0.5 font-mono-tech">
+                Plataforma de Coordenação e Roteiros
               </p>
             </div>
           </div>
@@ -1224,11 +736,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen p-4 md:p-6 space-y-4 max-w-7xl mx-auto relative selection:bg-indigo-500/30">
-      {/* Mesh Glowing Blobs no background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10 select-none rounded-3xl">
-        <div className="glass-blob animate-drift-1 bg-indigo-600/10 w-[500px] h-[500px] -top-40 -left-40" />
-        <div className="glass-blob animate-drift-2 bg-emerald-500/5 w-[600px] h-[600px] top-[40%] -right-40" />
-      </div>
+      {/* Pulsating Gradient Mesh BG */}
+      <div className="gradient-mesh-bg" />
 
       {/* Grid Principal Dividida: Sidebar e Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch flex-1">
@@ -1547,6 +1056,61 @@ export default function Home() {
 
               {/* Currency Rate Widget and Flight Tracker */}
               <CurrencyWidget destino={viagemAtiva.destino} />
+
+              {/* Vetor de Rota Espacial e Conexão de Viagens */}
+              <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md relative overflow-hidden select-none hover:border-indigo-500/50 transition-colors">
+                <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-teal-400 via-indigo-500 to-purple-500" />
+                <h3 className="text-[10px] font-black uppercase text-teal-400 tracking-wider flex items-center gap-1.5 mb-4">
+                  <span>🛸</span>
+                  <span>Vetor de Viagem & Rota Espacial</span>
+                </h3>
+                
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4 px-2 relative">
+                  {/* Background Starry Glow */}
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(129,140,248,0.06),transparent_70%)] pointer-events-none" />
+                  
+                  {/* Origem Node */}
+                  <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
+                    <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-indigo-500/60 flex items-center justify-center font-mono-tech text-xs text-indigo-300 font-extrabold shadow-[0_0_12px_rgba(99,102,241,0.3)]">
+                      {viagemAtiva.origem ? (viagemAtiva.origem.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.origem.slice(0, 3).toUpperCase()) : "GRU"}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
+                      {viagemAtiva.origem ? viagemAtiva.origem.split("(")[0].trim() : "Origem"}
+                    </span>
+                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono-tech mt-0.5">Ponto de Partida</span>
+                  </div>
+
+                  {/* Pulsating Dotted Dotted Vector */}
+                  <div className="flex-1 flex flex-col items-center justify-center min-w-[80px] w-full py-2 z-10 select-none">
+                    <div className="text-[9px] font-mono-tech text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 mb-1 animate-pulse">
+                      <span>🚀</span>
+                      <span>Em Rota</span>
+                    </div>
+                    <div className="w-full flex items-center justify-center relative px-4">
+                      <div className="w-full h-0.5 border-t border-dashed border-indigo-500/40 relative">
+                        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+                        <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                        <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                        <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2 rounded-full bg-teal-400 animate-ping" />
+                      </div>
+                    </div>
+                    <span className="text-[8px] text-indigo-400 font-bold uppercase tracking-widest mt-1.5 font-mono-tech">
+                      Conexão Direta Reativa
+                    </span>
+                  </div>
+
+                  {/* Destino Node */}
+                  <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
+                    <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-teal-500/60 flex items-center justify-center font-mono-tech text-xs text-teal-300 font-extrabold shadow-[0_0_12px_rgba(45,212,191,0.3)]">
+                      {viagemAtiva.destino ? (viagemAtiva.destino.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.destino.slice(0, 3).toUpperCase()) : "SCL"}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
+                      {viagemAtiva.destino ? viagemAtiva.destino.split("(")[0].trim() : "Destino"}
+                    </span>
+                    <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono-tech mt-0.5">Destino Final</span>
+                  </div>
+                </div>
+              </div>
 
               {/* Painel de Resumo das Abas (Dashboard Integrado) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full select-none">

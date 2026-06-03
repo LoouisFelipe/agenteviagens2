@@ -3,23 +3,74 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #07090e;
-  --bg-secondary: #0c0f17;
-  --bg-tertiary: #111522;
-  --border-primary: rgba(255, 255, 255, 0.06);
-  --border-active: rgba(99, 102, 241, 0.35);
+  --bg-primary: #040209;
+  --bg-secondary: #0a0813;
+  --bg-tertiary: #100d1f;
+  --border-primary: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(139, 92, 246, 0.4);
   
-  --accent-amber: #f59e0b;
-  --accent-green: #10b981;
+  --accent-amber: #fbbf24;
+  --accent-green: #2dd4bf; /* Mint/Teal */
   --accent-red: #f43f5e;
-  --accent-blue: #3b82f6;
-  --accent-indigo: #6366f1;
+  --accent-blue: #38bdf8; /* Sky Blue */
+  --accent-indigo: #818cf8; /* Violet/Indigo */
+  --accent-purple: #c084fc; /* Purple */
+  --accent-teal: #14b8a6; /* Teal */
 
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-mono: #10b981;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-mono: #2dd4bf;
 }
+
+/* Glassmorphism Evolution */
+.glass-panel-evolution {
+  background: rgba(10, 8, 22, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.glass-panel-evolution-light {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Gradient Mesh Pulsante de Fundo */
+.gradient-mesh-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  overflow: hidden;
+  background-color: #030008;
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(129, 140, 248, 0.15) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(192, 132, 252, 0.12) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(20, 184, 166, 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 90%, rgba(56, 189, 248, 0.1) 0px, transparent 50%);
+  filter: blur(40px);
+  opacity: 0.9;
+  animation: meshPulse 18s ease infinite alternate;
+}
+
+@keyframes meshPulse {
+  0% {
+    background-position: 0% 0%;
+    filter: blur(40px) hue-rotate(0deg);
+  }
+  50% {
+    background-position: 50% 100%;
+    filter: blur(60px) hue-rotate(15deg);
+  }
+  100% {
+    background-position: 100% 0%;
+    filter: blur(40px) hue-rotate(30deg);
+  }
+}
+
 
 body {
   color: var(--text-primary);

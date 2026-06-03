@@ -21,8 +21,8 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CHILINHO | Painel Integrador de Viagens",
-  description: "Painel de controle industrial para gestão logística de rotas, voos e roteiros diários.",
+  title: "EVOLUÇÃO DE VIAGENS | Plataforma de Coordenação e Roteiros",
+  description: "Gerenciamento moderno de viagens com roteiros interativos, controle de despesas e sincronização em tempo real.",
 };
 
 export default function RootLayout({
