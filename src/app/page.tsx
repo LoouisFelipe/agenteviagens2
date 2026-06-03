@@ -15,6 +15,7 @@ import {
   atualizarCotacoesOnDemand,
   atualizarCronogramaHorario,
   deletarViagem,
+  atualizarViajantesViagem,
   Viagem,
   RoteiroDiario,
   Hospedagem,
@@ -29,6 +30,10 @@ import SideAList from "@/components/SideAList";
 import SideBItinerary from "@/components/SideBItinerary";
 import IndustrialLog from "@/components/IndustrialLog";
 import TimelineCompact from "@/components/TimelineCompact";
+import TravelersManager from "@/components/TravelersManager";
+import BillSplitter from "@/components/BillSplitter";
+import PackingChecklist from "@/components/PackingChecklist";
+import CurrencyWidget from "@/components/CurrencyWidget";
 
 // Firebase Imports
 import { db, isFirebaseConfigured, auth } from "@/lib/firebase";
@@ -68,7 +73,7 @@ export default function Home() {
   const [isModoFoco, setIsModoFoco] = useState(true);
 
   // Controle de Abas no Sidebar
-  const [activeTab, setActiveTab] = useState<"visao-geral" | "financas" | "cronograma" | "banco" | "logs">("visao-geral");
+  const [activeTab, setActiveTab] = useState<"visao-geral" | "financas" | "cronograma" | "banco" | "checklist" | "logs">("visao-geral");
 
   // Estados para inclusão de despesa rápida na aba Finanças
   const [finAddNome, setFinAddNome] = useState("");
@@ -215,10 +220,16 @@ export default function Home() {
             data_fim: data.data_fim,
             criado_em: data.criado_em,
             orcamento_maximo: Number(data.orcamento_maximo ?? data.orcamento) || 0,
+            viajantes: data.viajantes || [],
           } as Viagem;
         }).filter(v => v.usuario_id === userId);
         
         setViagens(list);
+        setViagemAtiva((prevAtiva) => {
+          if (!prevAtiva) return null;
+          const atualizada = list.find((v) => v.id === prevAtiva.id);
+          return atualizada || prevAtiva;
+        });
         emitLog(`FIRESTORE: ${list.length} viagens hidratadas reativamente.`);
       }, (err) => {
         console.error("Erro ao escutar viagens:", err);
@@ -483,6 +494,19 @@ export default function Home() {
     }
   };
 
+  // Handler para atualizar viajantes (membros da viagem) reativamente
+  const handleAtualizarViajantes = async (viajantes: string[]) => {
+    if (!viagemAtiva) return;
+    try {
+      await atualizarViajantesViagem(viagemAtiva.id, viajantes);
+      setViagemAtiva((prev) => prev ? { ...prev, viajantes } : null);
+      emitLog(`SYSTEM: Lista de viajantes atualizada com sucesso.`);
+    } catch (err) {
+      console.error("Erro ao atualizar viajantes:", err);
+      emitLog("SYSTEM ERROR: Falha ao atualizar a lista de viajantes.");
+    }
+  };
+
   // Lado A ➔ Injetar Hospedagem (Otimista)
   const handleInjetarHospedagem = async (dataDia: string, hospedagem: Hospedagem) => {
     if (!viagemAtiva) return;
@@ -588,7 +612,18 @@ export default function Home() {
   };
 
   // Lado A/B ➔ Injetar Despesa (Otimista)
-  const handleInjetarDespesa = async (dataDia: string, despesa: { nome: string; valor: number; categoria: string }) => {
+  const handleInjetarDespesa = async (
+    dataDia: string,
+    despesa: {
+      nome: string;
+      valor: number;
+      categoria: string;
+      pagoPor?: string;
+      divididoCom?: string[];
+      moedaOriginal?: string;
+      valorOriginal?: number;
+    }
+  ) => {
     if (!viagemAtiva) return;
 
     const backupRoteiro = { ...roteiroDiario };
@@ -1039,6 +1074,15 @@ export default function Home() {
   const totalDespesasGlobais = despesasGlobais.reduce((acc, exp) => acc + exp.valor, 0);
   totalDespesas += totalDespesasGlobais;
 
+  // Lista unificada de todas as despesas da viagem (globais + diárias) para o Splitwise
+  const todasDespesas: Despesa[] = [...despesasGlobais];
+  datasViagem.forEach((dia) => {
+    const diario = roteiroDiario[dia];
+    if (diario && diario.despesas) {
+      todasDespesas.push(...diario.despesas);
+    }
+  });
+
   const custoTotal = totalHospedagem + totalPasseios + totalDespesas;
   const orcamento = viagemAtiva.orcamento_maximo || 0;
   const saldo = orcamento - custoTotal;
@@ -1311,6 +1355,18 @@ export default function Home() {
               </button>
 
               <button
+                onClick={() => setActiveTab("checklist")}
+                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
+                  activeTab === "checklist"
+                    ? "active-sidebar-capsule font-black"
+                    : "bg-slate-950/40 border-slate-850 hover:border-slate-800 text-slate-450 hover:text-slate-200 hover:bg-slate-950/60"
+                }`}
+              >
+                <span>🎒 Checklist de Bagagem</span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "checklist" ? "bg-white led-blue animate-pulse" : "bg-slate-800"}`} />
+              </button>
+
+              <button
                 onClick={() => setActiveTab("logs")}
                 className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "logs"
@@ -1488,6 +1544,9 @@ export default function Home() {
                 }}
                 diaAtivoWorkspace={diaAtivoWorkspace}
               />
+
+              {/* Currency Rate Widget and Flight Tracker */}
+              <CurrencyWidget destino={viagemAtiva.destino} />
 
               {/* Painel de Resumo das Abas (Dashboard Integrado) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full select-none">
@@ -1816,10 +1875,23 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* TravelersManager Component */}
+                  <TravelersManager
+                    viajantes={viagemAtiva.viajantes || []}
+                    onAtualizarViajantes={handleAtualizarViajantes}
+                  />
+
                 </div>
 
                 {/* COLUNA DIREITA (md:col-span-7) - Extrato & Gráfico Acumulativo */}
                 <div className="md:col-span-7 space-y-5 flex flex-col h-full w-full">
+
+                  {/* BillSplitter Component */}
+                  <BillSplitter
+                    viajantes={viagemAtiva.viajantes || []}
+                    despesas={todasDespesas}
+                    usuarioAtualId={user?.uid || "operator-01"}
+                  />
                   
                   {/* Extrato Consolidado */}
                   <div className="flex flex-col glass-panel p-5 rounded-2xl relative space-y-4 shadow-xl border border-slate-800/80">
@@ -2325,6 +2397,8 @@ export default function Home() {
                   diaAtivoWorkspace={diaAtivoWorkspace}
                   isModoFoco={isModoFoco}
                   onSalvarCronogramaInline={handleSalvarCronogramaInline}
+                  viajantes={viagemAtiva.viajantes}
+                  usuarioAtualId={user?.uid || "operator-01"}
                 />
               </div>
             </div>
@@ -2366,8 +2440,19 @@ export default function Home() {
                   onInjetarAtividade={handleInjetarAtividade}
                   onInjetarDespesa={handleInjetarDespesa}
                   viagemDestino={viagemAtiva.destino}
+                  viajantes={viagemAtiva.viajantes}
+                  usuarioAtualId={user?.uid || "operator-01"}
                 />
               </div>
+            </div>
+          )}
+
+          {/* =======================================
+              ABA 3.5: Checklist de Bagagem (Luggage Helper)
+              ======================================= */}
+          {activeTab === "checklist" && (
+            <div className="space-y-4 flex-1 flex flex-col min-h-0">
+              <PackingChecklist viagemId={viagemAtiva.id} />
             </div>
           )}
 
@@ -2428,6 +2513,15 @@ export default function Home() {
         >
           <span className="text-base select-none">🛍️</span>
           <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Alocar</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("checklist")}
+          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
+            activeTab === "checklist" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+          }`}
+        >
+          <span className="text-base select-none">🎒</span>
+          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Checklist</span>
         </button>
         <button
           onClick={() => setActiveTab("logs")}

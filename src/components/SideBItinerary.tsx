@@ -146,13 +146,23 @@ interface SideBItineraryProps {
   roteiroDiario: Record<string, RoteiroDiario>;
   onRemoverHospedagem: (dataDia: string) => Promise<void>;
   onRemoverAtividade: (dataDia: string, index: number) => Promise<void>;
-  onAdicionarDespesa: (dataDia: string, despesa: { nome: string; valor: number; categoria: string }) => Promise<void>;
+  onAdicionarDespesa: (dataDia: string, despesa: { 
+    nome: string; 
+    valor: number; 
+    categoria: string;
+    pagoPor?: string;
+    divididoCom?: string[];
+    moedaOriginal?: string;
+    valorOriginal?: number;
+  }) => Promise<void>;
   onRemoverDespesa: (dataDia: string, despesaId: string) => Promise<void>;
   destino: string;
   viagemAtiva: Viagem | null;
   diaAtivoWorkspace?: string | null;
   isModoFoco?: boolean;
   onSalvarCronogramaInline?: (dataDia: string, cronograma: Record<string, string>) => Promise<void>;
+  viajantes?: string[];
+  usuarioAtualId?: string;
 }
 
 export default function SideBItinerary({
@@ -167,6 +177,7 @@ export default function SideBItinerary({
   diaAtivoWorkspace,
   isModoFoco = true,
   onSalvarCronogramaInline,
+  usuarioAtualId = "operator-01",
 }: SideBItineraryProps) {
   const [diasAbertos, setDiasAbertos] = React.useState<Record<string, boolean>>({});
   const [cronogramaLocal, setCronogramaLocal] = React.useState<Record<string, Record<string, string>>>({});
@@ -442,10 +453,26 @@ export default function SideBItinerary({
                               <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono-tech select-none leading-none rounded">
                                 {exp.categoria}
                               </span>
+                              {exp.moedaOriginal && exp.moedaOriginal !== "BRL" && (
+                                <span className="text-[7.5px] font-bold px-1 py-0.2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded uppercase">
+                                  {exp.moedaOriginal} {exp.valorOriginal?.toLocaleString("pt-BR")}
+                                </span>
+                              )}
                             </div>
                             <div className="text-[9px] text-[#10b981] font-mono-tech mt-0.5 font-bold">
                               R$ {exp.valor.toLocaleString("pt-BR")}
                             </div>
+                            {exp.pagoPor && (
+                              <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1">
+                                <span>👤 PAGO POR: {exp.pagoPor === usuarioAtualId ? "Você" : exp.pagoPor}</span>
+                                {exp.divididoCom && exp.divididoCom.length > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <span>DIV.: {exp.divididoCom.map(v => v === usuarioAtualId ? "Você" : v).join(", ")}</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <button
                             onClick={() => onRemoverDespesa("global", exp.id || "")}
@@ -687,10 +714,26 @@ export default function SideBItinerary({
                                         <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono-tech select-none leading-none rounded">
                                           {exp.categoria}
                                         </span>
+                                        {exp.moedaOriginal && exp.moedaOriginal !== "BRL" && (
+                                          <span className="text-[7.5px] font-bold px-1 py-0.2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded uppercase">
+                                            {exp.moedaOriginal} {exp.valorOriginal?.toLocaleString("pt-BR")}
+                                          </span>
+                                        )}
                                       </div>
                                       <div className="text-[9px] text-[#10b981] font-mono-tech mt-0.5 font-bold">
                                         R$ {exp.valor.toLocaleString("pt-BR")}
                                       </div>
+                                      {exp.pagoPor && (
+                                        <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1">
+                                          <span>👤 PAGO POR: {exp.pagoPor === usuarioAtualId ? "Você" : exp.pagoPor}</span>
+                                          {exp.divididoCom && exp.divididoCom.length > 0 && (
+                                            <>
+                                              <span>•</span>
+                                              <span>DIV.: {exp.divididoCom.map(v => v === usuarioAtualId ? "Você" : v).join(", ")}</span>
+                                            </>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                     <button
                                       onClick={() => onRemoverDespesa(dataDia, exp.id || "")}

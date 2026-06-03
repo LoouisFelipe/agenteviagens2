@@ -338,3 +338,22 @@ body::after {
   animation: pulseLightning 1.2s infinite ease-in-out;
 }
 
+/* Checklist e Elementos de Viagem Customizados */
+.progress-ring__circle {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.checkbox-custom:checked + label {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.glow-card-violet:hover {
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  box-shadow: 0 12px 30px rgba(139, 92, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+

@@ -8,8 +8,18 @@ interface SideAListProps {
   datasViagem: string[]; // Lista de datas do roteiro gerado
   onInjetarHospedagem: (dataDia: string, hospedagem: Hospedagem) => Promise<void>;
   onInjetarAtividade: (dataDia: string, atividade: Atividade) => Promise<void>;
-  onInjetarDespesa: (dataDia: string, despesa: { nome: string; valor: number; categoria: string }) => Promise<void>;
+  onInjetarDespesa: (dataDia: string, despesa: { 
+    nome: string; 
+    valor: number; 
+    categoria: string;
+    pagoPor?: string;
+    divididoCom?: string[];
+    moedaOriginal?: string;
+    valorOriginal?: number;
+  }) => Promise<void>;
   viagemDestino: string;
+  viajantes?: string[];
+  usuarioAtualId?: string;
 }
 
 function obterCategoriaItem(nome: string, tipo: "hospedagem" | "atividade" | "despesa") {
@@ -54,6 +64,8 @@ export default function SideAList({
   onInjetarAtividade,
   onInjetarDespesa,
   viagemDestino,
+  viajantes = [],
+  usuarioAtualId = "operator-01",
 }: SideAListProps) {
   const [tabAtiva, setTabAtiva] = useState<"hospedagem" | "atividade" | "despesa">("hospedagem");
   const [filtro, setFiltro] = useState("");
@@ -92,6 +104,21 @@ export default function SideAList({
   const [despesaDiasSelecionados, setDespesaDiasSelecionados] = useState<string[]>([]);
   const [despesaFormError, setDespesaFormError] = useState("");
   const [isGlobalDespesa, setIsGlobalDespesa] = useState(false);
+
+  // Splitwise e Multi-currency
+  const [despesaMoeda, setDespesaMoeda] = useState("BRL");
+  const [despesaPagoPor, setDespesaPagoPor] = useState(usuarioAtualId);
+  const [despesaDivididoCom, setDespesaDivididoCom] = useState<string[]>(viajantes);
+
+  useEffect(() => {
+    if (usuarioAtualId) setDespesaPagoPor(usuarioAtualId);
+  }, [usuarioAtualId]);
+
+  useEffect(() => {
+    if (viajantes && viajantes.length > 0) {
+      setDespesaDivididoCom(viajantes);
+    }
+  }, [viajantes]);
 
   const toggleDespesaDiaSelecionado = (dia: string) => {
     setDespesaDiasSelecionados((prev) =>
@@ -436,19 +463,22 @@ export default function SideAList({
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div className="flex flex-col">
-                <label className="text-[10px] font-semibold text-slate-400 mb-1">Nome da Despesa</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Passagens Aéreas"
-                  value={despesaNome}
-                  onChange={(e) => setDespesaNome(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-medium"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-[10px] font-semibold text-slate-400 mb-1">Valor Unitário (R$)</label>
+            {/* Nome da Despesa */}
+            <div className="flex flex-col">
+              <label className="text-[10px] font-semibold text-slate-400 mb-1">Nome da Despesa</label>
+              <input
+                type="text"
+                placeholder="Ex: Almoço / Voo"
+                value={despesaNome}
+                onChange={(e) => setDespesaNome(e.target.value)}
+                className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-medium"
+              />
+            </div>
+
+            {/* Valor e Moeda */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="flex flex-col col-span-2">
+                <label className="text-[10px] font-semibold text-slate-400 mb-1">Valor Unitário</label>
                 <input
                   type="number"
                   placeholder="Ex: 1500"
@@ -457,8 +487,38 @@ export default function SideAList({
                   className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
                 />
               </div>
+              <div className="flex flex-col">
+                <label className="text-[10px] font-semibold text-slate-400 mb-1">Moeda</label>
+                <select
+                  value={despesaMoeda}
+                  onChange={(e) => setDespesaMoeda(e.target.value)}
+                  className="bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg cursor-pointer font-bold"
+                >
+                  <option value="BRL">BRL (R$)</option>
+                  <option value="CLP">CLP (Ch$)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                </select>
+              </div>
             </div>
 
+            {/* Display de conversão BRL */}
+            {despesaMoeda !== "BRL" && despesaPreco && !isNaN(Number(despesaPreco)) && (
+              <div className="bg-slate-950/40 border border-slate-850 px-3 py-2 rounded-lg text-[9.5px] font-mono-tech text-slate-400 flex justify-between items-center select-none leading-none">
+                <span>Convertido para BRL:</span>
+                <span className="text-[#10b981] font-bold">
+                  R$ {(() => {
+                    const original = Number(despesaPreco);
+                    if (despesaMoeda === "USD") return (original * 5.25).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+                    if (despesaMoeda === "EUR") return (original * 5.65).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+                    if (despesaMoeda === "CLP") return (original / 185).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+                    return original;
+                  })()}
+                </span>
+              </div>
+            )}
+
+            {/* Categoria */}
             <div className="flex flex-col">
               <label className="text-[10px] font-semibold text-slate-400 mb-1">Categoria do Gasto</label>
               <select
@@ -473,6 +533,55 @@ export default function SideAList({
                 <option value="Outros">Outros 💰</option>
               </select>
             </div>
+
+            {/* Pagador (Splitwise) */}
+            {viajantes.length > 0 && (
+              <div className="flex flex-col">
+                <label className="text-[10px] font-semibold text-slate-400 mb-1">Quem Pagou?</label>
+                <select
+                  value={despesaPagoPor}
+                  onChange={(e) => setDespesaPagoPor(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 text-slate-300 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg cursor-pointer font-bold"
+                >
+                  {viajantes.map((v) => (
+                    <option key={v} value={v}>
+                      {v === usuarioAtualId ? "Você" : v.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Divisão (Splitwise) */}
+            {viajantes.length > 0 && (
+              <div className="flex flex-col">
+                <label className="text-[10px] font-semibold text-slate-400 mb-1.5">Dividir com ({despesaDivididoCom.length} selecionados):</label>
+                <div className="flex flex-wrap gap-1.5 p-2 bg-slate-900/60 rounded-xl border border-slate-800/60">
+                  {viajantes.map((v) => {
+                    const isSelected = despesaDivididoCom.includes(v);
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => {
+                          setDespesaDivididoCom((prev) =>
+                            prev.includes(v) ? prev.filter((item) => item !== v) : [...prev, v]
+                          );
+                        }}
+                        className={`px-2 py-1 rounded-lg text-[9px] font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
+                          isSelected
+                            ? "bg-indigo-600/20 border-indigo-500/60 text-indigo-300 scale-[1.01]"
+                            : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
+                        }`}
+                      >
+                        <span className={`w-1 h-1 rounded-full ${isSelected ? "bg-indigo-400" : "bg-slate-700"}`} />
+                        <span>{v === usuarioAtualId ? "Você" : v}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {!isGlobalDespesa ? (
               <div className="flex flex-col">
@@ -524,7 +633,7 @@ export default function SideAList({
             )}
 
             {despesaFormError && (
-              <div className="text-[9.5px] text-rose-450 font-mono-tech leading-none">
+              <div className="text-[9.5px] text-rose-455 font-mono-tech leading-none">
                 ⚠️ {despesaFormError}
               </div>
             )}
@@ -536,29 +645,37 @@ export default function SideAList({
                   setDespesaFormError(isGlobalDespesa ? "Preencha todos os campos." : "Preencha todos os campos e selecione pelo menos um dia.");
                   return;
                 }
-                const precoVal = Number(despesaPreco);
-                if (isNaN(precoVal) || precoVal <= 0) {
+                const originalVal = Number(despesaPreco);
+                if (isNaN(originalVal) || originalVal <= 0) {
                   setDespesaFormError("Valor diário inválido.");
                   return;
                 }
 
+                // Calcula valor em BRL
+                let precoVal = originalVal;
+                if (despesaMoeda === "USD") precoVal = originalVal * 5.25;
+                else if (despesaMoeda === "EUR") precoVal = originalVal * 5.65;
+                else if (despesaMoeda === "CLP") precoVal = originalVal / 185;
+
                 try {
+                  const despesaPayload = {
+                    nome: despesaNome.trim(),
+                    valor: precoVal,
+                    categoria: despesaCategoria,
+                    pagoPor: despesaPagoPor,
+                    divididoCom: despesaDivididoCom,
+                    moedaOriginal: despesaMoeda,
+                    valorOriginal: originalVal,
+                  };
+
                   if (isGlobalDespesa) {
                     emitLog(`SYSTEM: Sincronizando despesa geral [${despesaNome.trim()}]...`);
-                    await onInjetarDespesa("global", {
-                      nome: despesaNome.trim(),
-                      valor: precoVal,
-                      categoria: despesaCategoria
-                    });
+                    await onInjetarDespesa("global", despesaPayload);
                   } else {
                     emitLog(`SYSTEM: Sincronizando despesa [${despesaNome.trim()}] nos dias [${despesaDiasSelecionados.join(", ")}]...`);
                     await Promise.all(
                       despesaDiasSelecionados.map((dia) =>
-                        onInjetarDespesa(dia, {
-                          nome: despesaNome.trim(),
-                          valor: precoVal,
-                          categoria: despesaCategoria
-                        })
+                        onInjetarDespesa(dia, despesaPayload)
                       )
                     );
                   }

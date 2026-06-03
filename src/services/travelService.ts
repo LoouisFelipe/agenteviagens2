@@ -33,6 +33,10 @@ export interface Despesa {
   nome: string;
   valor: number;
   categoria: string;
+  pagoPor?: string;
+  divididoCom?: string[];
+  moedaOriginal?: string;
+  valorOriginal?: number;
   criado_em?: unknown;
 }
 
@@ -51,8 +55,10 @@ export interface Viagem {
   data_inicio: string;
   data_fim: string;
   orcamento_maximo: number;
+  viajantes?: string[];
   criado_em: unknown;
 }
+
 
 // Helper para obter o ID do usuário autenticado atual
 export function obterUsuarioId(): string {
@@ -152,6 +158,7 @@ export async function listarViagens(): Promise<Viagem[]> {
           data_fim: data.data_fim,
           criado_em: data.criado_em,
           orcamento_maximo: Number(data.orcamento_maximo ?? data.orcamento) || 0,
+          viajantes: data.viajantes || [data.usuario_id || obterUsuarioId(), "Lucas", "Carol"],
         } as Viagem;
       });
       emitLog(`FIRESTORE: ${viagensFirestore.length} viagens carregadas com sucesso.`);
@@ -195,6 +202,7 @@ export async function listarViagens(): Promise<Viagem[]> {
         data_inicio: "2026-07-10",
         data_fim: "2026-07-15",
         orcamento_maximo: 5000,
+        viajantes: [obterUsuarioId(), "Lucas", "Carol"],
         criado_em: new Date().toISOString(),
       },
     ];
@@ -229,6 +237,7 @@ export async function criarNovaViagem(
         data_fim: dataFim,
         criado_em: Timestamp.now(),
         orcamento_maximo: orcamento,
+        viajantes: [obterUsuarioId(), "Lucas", "Carol"],
       };
 
       emitLog(`FIRESTORE: setDoc(doc(db, 'viagens', '${docRef.id}')) com destino=${record.destino}...`);
@@ -278,6 +287,7 @@ export async function criarNovaViagem(
       data_fim: dataFim,
       criado_em: new Date().toISOString(),
       orcamento_maximo: orcamento,
+      viajantes: [obterUsuarioId(), "Lucas", "Carol"],
     };
     viagens.unshift(novaViagem);
     localStorage.setItem(MOCK_TRIPS_KEY, JSON.stringify(viagens));
@@ -459,6 +469,10 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
         nome: string;
         valor: number;
         categoria: string;
+        pagoPor?: string;
+        divididoCom?: string[];
+        moedaOriginal?: string;
+        valorOriginal?: number;
         criado_em?: { seconds: number; nanoseconds: number } | null;
       }
 
@@ -482,6 +496,10 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
             nome: data.nome || "",
             valor: Number(data.valor) || 0,
             categoria: data.categoria || "Outros",
+            pagoPor: data.pagoPor || obterUsuarioId(),
+            divididoCom: data.divididoCom || [],
+            moedaOriginal: data.moedaOriginal || "BRL",
+            valorOriginal: Number(data.valorOriginal ?? data.valor) || 0,
             criado_em: data.criado_em || null
           });
         }
@@ -502,7 +520,11 @@ export async function obterRoteiroDiario(viagemId: string): Promise<Record<strin
           diaId: d.diaId,
           nome: d.nome,
           valor: d.valor,
-          categoria: d.categoria
+          categoria: d.categoria,
+          pagoPor: d.pagoPor,
+          divididoCom: d.divididoCom,
+          moedaOriginal: d.moedaOriginal,
+          valorOriginal: d.valorOriginal
         }));
       });
 
@@ -966,6 +988,10 @@ export async function adicionarDespesaDia(
       nome: despesa.nome,
       valor: despesa.valor,
       categoria: despesa.categoria,
+      pagoPor: despesa.pagoPor,
+      divididoCom: despesa.divididoCom,
+      moedaOriginal: despesa.moedaOriginal || "BRL",
+      valorOriginal: despesa.valorOriginal ?? despesa.valor,
       criado_em: new Date().toISOString()
     });
 
@@ -982,6 +1008,10 @@ export async function adicionarDespesaDia(
           nome: despesa.nome,
           valor: despesa.valor,
           categoria: despesa.categoria,
+          pagoPor: despesa.pagoPor || obterUsuarioId(),
+          divididoCom: despesa.divididoCom || [],
+          moedaOriginal: despesa.moedaOriginal || "BRL",
+          valorOriginal: despesa.valorOriginal ?? despesa.valor,
           criado_em: Timestamp.now()
         }),
         15000,
@@ -1029,6 +1059,32 @@ export async function removerDespesaDia(viagemId: string, dataDia: string, despe
       emitLog("FIRESTORE: Despesa excluída com sucesso.");
     } catch (error) {
       console.error(error);
+    }
+  }
+}
+
+/**
+ * Atualiza a lista de viajantes associada a uma viagem.
+ */
+export async function atualizarViajantesViagem(viagemId: string, viajantes: string[]): Promise<void> {
+  emitLog(`REQUEST: Sincronizando viajantes da viagem ID ${viagemId}: [${viajantes.join(", ")}]...`);
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(db, "viagens", viagemId);
+      await withTimeout(updateDoc(docRef, { viajantes }), 15000, "Erro ao atualizar viajantes.");
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  if (typeof window !== "undefined") {
+    const raw = localStorage.getItem(MOCK_TRIPS_KEY);
+    if (raw) {
+      const viagens: Viagem[] = JSON.parse(raw);
+      const idx = viagens.findIndex((v) => v.id === viagemId);
+      if (idx !== -1) {
+        viagens[idx].viajantes = viajantes;
+        localStorage.setItem(MOCK_TRIPS_KEY, JSON.stringify(viagens));
+      }
     }
   }
 }
