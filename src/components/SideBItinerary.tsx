@@ -824,7 +824,7 @@ export default function SideBItinerary({
                               type="button"
                               onClick={() => handleSalvarDia(dataDia)}
                               disabled={salvandoDia[dataDia]}
-                              className="w-full sm:w-auto px-4.5 py-1.5 bg-blue-600/10 border border-blue-500/35 hover:bg-blue-650/20 text-blue-400 font-bold transition-all cursor-pointer rounded-lg text-[9px] shadow-sm disabled:opacity-40"
+                              className="w-full sm:w-auto px-4 py-1.5 bg-blue-600/10 border border-blue-500/35 hover:bg-blue-650/20 text-blue-400 font-bold transition-all cursor-pointer rounded-lg text-[9px] shadow-sm disabled:opacity-40"
                             >
                               {salvandoDia[dataDia] ? "⚡ Salvando..." : "⚡ Auto-salvar ativo (salva ao sair do campo)"}
                             </button>

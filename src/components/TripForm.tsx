@@ -443,7 +443,7 @@ export default function TripForm({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4.5 py-2.5 border border-slate-800 hover:border-slate-650 hover:bg-slate-900/20 text-slate-400 hover:text-slate-200 transition-colors rounded-lg cursor-pointer text-[10px] font-bold uppercase"
+            className="px-4 py-2.5 border border-slate-800 hover:border-slate-650 hover:bg-slate-900/20 text-slate-400 hover:text-slate-200 transition-colors rounded-lg cursor-pointer text-[10px] font-bold uppercase"
           >
             Cancelar
           </button>

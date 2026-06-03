@@ -666,7 +666,7 @@ export default function Home() {
             <nav className="flex flex-col space-y-2.5">
               <button
                 onClick={() => setActiveTab("visao-geral")}
-                className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
+                className={`h-11 px-4 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "visao-geral"
                     ? "bg-[#007aff] border-[#007aff] text-white shadow-[0_4px_18px_rgba(0,122,255,0.45)] scale-[1.01]"
                     : "bg-[#1a1230]/40 border-white/5 hover:border-white/10 text-[#8a82a8] hover:text-[#eeeaf6] hover:bg-[#1a1230]/60"
@@ -690,7 +690,7 @@ export default function Home() {
                     key={t.id}
                     onClick={() => !isDisabled && setActiveTab(t.id)}
                     disabled={isDisabled}
-                    className={`h-11 px-4.5 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl ${
+                    className={`h-11 px-4 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl ${
                       isDisabled
                         ? "bg-[#1a1230]/10 border-white/5 text-[#4a4468] cursor-not-allowed opacity-40"
                         : isSelected
@@ -768,7 +768,7 @@ export default function Home() {
         <main className="lg:col-span-9 flex flex-col space-y-4 min-h-0 workspace-fade-in pb-24 lg:pb-0">
           
           {/* Header de Acompanhamento no Workspace - Premium Status Node */}
-          <header className="w-full glass-panel p-4.5 flex items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none shadow-xl border border-white/5 bg-[#130d20]">
+          <header className="w-full glass-panel p-4 flex items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none shadow-xl border border-white/5 bg-[#130d20]">
             <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-purple-600 to-indigo-600" />
             <div className="flex items-center space-x-3.5">
               {viagemAtiva && (
@@ -809,7 +809,7 @@ export default function Home() {
                 {/* KPIs de Orçamento Redesenhados de forma Ultra Premium */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
                   {/* KPI Orçamento Máximo */}
-                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                  <div className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Teto Orçamentário</div>
                       <div className="text-sm font-black text-slate-100 mt-1 font-heading">
@@ -825,7 +825,7 @@ export default function Home() {
                   </div>
 
                   {/* KPI Consumido */}
-                  <div className={`glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between`}>
+                  <div className={`glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between`}>
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Consumo Consolidado</div>
                       <div className={`text-sm font-black mt-1 font-heading ${ultrapassou ? "text-rose-400" : "text-[#6ee8f8]"}`}>
@@ -848,7 +848,7 @@ export default function Home() {
                   </div>
 
                   {/* KPI Saldo Restante */}
-                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                  <div className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Saldo Financeiro</div>
                       <div className={`text-sm font-black mt-1 font-heading ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
@@ -1175,7 +1175,7 @@ export default function Home() {
                 <div className="md:col-span-5 space-y-5 flex flex-col w-full">
                   
                   {/* Formulário Premium de Registro de Despesa */}
-                  <div className="glass-panel p-4.5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-xl border border-slate-800/80 select-none">
+                  <div className="glass-panel p-5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-xl border border-slate-800/80 select-none">
                     <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-amber-500 to-orange-500" />
                     <h3 className="text-[10px] font-black uppercase text-slate-350 tracking-wider flex items-center justify-between">
                       <span>💸 Registrar Nova Despesa</span>
