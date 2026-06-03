@@ -563,7 +563,7 @@ export default function Home() {
       : "border-indigo-500/35 shadow-lg shadow-indigo-500/5";
 
   return (
-    <div className="flex flex-col min-h-screen p-4 md:p-6 space-y-4 max-w-7xl mx-auto relative selection:bg-indigo-500/30">
+    <div className="w-full max-w-7xl mx-auto flex flex-col min-h-screen p-4 md:p-6 space-y-4 relative selection:bg-indigo-500/30 overflow-x-hidden">
       {/* Pulsating Gradient Mesh BG */}
       <div className="gradient-mesh-bg" />
 
@@ -1950,62 +1950,64 @@ export default function Home() {
       </div>
 
       {/* Mobile Bottom Navigation (inspired by Image 5) */}
-      <div className="lg:hidden fixed bottom-5 left-5 right-5 z-[999] glass-panel rounded-2xl p-2.5 flex justify-around items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-slate-800/80">
-        <button
-          onClick={() => setActiveTab("visao-geral")}
-          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-            activeTab === "visao-geral" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
-          }`}
-        >
-          <span className="text-base select-none">📊</span>
-          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Visão</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("financas")}
-          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-            activeTab === "financas" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
-          }`}
-        >
-          <span className="text-base select-none">💸</span>
-          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Finanças</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("cronograma")}
-          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-            activeTab === "cronograma" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
-          }`}
-        >
-          <span className="text-base select-none">📅</span>
-          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Agenda</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("banco")}
-          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-            activeTab === "banco" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
-          }`}
-        >
-          <span className="text-base select-none">🛍️</span>
-          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Alocar</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("checklist")}
-          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-            activeTab === "checklist" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
-          }`}
-        >
-          <span className="text-base select-none">🎒</span>
-          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Checklist</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("logs")}
-          className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-            activeTab === "logs" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
-          }`}
-        >
-          <span className="text-base select-none">📋</span>
-          <span className="text-[7.5px] font-black uppercase tracking-widest mt-1">Logs</span>
-        </button>
-      </div>
+      {viagemAtiva && (
+        <div className="lg:hidden fixed bottom-5 left-4 right-4 z-[999] glass-panel rounded-2xl p-2.5 flex justify-between items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-slate-800/80 gap-0.5">
+          <button
+            onClick={() => setActiveTab("visao-geral")}
+            className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 cursor-pointer ${
+              activeTab === "visao-geral" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+            }`}
+          >
+            <span className="text-base select-none">📊</span>
+            <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">Visão</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("financas")}
+            className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 cursor-pointer ${
+              activeTab === "financas" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+            }`}
+          >
+            <span className="text-base select-none">💸</span>
+            <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">Gastos</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("cronograma")}
+            className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 cursor-pointer ${
+              activeTab === "cronograma" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+            }`}
+          >
+            <span className="text-base select-none">📅</span>
+            <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">Agenda</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("banco")}
+            className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 cursor-pointer ${
+              activeTab === "banco" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+            }`}
+          >
+            <span className="text-base select-none">🛍️</span>
+            <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">Alocar</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("checklist")}
+            className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 cursor-pointer ${
+              activeTab === "checklist" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+            }`}
+          >
+            <span className="text-base select-none">🎒</span>
+            <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">Malas</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("logs")}
+            className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 cursor-pointer ${
+              activeTab === "logs" ? "active-bottom-tab-capsule text-white scale-105" : "text-slate-500 hover:text-slate-355"
+            }`}
+          >
+            <span className="text-base select-none">📋</span>
+            <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">Logs</span>
+          </button>
+        </div>
+      )}
 
       {/* Modal de Edição (Overlay) */}
       {isFormEdicaoAberto && (

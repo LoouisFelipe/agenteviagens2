@@ -251,7 +251,7 @@ export default function SideAList({
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          🏨 Hospedagens
+          🏨 Hotéis
         </button>
         <button
           onClick={() => {
@@ -279,7 +279,7 @@ export default function SideAList({
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
-          💰 Despesas
+          💰 Gastos
         </button>
       </div>
 
