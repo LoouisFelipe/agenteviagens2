@@ -94,14 +94,15 @@ service cloud.firestore {
 
     function isValidViagem(data) {
       return hasRequiredFields(['usuario_id', 'origem', 'destino', 'data_inicio', 'data_fim', 'orcamento_maximo', 'criado_em']) &&
-             hasOnlyAllowedFields(['usuario_id', 'origem', 'destino', 'data_inicio', 'data_fim', 'orcamento_maximo', 'criado_em']) &&
+             hasOnlyAllowedFields(['usuario_id', 'origem', 'destino', 'data_inicio', 'data_fim', 'orcamento_maximo', 'criado_em', 'viajantes']) &&
              data.usuario_id is string && data.usuario_id.size() >= 1 && data.usuario_id.size() <= 50 &&
              data.origem is string && data.origem.size() >= 1 && data.origem.size() <= 100 &&
              data.destino is string && data.destino.size() >= 1 && data.destino.size() <= 100 &&
              isValidDateString(data.data_inicio) &&
              isValidDateString(data.data_fim) &&
              data.orcamento_maximo is number && data.orcamento_maximo >= 0 &&
-             data.criado_em is timestamp;
+             data.criado_em is timestamp &&
+             (!data.keys().hasAll(['viajantes']) || (data.viajantes is list && data.viajantes.size() <= 50));
     }
 
     function isValidHotel(data) {
@@ -130,12 +131,16 @@ service cloud.firestore {
 
     function isValidDespesa(data) {
       return hasRequiredFields(['diaId', 'nome', 'valor', 'categoria', 'criado_em']) &&
-             hasOnlyAllowedFields(['diaId', 'nome', 'valor', 'categoria', 'criado_em']) &&
+             hasOnlyAllowedFields(['diaId', 'nome', 'valor', 'categoria', 'criado_em', 'pagoPor', 'divididoCom', 'moedaOriginal', 'valorOriginal']) &&
              (isValidDateString(data.diaId) || data.diaId == "global") &&
              data.nome is string && data.nome.size() >= 1 && data.nome.size() <= 100 &&
              data.valor is number && data.valor >= 0 &&
              data.categoria is string && data.categoria.size() >= 1 && data.categoria.size() <= 50 &&
-             data.criado_em is timestamp;
+             data.criado_em is timestamp &&
+             (!data.keys().hasAll(['pagoPor']) || (data.pagoPor is string && data.pagoPor.size() <= 50)) &&
+             (!data.keys().hasAll(['divididoCom']) || (data.divididoCom is list && data.divididoCom.size() <= 50)) &&
+             (!data.keys().hasAll(['moedaOriginal']) || (data.moedaOriginal is string && data.moedaOriginal.size() <= 10)) &&
+             (!data.keys().hasAll(['valorOriginal']) || (data.valorOriginal is number && data.valorOriginal >= 0));
     }
 
     // ===============================================================
