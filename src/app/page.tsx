@@ -106,6 +106,9 @@ export default function Home() {
   // Estado para clique no gráfico de progressão
   const [selectedGraphDay, setSelectedGraphDay] = useState<string | null>(null);
 
+  // Estado para modal de detalhes dos KPIs (acessibilidade e resumo)
+  const [activeKpiModal, setActiveKpiModal] = useState<"teto" | "consumo" | "saldo" | null>(null);
+
   // Escuta alterações de Autenticação em tempo real
   useEffect(() => {
     if (!auth) {
@@ -806,10 +809,22 @@ export default function Home() {
           {activeTab === "visao-geral" && (
             viagemAtiva ? (
               <div className="space-y-5 flex-1 flex flex-col min-h-0">
-                {/* KPIs de Orçamento Redesenhados de forma Ultra Premium */}
+                {/* KPIs de Orçamento Redesenhados de forma Ultra Premium e Acessíveis */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
                   {/* KPI Orçamento Máximo */}
-                  <div className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActiveKpiModal("teto")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveKpiModal("teto");
+                      }
+                    }}
+                    aria-label="Ver resumo e detalhamento do Teto Orçamentário"
+                    className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:border-indigo-500/40 border border-slate-800/80 shadow-md flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  >
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Teto Orçamentário</div>
                       <div className="text-sm font-black text-slate-100 mt-1 font-heading">
@@ -825,7 +840,19 @@ export default function Home() {
                   </div>
 
                   {/* KPI Consumido */}
-                  <div className={`glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between`}>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActiveKpiModal("consumo")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveKpiModal("consumo");
+                      }
+                    }}
+                    aria-label="Ver resumo e detalhamento do Consumo Consolidado"
+                    className={`glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50`}
+                  >
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Consumo Consolidado</div>
                       <div className={`text-sm font-black mt-1 font-heading ${ultrapassou ? "text-rose-400" : "text-[#6ee8f8]"}`}>
@@ -848,7 +875,19 @@ export default function Home() {
                   </div>
 
                   {/* KPI Saldo Restante */}
-                  <div className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border border-slate-800/80 shadow-md flex items-center justify-between">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setActiveKpiModal("saldo")}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveKpiModal("saldo");
+                      }
+                    }}
+                    aria-label="Ver resumo e detalhamento do Saldo Financeiro"
+                    className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:border-indigo-500/40 border border-slate-800/80 shadow-md flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  >
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Saldo Financeiro</div>
                       <div className={`text-sm font-black mt-1 font-heading ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
@@ -1951,6 +1990,165 @@ export default function Home() {
             <span className="text-base select-none">📋</span>
             <span className="text-[7.5px] font-black uppercase tracking-wider mt-1">Logs</span>
           </button>
+        </div>
+      )}
+
+      {/* Modal de Detalhes dos KPIs (Acessibilidade e Resumo) */}
+      {activeKpiModal && (
+        <div 
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[999] flex items-center justify-center p-4"
+          onClick={() => setActiveKpiModal(null)}
+        >
+          <div 
+            className="relative w-full max-w-lg glass-panel p-6 rounded-2xl overflow-hidden space-y-4 shadow-2xl border border-slate-800 bg-[#130d20] animate-workspace-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500" />
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-850">
+              <h3 className="text-xs font-black uppercase text-slate-100 tracking-wider flex items-center gap-2">
+                {activeKpiModal === "teto" && (
+                  <>
+                    <span>🔑</span>
+                    <span>Resumo: Teto Orçamentário</span>
+                  </>
+                )}
+                {activeKpiModal === "consumo" && (
+                  <>
+                    <span>⚡</span>
+                    <span>Resumo: Consumo Consolidado</span>
+                  </>
+                )}
+                {activeKpiModal === "saldo" && (
+                  <>
+                    <span>❤️</span>
+                    <span>Resumo: Saldo Financeiro</span>
+                  </>
+                )}
+              </h3>
+              <button
+                onClick={() => setActiveKpiModal(null)}
+                className="w-6 h-6 flex items-center justify-center bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-slate-800 text-slate-400 hover:text-slate-100 rounded-lg text-[9px] cursor-pointer transition-colors"
+                title="Fechar detalhes"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-4 text-xs">
+              {activeKpiModal === "teto" && (
+                <>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    O valor máximo planejado para a realização desta viagem. Serve como limite de gastos recomendado.
+                  </p>
+                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono-tech">
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Teto Total Definido:</span>
+                      <span className="text-slate-200 font-black">R$ {orcamento.toLocaleString("pt-BR")}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Duração da Viagem:</span>
+                      <span className="text-slate-200 font-black">{datasViagem.length} Dias</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Gasto Recomendado por Dia:</span>
+                      <span className="text-indigo-400 font-black">
+                        R$ {(datasViagem.length > 0 ? Math.round(orcamento / datasViagem.length) : 0).toLocaleString("pt-BR")} / dia
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Limite de Alerta (80%):</span>
+                      <span className="text-amber-500 font-black">R$ {Math.round(orcamento * 0.8).toLocaleString("pt-BR")}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeKpiModal === "consumo" && (
+                <>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    O montante de todos os valores injetados no roteiro, categorizado em acomodações, passeios e despesas gerais.
+                  </p>
+                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono-tech">
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Consumo Total:</span>
+                      <span className={`font-black ${ultrapassou ? "text-rose-400" : "text-[#6ee8f8]"}`}>
+                        R$ {custoTotal.toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Acomodação (Hotéis):</span>
+                      <span className="text-indigo-300 font-black">
+                        R$ {totalHospedagem.toLocaleString("pt-BR")} ({percentualHospedagem}%)
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Lazer & Passeios:</span>
+                      <span className="text-emerald-400 font-black">
+                        R$ {totalPasseios.toLocaleString("pt-BR")} ({percentualPasseios}%)
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Despesas Gerais/Extras:</span>
+                      <span className="text-amber-500 font-black">
+                        R$ {totalDespesas.toLocaleString("pt-BR")} ({percentualDespesas}%)
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Total de Itens Inseridos:</span>
+                      <span className="text-slate-200 font-black">{todasDespesas.length + datasViagem.filter(d => roteiroDiario[d]?.hospedagem).length + datasViagem.reduce((acc, d) => acc + (roteiroDiario[d]?.atividades?.length || 0), 0)} itens</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {activeKpiModal === "saldo" && (
+                <>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                    A diferença entre o teto planejado e os gastos totais realizados até o momento.
+                  </p>
+                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono-tech">
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Saldo Financeiro:</span>
+                      <span className={`font-black ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
+                        R$ {saldo.toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Situação Geral:</span>
+                      <span className={`font-black uppercase text-[10px] ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
+                        {saldo < 0 ? "⚠️ Orçamento Excedido" : "✅ Dentro do Orçamento"}
+                      </span>
+                    </div>
+                    {saldo > 0 && datasViagem.length > 0 && (
+                      <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                        <span className="text-slate-550 font-sans font-bold uppercase">Disponível por Dia Restante:</span>
+                        <span className="text-[#6ee8f8] font-black">
+                          R$ {Math.round(saldo / datasViagem.length).toLocaleString("pt-BR")} / dia
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-slate-550 font-sans font-bold uppercase">Porcentagem Utilizada:</span>
+                      <span className="text-slate-200 font-black">{percentualConsumido}% do teto</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end pt-1 select-none">
+              <button
+                onClick={() => setActiveKpiModal(null)}
+                className="px-4 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-[9px] rounded-lg uppercase cursor-pointer border-0 shadow-md transition-all active:scale-95"
+              >
+                Fechar Detalhes
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
