@@ -881,7 +881,7 @@ export default function Home() {
                 />
 
                 {/* Currency Rate Widget and Flight Tracker */}
-                <CurrencyWidget destino={viagemAtiva.destino} />
+                <CurrencyWidget />
 
                 {/* Vetor de Rota Espacial e Conexão de Viagens */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md relative overflow-hidden select-none hover:border-indigo-500/50 transition-colors">
