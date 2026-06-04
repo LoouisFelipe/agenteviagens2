@@ -923,10 +923,186 @@ export default function Home() {
                 <CurrencyWidget />
 
                 {/* Painel de Resumo das Abas (Dashboard Integrado) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full select-none">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 w-full select-none">
+                  
+                  {/* 2. Resumo de Finanças */}
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-8">
+                    <div className="space-y-4">
+                      {/* Card Title & Header */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[10.5px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                          <span>💸</span>
+                          <span>Resumo de Finanças</span>
+                        </h3>
+                        <span className="text-[7.5px] font-mono font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                          Consolidado
+                        </span>
+                      </div>
+
+                      {/* Content Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        {/* Left Side: Category Breakdown */}
+                        <div className="space-y-4">
+                          <h4 className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-900 pb-1">
+                            Distribuição das Categorias
+                          </h4>
+
+                          {/* Segmented linear bar representing distribution */}
+                          <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden flex border border-slate-900 shadow-inner">
+                            {totalHospedagem > 0 && (
+                              <div style={{ width: `${percentualHospedagem}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-indigo-650" title={`Acomodação: ${percentualHospedagem}%`} />
+                            )}
+                            {totalPasseios > 0 && (
+                              <div style={{ width: `${percentualPasseios}%` }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-650 border-l border-slate-950" title={`Atividades: ${percentualPasseios}%`} />
+                            )}
+                            {totalDespesas > 0 && (
+                              <div style={{ width: `${percentualDespesas}%` }} className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950" title={`Despesas: ${percentualDespesas}%`} />
+                            )}
+                            {custoTotal === 0 && (
+                              <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[7px] text-slate-600 font-bold uppercase tracking-wider">
+                                Sem despesas registradas
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-2.5 text-[9px]">
+                            {/* Hospedagem */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1.5 font-bold text-indigo-455">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                <span>Acomodação</span>
+                              </div>
+                              <span className="font-mono text-slate-300 font-bold">
+                                R$ {totalHospedagem.toLocaleString("pt-BR")} <span className="text-[7.5px] text-slate-500 font-normal">({percentualHospedagem}%)</span>
+                              </span>
+                            </div>
+
+                            {/* Passeios */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1.5 font-bold text-emerald-455">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                <span>Atividades</span>
+                              </div>
+                              <span className="font-mono text-slate-300 font-bold">
+                                R$ {totalPasseios.toLocaleString("pt-BR")} <span className="text-[7.5px] text-slate-500 font-normal">({percentualPasseios}%)</span>
+                              </span>
+                            </div>
+
+                            {/* Despesas */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1.5 font-bold text-amber-450">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                <span>Despesas Extras</span>
+                              </div>
+                              <span className="font-mono text-slate-300 font-bold">
+                                R$ {totalDespesas.toLocaleString("pt-BR")} <span className="text-[7.5px] text-slate-500 font-normal">({percentualDespesas}%)</span>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Render Subcategories of Despesas Extras if totalDespesas > 0 */}
+                          {totalDespesas > 0 && (
+                            <div className="pt-2 border-t border-slate-900/60">
+                              <span className="text-[7.5px] font-bold text-slate-555 uppercase tracking-wider block mb-1.5">
+                                Subcategorias de Despesas Extras:
+                              </span>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {Object.entries(
+                                  todasDespesas.reduce<Record<string, number>>((acc, exp) => {
+                                    const cat = exp.categoria || "Outros";
+                                    acc[cat] = (acc[cat] || 0) + exp.valor;
+                                    return acc;
+                                  }, {})
+                                ).map(([cat, val]) => (
+                                  <div key={cat} className="bg-slate-950/40 border border-slate-900 p-1.5 rounded-md flex items-center justify-between text-[8px]">
+                                    <span className="text-slate-455 uppercase truncate max-w-[65px] font-semibold">{cat}</span>
+                                    <span className="font-mono text-slate-300 font-bold">R$ {Math.round(val).toLocaleString("pt-BR")}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right Side: Top single expenses (Maiores Gastos) & Budget Bar */}
+                        <div className="space-y-4">
+                          <h4 className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-900 pb-1">
+                            Maiores Gastos da Viagem
+                          </h4>
+
+                          <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                            {statementItems.length === 0 ? (
+                              <div className="text-center py-6 text-[8.5px] text-slate-600 font-bold uppercase tracking-wider">
+                                Nenhum lançamento encontrado
+                              </div>
+                            ) : (
+                              [...statementItems]
+                                .sort((a, b) => b.valor - a.valor)
+                                .slice(0, 3)
+                                .map((item) => {
+                                  const icons: Record<string, string> = {
+                                    hospedagem: "🏨",
+                                    passeio: "🎟️",
+                                    despesa: "💸"
+                                  };
+                                  return (
+                                    <div key={item.key} className="flex items-center justify-between bg-slate-950/50 border border-slate-900/60 p-2 rounded-xl text-[9px] hover:border-slate-800 transition-colors">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="text-xs select-none">{icons[item.tipo] || "💰"}</span>
+                                        <div className="min-w-0 flex flex-col">
+                                          <span className="text-slate-200 font-bold uppercase truncate max-w-[120px] leading-tight">
+                                            {item.nome}
+                                          </span>
+                                          <span className="text-slate-500 text-[7px] uppercase tracking-wider font-semibold">
+                                            {item.tipo === "hospedagem" ? "Acomodação" : item.tipo === "passeio" ? "Atividade" : item.categoria}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <span className="font-mono text-indigo-400 font-bold ml-1.5 shrink-0">
+                                        R$ {item.valor.toLocaleString("pt-BR")}
+                                      </span>
+                                    </div>
+                                  );
+                                })
+                            )}
+                          </div>
+
+                          {/* Budget utilization status bar */}
+                          <div className="bg-slate-950/30 border border-slate-900 p-2.5 rounded-xl space-y-1.5 select-none">
+                            <div className="flex justify-between text-[7.5px] font-bold text-slate-500 uppercase">
+                              <span>Teto Consumido</span>
+                              <span className={ultrapassou ? "text-rose-455" : "text-emerald-450"}>
+                                {percentualConsumido}% ({custoTotal > 0 ? `R$ ${custoTotal.toLocaleString("pt-BR")}` : "R$ 0"} / R$ {orcamento.toLocaleString("pt-BR")})
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-950 border border-slate-900 rounded-full overflow-hidden">
+                              <div
+                                style={{ width: `${percentualConsumido}%` }}
+                                className={`h-full transition-all duration-300 ${
+                                  ultrapassou
+                                    ? "bg-gradient-to-r from-rose-500 to-red-600"
+                                    : percentualConsumido > 80
+                                    ? "bg-gradient-to-r from-amber-500 to-orange-500"
+                                    : "bg-gradient-to-r from-indigo-500 to-indigo-650"
+                                }`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab("financas")}
+                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md mt-2"
+                    >
+                      Acessar Finanças Completa ➔
+                    </button>
+                  </div>
                   
                   {/* 1. Resumo da Agenda e Itinerário */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-4">
                     <div className="space-y-3">
                       <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
                         <span>📅</span>
@@ -934,17 +1110,17 @@ export default function Home() {
                       </h3>
                       <div className="space-y-2 text-[10px] text-slate-300">
                         <div className="flex justify-between">
-                          <span className="text-slate-500 uppercase font-bold">Duração Total:</span>
+                          <span className="text-slate-550 uppercase font-bold">Duração Total:</span>
                           <span className="font-mono font-bold">{datasViagem.length} dias</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500 uppercase font-bold">Hospedagem reservada:</span>
+                          <span className="text-slate-555 uppercase font-bold">Hospedagem reservada:</span>
                           <span className="font-mono font-bold text-[#6ee8f8]">
                             {datasViagem.filter(dia => roteiroDiario[dia]?.hospedagem).length} de {datasViagem.length} noites
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500 uppercase font-bold">Passeios & Atividades:</span>
+                          <span className="text-slate-555 uppercase font-bold">Passeios & Atividades:</span>
                           <span className="font-mono font-bold text-amber-500">
                             {datasViagem.reduce((acc, dia) => acc + (roteiroDiario[dia]?.atividades?.length || 0), 0)} itens agendados
                           </span>
@@ -959,57 +1135,8 @@ export default function Home() {
                     </button>
                   </div>
 
-                  {/* 2. Resumo de Finanças */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
-                    <div className="space-y-3">
-                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
-                        <span>💸</span>
-                        <span>Resumo de Finanças</span>
-                      </h3>
-                      
-                      {/* Segmented mini-bar */}
-                      <div className="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-900 shadow-inner">
-                        {totalHospedagem > 0 && (
-                          <div style={{ width: `${percentualHospedagem}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600" />
-                        )}
-                        {totalPasseios > 0 && (
-                          <div style={{ width: `${percentualPasseios}%` }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950" />
-                        )}
-                        {totalDespesas > 0 && (
-                          <div style={{ width: `${percentualDespesas}%` }} className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950" />
-                        )}
-                        {custoTotal === 0 && (
-                          <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[7px] text-slate-650 font-bold uppercase tracking-wider">
-                            Nenhum gasto
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-1 text-[8px] font-bold">
-                        <div className="text-center">
-                          <span className="text-indigo-455 block">Acomodação</span>
-                          <span className="text-slate-500 font-mono block mt-0.5">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
-                        </div>
-                        <div className="text-center">
-                          <span className="text-emerald-455 block">Atividades</span>
-                          <span className="text-slate-500 font-mono block mt-0.5">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
-                        </div>
-                        <div className="text-center">
-                          <span className="text-amber-450 block">Despesas</span>
-                          <span className="text-slate-500 font-mono block mt-0.5">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab("financas")}
-                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                    >
-                      Acessar Finanças ➔
-                    </button>
-                  </div>
-
                   {/* 3. Banco de Alocações (Itens Livres) */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-4">
                     <div className="space-y-3">
                       <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
                         <span>🛍️</span>
@@ -1028,7 +1155,7 @@ export default function Home() {
                   </div>
 
                   {/* 4. Console Real-Time Monitor Preview */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4">
+                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-8">
                     <div className="space-y-3">
                       <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
@@ -1037,7 +1164,7 @@ export default function Home() {
                         </div>
                         <span className="w-1.5 h-1.5 bg-[#6ee8f8] rounded-full led-green animate-pulse" />
                       </h3>
-                      <div className="bg-slate-950/70 border border-slate-850 rounded-xl p-3 font-mono text-[8.5px] space-y-1.5 h-14 overflow-y-auto select-none shadow-inner leading-normal">
+                      <div className="bg-slate-950/70 border border-slate-855 rounded-xl p-3 font-mono text-[8.5px] space-y-1.5 h-20 overflow-y-auto select-none shadow-inner leading-normal">
                         {consoleLogs.map((log, index) => {
                           let colorClass = "text-slate-455";
                           if (log.includes("[SYSTEM]")) colorClass = "text-cyan-400/90 font-bold";
@@ -1054,7 +1181,7 @@ export default function Home() {
                     </div>
                     <button
                       onClick={() => setActiveTab("logs")}
-                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
+                      className="w-full py-2 bg-slate-950 border border-slate-855 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
                     >
                       Abrir Console de Logs ➔
                     </button>

@@ -17,6 +17,7 @@
   },
   "apphosting": {
     "backendId": "agenteviagens2",
-    "rootDir": "/"
+    "rootDir": "/",
+    "alwaysDeployFromSource": true
   }
 }
