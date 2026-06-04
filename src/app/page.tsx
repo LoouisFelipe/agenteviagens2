@@ -827,7 +827,7 @@ export default function Home() {
                   >
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Teto Orçamentário</div>
-                      <div className="text-sm font-black text-slate-100 mt-1 font-heading">
+                      <div className="text-sm font-black text-slate-100 mt-1 font-sans">
                         R$ {orcamento.toLocaleString("pt-BR")}
                       </div>
                       <div className="text-[8.5px] text-[#8a82a8] font-semibold mt-1.5 uppercase font-mono leading-none">
@@ -855,11 +855,11 @@ export default function Home() {
                   >
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Consumo Consolidado</div>
-                      <div className={`text-sm font-black mt-1 font-heading ${ultrapassou ? "text-rose-400" : "text-[#6ee8f8]"}`}>
+                      <div className={`text-sm font-black mt-1 font-sans ${ultrapassou ? "text-rose-455" : "text-[#6ee8f8]"}`}>
                         R$ {custoTotal.toLocaleString("pt-BR")}
                       </div>
                       <div className="flex items-center gap-1.5 mt-1.5 select-none leading-none">
-                        <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-400 animate-pulse" : "text-[#6ee8f8]"}`}>
+                        <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-455 animate-pulse" : "text-[#6ee8f8]"}`}>
                           {percentualConsumido}% CONSUMIDO
                         </span>
                         {ultrapassou && (
@@ -890,7 +890,7 @@ export default function Home() {
                   >
                     <div>
                       <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Saldo Financeiro</div>
-                      <div className={`text-sm font-black mt-1 font-heading ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
+                      <div className={`text-sm font-black mt-1 font-sans ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
                         R$ {saldo.toLocaleString("pt-BR")}
                       </div>
                       <div className="text-[8.5px] text-[#8a82a8] font-semibold mt-1.5 uppercase font-mono leading-none">
