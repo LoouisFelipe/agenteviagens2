@@ -880,63 +880,8 @@ export default function Home() {
                   diaAtivoWorkspace={diaAtivoWorkspace}
                 />
 
-                {/* Currency Rate Widget and Flight Tracker */}
+                {/* Currency Rate Widget */}
                 <CurrencyWidget />
-
-                {/* Vetor de Rota Espacial e Conexão de Viagens */}
-                <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md relative overflow-hidden select-none hover:border-indigo-500/50 transition-colors">
-                  <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-teal-400 via-indigo-500 to-purple-500" />
-                  <h3 className="text-[10px] font-black uppercase text-teal-400 tracking-wider flex items-center gap-1.5 mb-4">
-                    <span>🛸</span>
-                    <span>Vetor de Viagem & Rota Espacial</span>
-                  </h3>
-                  
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4 px-2 relative">
-                    {/* Background Starry Glow */}
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(129,140,248,0.06),transparent_70%)] pointer-events-none" />
-                    
-                    {/* Origem Node */}
-                    <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
-                      <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-indigo-500/60 flex items-center justify-center font-mono text-xs text-indigo-300 font-extrabold shadow-[0_0_12px_rgba(99,102,241,0.3)]">
-                        {viagemAtiva.origem ? (viagemAtiva.origem.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.origem.slice(0, 3).toUpperCase()) : "GRU"}
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
-                        {viagemAtiva.origem ? viagemAtiva.origem.split("(")[0].trim() : "Origem"}
-                      </span>
-                      <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono mt-0.5">Ponto de Partida</span>
-                    </div>
-
-                    {/* Pulsating Dotted Dotted Vector */}
-                    <div className="flex-1 flex flex-col items-center justify-center min-w-[80px] w-full py-2 z-10 select-none">
-                      <div className="text-[9px] font-mono text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1 mb-1 animate-pulse">
-                        <span>🚀</span>
-                        <span>Em Rota</span>
-                      </div>
-                      <div className="w-full flex items-center justify-center relative px-4">
-                        <div className="w-full h-0.5 border-t border-dashed border-indigo-500/40 relative">
-                          <div className="absolute top-1/2 left-0 -translate-y-1/2 w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-                          <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                          <div className="absolute top-1/2 left-2/3 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-2 h-2 rounded-full bg-teal-400 animate-ping" />
-                        </div>
-                      </div>
-                      <span className="text-[8px] text-indigo-400 font-bold uppercase tracking-widest mt-1.5 font-mono">
-                        Conexão Direta Reativa
-                      </span>
-                    </div>
-
-                    {/* Destino Node */}
-                    <div className="flex flex-col items-center text-center z-10 transition-transform duration-300 hover:scale-105">
-                      <div className="w-10 h-10 rounded-full bg-slate-950 border-2 border-teal-500/60 flex items-center justify-center font-mono text-xs text-teal-300 font-extrabold shadow-[0_0_12px_rgba(45,212,191,0.3)]">
-                        {viagemAtiva.destino ? (viagemAtiva.destino.match(/\(([^)]+)\)/)?.[1] || viagemAtiva.destino.slice(0, 3).toUpperCase()) : "SCL"}
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-200 mt-2 uppercase tracking-wide">
-                        {viagemAtiva.destino ? viagemAtiva.destino.split("(")[0].trim() : "Destino"}
-                      </span>
-                      <span className="text-[8px] text-slate-500 uppercase tracking-widest font-mono mt-0.5">Destino Final</span>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Painel de Resumo das Abas (Dashboard Integrado) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full select-none">
