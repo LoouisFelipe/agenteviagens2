@@ -249,7 +249,7 @@ export default function TripForm({
   };
 
   return (
-    <div className="w-full glass-panel shadow-2xl p-5 text-xs font-sans relative overflow-hidden rounded-2xl select-none">
+    <div className="w-full glass-panel shadow-2xl p-5 text-xs font-sans relative overflow-hidden rounded-2xl select-none border border-slate-800 hover:border-blue-500/40 hover:shadow-[0_0_25px_rgba(0,122,255,0.15)] transition-all duration-300">
       {/* Decoração da borda superior */}
       <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-blue-500 to-[#007aff]" />
 
@@ -261,7 +261,7 @@ export default function TripForm({
             <h3 className="text-xs font-black text-slate-100 uppercase tracking-wide leading-none font-heading pt-0.5">
               {viagemParaEditar ? "Editar Rota Operacional" : "Nova Rota Operacional"}
             </h3>
-            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider font-mono-tech mt-1">
+            <p className="text-[8px] text-slate-500 font-bold uppercase tracking-wider font-mono mt-1">
               {viagemParaEditar ? "trip_edit_system_v3" : "trip_creation_system_v3"}
             </p>
           </div>
@@ -313,7 +313,7 @@ export default function TripForm({
           {activeDropdown === "origem" && (origemSugestoes.length > 0 || isSearchingOrigem) && (
             <div className="absolute top-full left-0 w-full mt-1.5 bg-slate-900 border border-slate-800 z-30 shadow-2xl max-h-48 overflow-y-auto rounded-xl divide-y divide-slate-800/40 p-1">
               {isSearchingOrigem ? (
-                <div className="p-3 text-slate-500 text-[10px] animate-pulse font-mono-tech">
+                <div className="p-3 text-slate-500 text-[10px] animate-pulse font-mono">
                   Pesquisando...
                 </div>
               ) : (
@@ -360,7 +360,7 @@ export default function TripForm({
           {activeDropdown === "destino" && (destinoSugestoes.length > 0 || isSearchingDestino) && (
             <div className="absolute top-full left-0 w-full mt-1.5 bg-slate-900 border border-slate-800 z-30 shadow-2xl max-h-48 overflow-y-auto rounded-xl divide-y divide-slate-800/40 p-1">
               {isSearchingDestino ? (
-                <div className="p-3 text-slate-500 text-[10px] animate-pulse font-mono-tech">
+                <div className="p-3 text-slate-500 text-[10px] animate-pulse font-mono">
                   Pesquisando...
                 </div>
               ) : (
@@ -394,7 +394,7 @@ export default function TripForm({
             onChange={(e) => setDataInicio(e.target.value)}
             onClick={(e) => e.currentTarget.showPicker?.()}
             disabled={isLoading}
-            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-blue-500 focus:outline-none cursor-pointer rounded-lg transition-all duration-150 font-mono-tech shadow-inner"
+            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-blue-500 focus:outline-none cursor-pointer rounded-lg transition-all duration-150 font-mono shadow-inner"
           />
         </div>
 
@@ -409,7 +409,7 @@ export default function TripForm({
             onChange={(e) => setDataFim(e.target.value)}
             onClick={(e) => e.currentTarget.showPicker?.()}
             disabled={isLoading}
-            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-blue-500 focus:outline-none cursor-pointer rounded-lg transition-all duration-150 font-mono-tech shadow-inner"
+            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-blue-500 focus:outline-none cursor-pointer rounded-lg transition-all duration-150 font-mono shadow-inner"
           />
         </div>
 
@@ -424,14 +424,14 @@ export default function TripForm({
             value={orcamento}
             onChange={(e) => setOrcamento(e.target.value)}
             disabled={isLoading}
-            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-blue-500 focus:outline-none placeholder-slate-750 font-mono-tech rounded-lg transition-all duration-150 shadow-inner"
+            className="bg-slate-950 border border-slate-800 text-slate-100 px-3 py-2 focus:border-blue-500 focus:outline-none placeholder-slate-750 font-mono rounded-lg transition-all duration-150 shadow-inner"
             min="1"
           />
         </div>
 
         {/* Mensagem de Erro */}
         {erro && (
-          <div className="md:col-span-5 bg-rose-950/20 border border-rose-900/40 text-rose-400 p-3 rounded-lg flex items-center gap-2 font-mono-tech shadow-md">
+          <div className="md:col-span-5 bg-rose-950/20 border border-rose-900/40 text-rose-400 p-3 rounded-lg flex items-center gap-2 font-mono shadow-md">
             <span className="w-1.5 h-1.5 bg-rose-500 led-red rounded-full animate-ping" />
             <span className="font-bold tracking-wide">{erro}</span>
           </div>

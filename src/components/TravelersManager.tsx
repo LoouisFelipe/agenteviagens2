@@ -82,7 +82,7 @@ export default function TravelersManager({
         </button>
       </form>
 
-      {erro && <div className="text-[8.5px] text-rose-455 font-mono-tech leading-none">⚠️ {erro}</div>}
+      {erro && <div className="text-[8.5px] text-rose-455 font-mono leading-none">⚠️ {erro}</div>}
 
       {/* Lista de Viajantes */}
       <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1 scrollbar-thin">

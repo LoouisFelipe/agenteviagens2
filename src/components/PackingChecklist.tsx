@@ -11,6 +11,11 @@ interface ChecklistItem {
 
 interface PackingChecklistProps {
   viagemId: string;
+  checklist: ChecklistItem[];
+  onAdicionar: (item: Omit<ChecklistItem, "id">) => Promise<string>;
+  onAlternar: (id: string, marcado: boolean) => Promise<void>;
+  onRemover: (id: string) => Promise<void>;
+  onDesmarcarTodos: () => Promise<void>;
 }
 
 const DEFAULT_ITEMS: Omit<ChecklistItem, "id">[] = [
@@ -32,45 +37,35 @@ const DEFAULT_ITEMS: Omit<ChecklistItem, "id">[] = [
   { categoria: "Higiene", nome: "Remédios de Uso Pessoal", marcado: false },
 ];
 
-export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
-  const [itens, setItens] = useState<ChecklistItem[]>([]);
+export default function PackingChecklist({
+  viagemId,
+  checklist = [],
+  onAdicionar,
+  onAlternar,
+  onRemover,
+  onDesmarcarTodos,
+}: PackingChecklistProps) {
   const [novoItem, setNovoItem] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("Documentos");
   const [filtroCategoria, setFiltroCategoria] = useState("todas");
 
-  // Carrega itens do localStorage para a viagem ativa
+  // Initialize with defaults if checklist is empty and not initialized yet
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storageKey = `chilinho_checklist_${viagemId}`;
-      const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        setItens(JSON.parse(raw));
-      } else {
-        // Inicializa com os itens padrões
-        const inicial = DEFAULT_ITEMS.map((item, idx) => ({
-          id: `item_def_${idx}`,
-          ...item,
-        }));
-        setItens(inicial);
-        localStorage.setItem(storageKey, JSON.stringify(inicial));
+    if (typeof window !== "undefined" && checklist.length === 0 && viagemId) {
+      const initKey = `chilinho_checklist_init_${viagemId}`;
+      const isInitialized = localStorage.getItem(initKey);
+      if (!isInitialized) {
+        // Sequentially create default items
+        DEFAULT_ITEMS.forEach((item) => {
+          onAdicionar(item);
+        });
+        localStorage.setItem(initKey, "true");
       }
     }
-  }, [viagemId]);
+  }, [viagemId, checklist.length, onAdicionar]);
 
-  // Salva no localStorage quando itens mudam
-  const salvarItens = (novosItens: ChecklistItem[]) => {
-    setItens(novosItens);
-    if (typeof window !== "undefined") {
-      const storageKey = `chilinho_checklist_${viagemId}`;
-      localStorage.setItem(storageKey, JSON.stringify(novosItens));
-    }
-  };
-
-  const handleToggle = (id: string) => {
-    const novosItens = itens.map((item) =>
-      item.id === id ? { ...item, marcado: !item.marcado } : item
-    );
-    salvarItens(novosItens);
+  const handleToggle = (id: string, atualMarcado: boolean) => {
+    onAlternar(id, !atualMarcado);
   };
 
   const handleAdicionar = (e: React.FormEvent) => {
@@ -78,40 +73,35 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
     const nome = novoItem.trim();
     if (!nome) return;
 
-    const item: ChecklistItem = {
-      id: "item_" + Math.random().toString(36).substring(2, 9),
+    onAdicionar({
       categoria: categoriaSelecionada,
       nome,
       marcado: false,
-    };
-
-    salvarItens([...itens, item]);
+    });
     setNovoItem("");
   };
 
   const handleRemover = (id: string) => {
-    const filtrados = itens.filter((item) => item.id !== id);
-    salvarItens(filtrados);
+    onRemover(id);
   };
 
   const handleLimparMarcados = () => {
-    if (!confirm("Limpar todos os itens marcados?")) return;
-    const desmarcados = itens.map((item) => ({ ...item, marcado: false }));
-    salvarItens(desmarcados);
+    if (!confirm("Desmarcar todos os itens?")) return;
+    onDesmarcarTodos();
   };
 
-  // Cálculos de Progresso
-  const totalItens = itens.length;
-  const marcadosItens = itens.filter((i) => i.marcado).length;
+  // Progress Calculations
+  const totalItens = checklist.length;
+  const marcadosItens = checklist.filter((i) => i.marcado).length;
   const percentual = totalItens > 0 ? Math.round((marcadosItens / totalItens) * 100) : 0;
 
-  // Parâmetros do Círculo de Progresso SVG
+  // SVG Progress Circle Settings
   const raio = 32;
   const circunferencia = 2 * Math.PI * raio;
   const strokeDashoffset = circunferencia - (percentual / 100) * circunferencia;
 
-  // Filtragem dos itens para exibição
-  const itensExibidos = itens.filter((item) =>
+  // Filtering list
+  const itensExibidos = checklist.filter((item) =>
     filtroCategoria === "todas" ? true : item.categoria === filtroCategoria
   );
 
@@ -121,10 +111,10 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
     <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md relative overflow-hidden select-none space-y-5">
       <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-emerald-500 to-teal-600" />
 
-      {/* Cabeçalho da Lista com Progresso Circular */}
+      {/* Header with Circular Progress */}
       <div className="flex items-center justify-between border-b border-slate-850 pb-3">
         <div className="flex items-center space-x-3.5">
-          {/* Círculo SVG de Progresso */}
+          {/* Progress Circle */}
           <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
             <svg className="w-full h-full transform -rotate-90">
               <circle
@@ -145,7 +135,7 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
                 strokeLinecap="round"
               />
             </svg>
-            <span className="absolute text-[10px] font-mono-tech font-black text-emerald-450 leading-none">
+            <span className="absolute text-[10px] font-mono font-black text-emerald-450 leading-none">
               {percentual}%
             </span>
           </div>
@@ -154,7 +144,7 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
             <h3 className="text-[10px] font-black uppercase text-emerald-400 tracking-wider">
               🎒 Checklist de Viagem (Bagagem)
             </h3>
-            <p className="text-[8px] text-slate-550 font-bold uppercase tracking-wider font-mono-tech mt-1">
+            <p className="text-[8px] text-slate-550 font-bold uppercase tracking-wider font-mono mt-1">
               Concluído: {marcadosItens} / {totalItens} itens
             </p>
           </div>
@@ -163,13 +153,13 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
         <button
           onClick={handleLimparMarcados}
           disabled={marcadosItens === 0}
-          className="px-2.5 py-1.5 bg-slate-950 border border-slate-850 hover:border-slate-850 text-slate-500 hover:text-slate-300 font-bold text-[8.5px] rounded-lg transition-colors uppercase cursor-pointer disabled:opacity-40 select-none"
+          className="px-2.5 py-1.5 bg-slate-950 border border-slate-850 hover:border-slate-700 text-slate-500 hover:text-slate-300 font-bold text-[8.5px] rounded-lg transition-colors uppercase cursor-pointer disabled:opacity-40 select-none"
         >
           Desmarcar Todos
         </button>
       </div>
 
-      {/* Formulário de Novo Item */}
+      {/* New Item Form */}
       <form onSubmit={handleAdicionar} className="grid grid-cols-1 sm:grid-cols-12 gap-2 text-[10px]">
         <div className="sm:col-span-4 flex flex-col">
           <select
@@ -204,11 +194,11 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
         </div>
       </form>
 
-      {/* Abas de Filtro por Categoria */}
+      {/* Category Filter Pills */}
       <div className="flex items-center gap-1.5 pb-2 border-b border-slate-850 overflow-x-auto scrollbar-none select-none">
         <button
           onClick={() => setFiltroCategoria("todas")}
-          className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+          className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
             filtroCategoria === "todas"
               ? "bg-emerald-600/20 border-emerald-500/60 text-emerald-300 font-extrabold shadow-sm"
               : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
@@ -220,7 +210,7 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
           <button
             key={cat}
             onClick={() => setFiltroCategoria(cat)}
-            className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+            className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
               filtroCategoria === cat
                 ? "bg-emerald-600/20 border-emerald-500/60 text-emerald-300 font-extrabold shadow-sm"
                 : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
@@ -231,7 +221,7 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
         ))}
       </div>
 
-      {/* Lista de Itens do Checklist */}
+      {/* Checklist Items Container with fade-in animations */}
       <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1.5 scrollbar-thin">
         {itensExibidos.length === 0 ? (
           <div className="py-8 text-center text-slate-650 font-bold uppercase text-[9px] tracking-wider select-none animate-pulse">
@@ -241,7 +231,7 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
           itensExibidos.map((item) => (
             <div
               key={item.id}
-              className={`flex items-center justify-between gap-3 p-3 bg-slate-900/60 border rounded-xl transition-all shadow-sm group select-none ${
+              className={`flex items-center justify-between gap-3 p-3 bg-slate-900/60 border rounded-xl shadow-sm group select-none transition-all duration-300 ease-in-out transform hover:scale-[1.01] hover:shadow-md animate-[fadeIn_0.2s_ease-out] ${
                 item.marcado ? "border-slate-900 bg-slate-905/30" : "border-slate-850 hover:border-slate-750"
               }`}
             >
@@ -250,7 +240,7 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
                   type="checkbox"
                   id={item.id}
                   checked={item.marcado}
-                  onChange={() => handleToggle(item.id)}
+                  onChange={() => handleToggle(item.id, item.marcado)}
                   className="w-4 h-4 bg-slate-950 border border-slate-800 text-emerald-500 focus:ring-0 focus:ring-offset-0 cursor-pointer rounded checkbox-custom"
                 />
                 <label
@@ -264,7 +254,7 @@ export default function PackingChecklist({ viagemId }: PackingChecklistProps) {
               </div>
 
               <div className="flex items-center gap-2 select-none">
-                <span className="text-[7.5px] font-black px-1.5 py-0.2 bg-slate-950 border border-slate-850/80 text-slate-500 font-mono-tech select-none leading-none rounded uppercase">
+                <span className="text-[7.5px] font-black px-1.5 py-0.2 bg-slate-950 border border-slate-850/80 text-slate-500 font-mono select-none leading-none rounded uppercase">
                   {item.categoria}
                 </span>
                 <button

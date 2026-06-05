@@ -23,7 +23,12 @@ import {
   Hospedagem,
   Atividade,
   Despesa,
-  emitLog
+  emitLog,
+  ChecklistItem,
+  adicionarChecklistItem,
+  alternarChecklistItem,
+  removerChecklistItem,
+  desmarcarTodosChecklist
 } from "@/services/travelService";
 
 // Helper para gerar as datas cronologicamente entre início e fim sem bugs de timezone
@@ -47,6 +52,7 @@ export function useTravelData(user: User | null) {
   const [datasViagem, setDatasViagem] = useState<string[]>([]);
   const [roteiroDiario, setRoteiroDiario] = useState<Record<string, RoteiroDiario>>({});
   const [diaAtivoWorkspace, setDiaAtivoWorkspace] = useState<string | null>(null);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
 
   // Carrega todas as viagens salvas (usado como fallback local ou inicialização)
   const carregarDadosViagens = useCallback(async (activeIdToSet?: string) => {
@@ -309,6 +315,50 @@ export function useTravelData(user: User | null) {
       }
     }
   }, [viagemAtiva, datasViagem]);
+
+  // 3. Escuta Checklist em tempo real (Bagagem)
+  useEffect(() => {
+    if (!viagemAtiva) {
+      setChecklist([]);
+      return;
+    }
+
+    if (isFirebaseConfigured && db) {
+      emitLog(`FIRESTORE: Conectando ouvinte em tempo real do Checklist da Viagem ID [${viagemAtiva.id}]...`);
+      const checklistRef = collection(db, "viagens", viagemAtiva.id, "checklist");
+      const unsubscribe = onSnapshot(
+        checklistRef,
+        (snapshot) => {
+          const list = snapshot.docs.map((docSnap) => {
+            const data = docSnap.data();
+            return {
+              id: docSnap.id,
+              categoria: data.categoria || "Outros",
+              nome: data.nome || "",
+              marcado: !!data.marcado,
+            } as ChecklistItem;
+          });
+
+          setChecklist(list);
+          emitLog(`FIRESTORE: Checklist sincronizado com ${list.length} itens.`);
+        },
+        (err) => {
+          console.error("Erro ao escutar checklist:", err);
+          emitLog("FIRESTORE ERROR: Falha ao carregar checklist em tempo real.");
+        }
+      );
+
+      return () => unsubscribe();
+    } else {
+      const storageKey = `chilinho_checklist_${viagemAtiva.id}`;
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        setChecklist(JSON.parse(raw));
+      } else {
+        setChecklist([]);
+      }
+    }
+  }, [viagemAtiva]);
 
   // Handler para trocar de viagem ativa
   const selecionarViagem = useCallback(async (id: string) => {
@@ -582,6 +632,59 @@ export function useTravelData(user: User | null) {
     }
   }, [viagemAtiva]);
 
+  // Adicionar item ao checklist
+  const handleAdicionarChecklistItem = useCallback(async (item: Omit<ChecklistItem, "id">): Promise<string> => {
+    if (!viagemAtiva) return "";
+    try {
+      return await adicionarChecklistItem(viagemAtiva.id, item);
+    } catch (err) {
+      console.error(err);
+      return "";
+    }
+  }, [viagemAtiva]);
+
+  // Alternar item do checklist
+  const handleAlternarChecklistItem = useCallback(async (itemId: string, marcado: boolean) => {
+    if (!viagemAtiva) return;
+    
+    // Otimista
+    setChecklist((prev) => prev.map(it => it.id === itemId ? { ...it, marcado } : it));
+    
+    try {
+      await alternarChecklistItem(viagemAtiva.id, itemId, marcado);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [viagemAtiva]);
+
+  // Remover item do checklist
+  const handleRemoverChecklistItem = useCallback(async (itemId: string) => {
+    if (!viagemAtiva) return;
+    
+    // Otimista
+    setChecklist((prev) => prev.filter(it => it.id !== itemId));
+
+    try {
+      await removerChecklistItem(viagemAtiva.id, itemId);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [viagemAtiva]);
+
+  // Desmarcar todos os itens do checklist
+  const handleDesmarcarTodosChecklist = useCallback(async () => {
+    if (!viagemAtiva) return;
+    
+    // Otimista
+    setChecklist((prev) => prev.map(it => ({ ...it, marcado: false })));
+
+    try {
+      await desmarcarTodosChecklist(viagemAtiva.id, checklist);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [viagemAtiva, checklist]);
+
   return {
     viagens,
     viagemAtiva,
@@ -602,6 +705,11 @@ export function useTravelData(user: User | null) {
     injetarDespesa,
     removerDespesa,
     salvarCronogramaInline,
-    atualizarViajantes
+    atualizarViajantes,
+    checklist,
+    adicionarChecklistItem: handleAdicionarChecklistItem,
+    alternarChecklistItem: handleAlternarChecklistItem,
+    removerChecklistItem: handleRemoverChecklistItem,
+    desmarcarTodosChecklist: handleDesmarcarTodosChecklist
   };
 }

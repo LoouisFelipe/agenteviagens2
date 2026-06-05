@@ -151,7 +151,7 @@ export default function BillSplitter({
               >
                 <span className="text-slate-200 font-bold uppercase">{formatNome(v)}</span>
                 <div className="text-right">
-                  <span className={`font-mono-tech font-bold ${statusColor}`}>
+                  <span className={`font-mono font-bold ${statusColor}`}>
                     {prefix}R$ {Math.abs(saldo).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </span>
                   <div className="text-[8px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
@@ -186,7 +186,7 @@ export default function BillSplitter({
                   <span className="text-slate-500">deve transferir para</span>
                   <span className="font-bold text-emerald-400 uppercase">{formatNome(t.para)}</span>
                 </div>
-                <div className="font-mono-tech font-bold text-[#f59e0b] bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
+                <div className="font-mono font-bold text-[#f59e0b] bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
                   R$ {t.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </div>
               </div>

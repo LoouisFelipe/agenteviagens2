@@ -51,7 +51,12 @@ export default function Home() {
     injetarDespesa,
     removerDespesa,
     salvarCronogramaInline,
-    atualizarViajantes
+    atualizarViajantes,
+    checklist,
+    adicionarChecklistItem,
+    alternarChecklistItem,
+    removerChecklistItem,
+    desmarcarTodosChecklist
   } = useTravelData(user);
 
   const [isFormCriacaoAberto, setIsFormCriacaoAberto] = useState(false);
@@ -575,7 +580,7 @@ export default function Home() {
         
         {/* COLUNA 1: SIDEBAR LATERAL DE CONTROLE */}
         <aside className="hidden lg:flex lg:col-span-3 flex-col justify-between glass-panel p-5 rounded-2xl relative overflow-hidden h-fit lg:h-[calc(100vh-3rem)] sticky lg:top-6 select-none bg-[#130d20] border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500" />
+          <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
           
           <div className="space-y-5">
             {/* Botão de Retorno Central */}
@@ -772,7 +777,7 @@ export default function Home() {
           
           {/* Header de Acompanhamento no Workspace - Premium Status Node */}
           <header className="w-full glass-panel p-4 flex items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none shadow-xl border border-white/5 bg-[#130d20]">
-            <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-purple-600 to-indigo-600" />
+            <div className="absolute top-0 left-0 w-full h-[2.5px] hazard-stripes" />
             <div className="flex items-center space-x-3.5">
               {viagemAtiva && (
                 <button
@@ -920,7 +925,7 @@ export default function Home() {
                 />
 
                 {/* Currency Rate Widget */}
-                <CurrencyWidget />
+                <CurrencyWidget destino={viagemAtiva?.destino || ""} />
 
                 {/* Painel de Resumo das Abas (Dashboard Integrado) */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-5 w-full select-none">
@@ -1290,7 +1295,7 @@ export default function Home() {
                     <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-amber-500 to-orange-500" />
                     <h3 className="text-[10px] font-black uppercase text-slate-350 tracking-wider flex items-center justify-between">
                       <span>💸 Registrar Nova Despesa</span>
-                      <span className="text-[8px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-mono-tech font-bold leading-none">
+                      <span className="text-[8px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-mono font-bold leading-none">
                         lançamento direto
                       </span>
                     </h3>
@@ -1368,14 +1373,14 @@ export default function Home() {
                             placeholder="0,00"
                             value={finAddValor}
                             onChange={(e) => setFinAddValor(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] font-mono-tech"
+                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] font-mono"
                           />
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between gap-3 pt-1 select-none">
                         {finAddErro ? (
-                          <span className="text-[8.5px] text-rose-455 font-mono-tech font-bold">⚠️ {finAddErro}</span>
+                          <span className="text-[8.5px] text-rose-455 font-mono font-bold">⚠️ {finAddErro}</span>
                         ) : (
                           <span />
                         )}
@@ -1435,8 +1440,8 @@ export default function Home() {
                           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                           <span>Acomodação</span>
                         </div>
-                        <span className="text-slate-400 font-mono-tech pl-2.5 font-bold">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
-                        <span className="text-slate-550 font-mono-tech pl-2.5 text-[7.5px] font-semibold">{percentualHospedagem}%</span>
+                        <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
+                        <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualHospedagem}%</span>
                       </div>
 
                       <div className="flex flex-col gap-0.5">
@@ -1444,8 +1449,8 @@ export default function Home() {
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                           <span>Passeios</span>
                         </div>
-                        <span className="text-slate-400 font-mono-tech pl-2.5 font-bold">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
-                        <span className="text-slate-550 font-mono-tech pl-2.5 text-[7.5px] font-semibold">{percentualPasseios}%</span>
+                        <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
+                        <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualPasseios}%</span>
                       </div>
 
                       <div className="flex flex-col gap-0.5">
@@ -1453,8 +1458,8 @@ export default function Home() {
                           <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                           <span>Despesas</span>
                         </div>
-                        <span className="text-slate-400 font-mono-tech pl-2.5 font-bold">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
-                        <span className="text-slate-550 font-mono-tech pl-2.5 text-[7.5px] font-semibold">{percentualDespesas}%</span>
+                        <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
+                        <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualDespesas}%</span>
                       </div>
                     </div>
                   </div>
@@ -1483,7 +1488,7 @@ export default function Home() {
                     <div className="flex items-center justify-between select-none">
                       <h3 className="text-[10px] font-black uppercase text-slate-355 tracking-wider flex items-center gap-2">
                         <span>🧾 Extrato Consolidado</span>
-                        <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2 py-0.5 rounded text-[8px] leading-none uppercase">
+                        <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono px-2 py-0.5 rounded text-[8px] leading-none uppercase">
                           {filteredStatementItems.length} itens {filteredStatementItems.length !== statementItems.length && `filtrados (de ${statementItems.length})`}
                         </span>
                       </h3>
@@ -1497,7 +1502,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => setFiltroVinculo("todos")}
-                          className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                          className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
                             filtroVinculo === "todos"
                               ? "bg-indigo-600/20 border-indigo-500/60 text-indigo-300 font-extrabold shadow-sm"
                               : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
@@ -1508,7 +1513,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => setFiltroVinculo("global")}
-                          className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                          className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
                             filtroVinculo === "global"
                               ? "bg-amber-600/20 border-amber-500/60 text-amber-300 font-extrabold shadow-sm"
                               : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
@@ -1519,7 +1524,7 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => setFiltroVinculo("dias")}
-                          className={`px-3 py-1 font-mono-tech text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                          className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
                             filtroVinculo === "dias"
                               ? "bg-emerald-600/20 border-emerald-500/60 text-emerald-300 font-extrabold shadow-sm"
                               : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
@@ -1567,7 +1572,7 @@ export default function Home() {
                                 <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
                                   📁 {categoria}
                                 </span>
-                                <span className="font-mono-tech text-slate-500 text-[8px] font-bold uppercase">
+                                <span className="font-mono text-slate-500 text-[8px] font-bold uppercase">
                                   Subtotal: <span className="text-slate-400">R$ {totalCategoria.toLocaleString("pt-BR")}</span>
                                 </span>
                               </div>
@@ -1585,7 +1590,7 @@ export default function Home() {
                                       >
                                         <div className="text-[8.5px] font-bold text-amber-500 uppercase tracking-widest border-b border-slate-900 pb-1 flex items-center justify-between">
                                           <span>📝 Editando Item ({item.tipo})</span>
-                                          <span className="text-[7.5px] font-mono-tech text-slate-500">{item.key}</span>
+                                          <span className="text-[7.5px] font-mono text-slate-500">{item.key}</span>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-2 text-[10px]">
@@ -1604,7 +1609,7 @@ export default function Home() {
                                               type="number"
                                               value={editValor}
                                               onChange={(e) => setEditValor(e.target.value)}
-                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] font-mono-tech"
+                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] font-mono"
                                             />
                                           </div>
                                         </div>
@@ -1665,7 +1670,7 @@ export default function Home() {
 
                                         <div className="flex items-center justify-between pt-1 select-none">
                                           {editErro ? (
-                                            <span className="text-[8px] text-rose-400 font-mono-tech font-bold">⚠️ {editErro}</span>
+                                            <span className="text-[8px] text-rose-400 font-mono font-bold">⚠️ {editErro}</span>
                                           ) : (
                                             <span />
                                           )}
@@ -1708,11 +1713,11 @@ export default function Home() {
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                           {item.diaIdx >= 0 ? (
-                                            <span className="font-bold text-[#f59e0b] font-mono-tech text-[8.5px] uppercase">
+                                            <span className="font-bold text-[#f59e0b] font-mono text-[8.5px] uppercase">
                                               D{String(item.diaIdx + 1).padStart(2, "0")}
                                             </span>
                                           ) : (
-                                            <span className="font-bold text-amber-500 font-mono-tech text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
+                                            <span className="font-bold text-amber-500 font-mono text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
                                               GERAL
                                             </span>
                                           )}
@@ -1733,7 +1738,7 @@ export default function Home() {
                                       </div>
 
                                       <div className="flex items-center gap-2 select-none font-sans font-semibold">
-                                        <span className="text-[#10b981] font-mono-tech font-bold text-[10px] mr-1">
+                                        <span className="text-[#10b981] font-mono font-bold text-[10px] mr-1">
                                           R$ {item.valor.toLocaleString("pt-BR")}
                                         </span>
                                         <button
@@ -1775,7 +1780,7 @@ export default function Home() {
                     </div>
 
                     {/* Dashboard Totalizer Footer */}
-                    <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono-tech select-none">
+                    <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono select-none">
                       <span className="text-slate-455 uppercase font-sans font-bold">Total Consolidado:</span>
                       <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
                     </div>
@@ -1816,9 +1821,9 @@ export default function Home() {
                             {/* Hover tooltip */}
                             <div className="absolute bottom-full mb-2 bg-slate-950 border border-indigo-500/50 text-[8.5px] p-2 rounded shadow-2xl hidden group-hover/bar:flex flex-col text-center w-24 pointer-events-none z-50 transition-all font-sans font-semibold">
                               <span className="text-amber-500 uppercase tracking-wider">{d.diaLabel}</span>
-                              <span className="text-slate-400 font-mono-tech mt-0.5 text-[8px]">{d.diaData.slice(5).replace("-", "/")}</span>
-                              <span className="text-indigo-400 font-mono-tech mt-1">Dia: R$ {d.custoDia}</span>
-                              <span className="text-[#10b981] font-mono-tech">Acum: R$ {d.acumulado}</span>
+                              <span className="text-slate-400 font-mono mt-0.5 text-[8px]">{d.diaData.slice(5).replace("-", "/")}</span>
+                              <span className="text-indigo-400 font-mono mt-1">Dia: R$ {d.custoDia}</span>
+                              <span className="text-[#10b981] font-mono">Acum: R$ {d.acumulado}</span>
                             </div>
 
                             {/* Bar Graph */}
@@ -1837,7 +1842,7 @@ export default function Home() {
                             </div>
 
                             {/* Label */}
-                            <span className={`text-[8.5px] font-mono-tech font-bold mt-1.5 uppercase select-none transition-colors ${
+                            <span className={`text-[8.5px] font-mono font-bold mt-1.5 uppercase select-none transition-colors ${
                               isSelected ? "text-amber-500 font-extrabold" : "text-slate-500 group-hover/bar:text-slate-300"
                             }`}>
                               D{String(idx + 1).padStart(2, "0")}
@@ -1859,7 +1864,7 @@ export default function Home() {
                             <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
                               🔍 Detalhamento: Dia {activeDiaIndex + 1} ({selectedGraphDay.slice(5).replace("-", "/")})
                             </span>
-                            <span className="font-mono-tech text-slate-350 text-[8.5px] font-bold">
+                            <span className="font-mono text-slate-350 text-[8.5px] font-bold">
                               Subtotal do Dia: <span className="text-[#10b981]">R$ {dayTotal.toLocaleString("pt-BR")}</span>
                             </span>
                           </div>
@@ -1884,7 +1889,7 @@ export default function Home() {
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2 select-none shrink-0 font-sans font-semibold">
-                                    <span className="text-slate-300 font-mono-tech font-bold text-[9.5px]">
+                                    <span className="text-slate-300 font-mono font-bold text-[9.5px]">
                                       R$ {item.valor.toLocaleString("pt-BR")}
                                     </span>
                                     <button
@@ -1950,14 +1955,14 @@ export default function Home() {
                 <div className="flex items-center space-x-3">
                   <span className="text-[#f59e0b] font-black text-[10px] uppercase tracking-wider font-sans flex items-center gap-2">
                     <span>⚡ Workspace Diário de Foco:</span>
-                    <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2.5 py-0.5 rounded-lg text-[9.5px]">
+                    <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono px-2.5 py-0.5 rounded-lg text-[9.5px]">
                       Dia {datasViagem.indexOf(diaAtivoWorkspace) + 1} ➔ {new Date(diaAtivoWorkspace + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ({diaAtivoWorkspace})
                     </span>
                   </span>
                 </div>
                 <button
                   onClick={() => setIsModoFoco(!isModoFoco)}
-                  className={`px-4 py-1.5 font-mono-tech text-[9px] font-bold rounded-lg border transition-all duration-200 uppercase cursor-pointer ${
+                  className={`px-4 py-1.5 font-mono text-[9px] font-bold rounded-lg border transition-all duration-200 uppercase cursor-pointer ${
                     isModoFoco
                       ? "bg-indigo-600/10 border-indigo-500/40 text-indigo-400 hover:bg-indigo-600/25"
                       : "bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-350"
@@ -1976,6 +1981,8 @@ export default function Home() {
                   onRemoverAtividade={handleRemoverAtividade}
                   onAdicionarDespesa={handleInjetarDespesa}
                   onRemoverDespesa={handleRemoverDespesa}
+                  onInjetarHospedagem={handleInjetarHospedagem}
+                  onInjetarAtividade={handleInjetarAtividade}
                   destino={viagemAtiva?.destino || ""}
                   viagemAtiva={viagemAtiva}
                   diaAtivoWorkspace={diaAtivoWorkspace}
@@ -2007,11 +2014,11 @@ export default function Home() {
               <div className="bg-slate-950/30 border border-slate-850 p-4 rounded-xl flex items-center justify-between select-none">
                 <div className="space-y-1">
                   <h4 className="text-[10px] font-black text-slate-200 uppercase tracking-widest leading-none">🛍️ Banco Central de Alocações</h4>
-                  <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider font-mono-tech mt-0.5">
+                  <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider font-mono mt-0.5">
                     pesquise ou crie itens customizados para injetar no dia operacional selecionado
                   </p>
                 </div>
-                <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono-tech px-2.5 py-0.5 rounded-lg text-[9.5px]">
+                <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono px-2.5 py-0.5 rounded-lg text-[9.5px]">
                   Dia em Alocação: {datasViagem.indexOf(diaAtivoWorkspace) + 1} ({diaAtivoWorkspace})
                 </span>
               </div>
@@ -2036,7 +2043,14 @@ export default function Home() {
               ======================================= */}
           {activeTab === "checklist" && (
             <div className="space-y-4 flex-1 flex flex-col min-h-0">
-              <PackingChecklist viagemId={viagemAtiva?.id || ""} />
+              <PackingChecklist
+                viagemId={viagemAtiva?.id || ""}
+                checklist={checklist}
+                onAdicionar={adicionarChecklistItem}
+                onAlternar={alternarChecklistItem}
+                onRemover={removerChecklistItem}
+                onDesmarcarTodos={desmarcarTodosChecklist}
+              />
             </div>
           )}
 
@@ -2047,7 +2061,7 @@ export default function Home() {
             <div className="flex-1 flex flex-col min-h-0 h-full">
               <div className="bg-slate-950/30 border border-slate-850 p-4 rounded-t-xl select-none">
                 <h4 className="text-[10px] font-black text-slate-200 uppercase tracking-widest leading-none">📋 Histórico e Logs</h4>
-                <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider font-mono-tech mt-1">
+                <p className="text-[9px] text-slate-450 font-bold uppercase tracking-wider font-mono mt-1">
                   rastreamento em tempo real das chamadas transacionais de rede na nuvem
                 </p>
               </div>
@@ -2057,6 +2071,12 @@ export default function Home() {
             </div>
           )}
 
+          {/* Persistent Industrial Operations Log Terminal */}
+          {viagemAtiva && (
+            <div className="mt-4 animate-fade-in shrink-0">
+              <IndustrialLog />
+            </div>
+          )}
         </main>
       </div>
 
@@ -2130,7 +2150,7 @@ export default function Home() {
             className="relative w-full max-w-lg glass-panel p-6 rounded-2xl overflow-hidden space-y-4 shadow-2xl border border-slate-800 bg-[#130d20] animate-workspace-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500" />
+            <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
             
             {/* Header */}
             <div className="flex items-center justify-between pb-2.5 border-b border-slate-850">
@@ -2170,7 +2190,7 @@ export default function Home() {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     O valor máximo planejado para a realização desta viagem. Serve como limite de gastos recomendado.
                   </p>
-                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono-tech">
+                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono">
                     <div className="flex justify-between border-b border-slate-900 pb-1.5">
                       <span className="text-slate-550 font-sans font-bold uppercase">Teto Total Definido:</span>
                       <span className="text-slate-200 font-black">R$ {orcamento.toLocaleString("pt-BR")}</span>
@@ -2198,7 +2218,7 @@ export default function Home() {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     O montante de todos os valores injetados no roteiro, categorizado em acomodações, passeios e despesas gerais.
                   </p>
-                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono-tech">
+                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono">
                     <div className="flex justify-between border-b border-slate-900 pb-1.5">
                       <span className="text-slate-550 font-sans font-bold uppercase">Consumo Total:</span>
                       <span className={`font-black ${ultrapassou ? "text-rose-400" : "text-[#6ee8f8]"}`}>
@@ -2236,7 +2256,7 @@ export default function Home() {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                     A diferença entre o teto planejado e os gastos totais realizados até o momento.
                   </p>
-                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono-tech">
+                  <div className="bg-slate-950/50 border border-slate-850 p-4 rounded-xl space-y-3 font-mono">
                     <div className="flex justify-between border-b border-slate-900 pb-1.5">
                       <span className="text-slate-550 font-sans font-bold uppercase">Saldo Financeiro:</span>
                       <span className={`font-black ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>

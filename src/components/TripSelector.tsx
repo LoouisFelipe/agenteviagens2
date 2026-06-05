@@ -50,7 +50,7 @@ export default function TripSelector({
       {/* Card "Viagens" Principal na Tela */}
       <div
         onClick={() => setIsManagerOpen(true)}
-        className="w-full glass-panel shadow-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer rounded-2xl border border-slate-800 hover:border-slate-750 transition-all duration-300 relative overflow-hidden group/trip hover:scale-[1.002]"
+        className="w-full glass-panel shadow-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer rounded-2xl border border-slate-800 hover:border-indigo-500/50 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all duration-300 relative overflow-hidden group/trip hover:scale-[1.01] active:scale-[0.995]"
       >
         {/* Faixa decorativa indigo moderna */}
         <div className="absolute top-0 left-0 w-full h-[2.5px] hazard-stripes" />
@@ -61,14 +61,14 @@ export default function TripSelector({
             🗺️
           </div>
           <div>
-            <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest leading-none">Roteador Ativo</div>
+            <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest leading-none">Roteador Ativo</div>
             {viagemAtiva ? (
               <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                 <span className="text-slate-100 font-black text-sm uppercase tracking-wide">
                   {viagemAtiva.origem} ➔ {viagemAtiva.destino}
                 </span>
                 <span className="text-slate-750 font-normal">|</span>
-                <span className="text-indigo-400 font-bold font-mono-tech text-[10.5px]">
+                <span className="text-indigo-400 font-bold font-mono text-[10.5px]">
                   {viagemAtiva.data_inicio} até {viagemAtiva.data_fim}
                 </span>
               </div>
@@ -83,7 +83,7 @@ export default function TripSelector({
         {/* Lado Direito - Ações do Dashboard */}
         <div className="flex items-center gap-3">
           {viagemAtiva && (
-            <div className="hidden lg:flex flex-col text-right font-mono-tech bg-slate-900/40 border border-slate-850 px-3.5 py-1.5 rounded-xl shadow-inner">
+            <div className="hidden lg:flex flex-col text-right font-mono bg-slate-900/40 border border-slate-850 px-3.5 py-1.5 rounded-xl shadow-inner">
               <span className="text-[9px] text-slate-500 font-bold uppercase">RASTREAMENTO</span>
               <span className="text-[#f59e0b] font-semibold text-[10px] uppercase tracking-wide mt-0.5">
                 {viagemAtiva.id}
@@ -95,13 +95,13 @@ export default function TripSelector({
             <button
               onClick={(e) => handleEditar(e)}
               disabled={!viagemAtiva}
-              className="h-10 px-4 flex items-center font-bold tracking-wide uppercase transition-all border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 bg-slate-950/40 hover:bg-slate-950/80 cursor-pointer rounded-lg text-[10.5px] disabled:opacity-30 disabled:pointer-events-none"
+              className="h-10 px-4 flex items-center font-bold tracking-wide uppercase transition-all border border-slate-800 hover:border-slate-650 hover:scale-[1.02] active:scale-[0.98] text-slate-400 hover:text-slate-200 bg-slate-950/40 hover:bg-slate-950/80 cursor-pointer rounded-lg text-[10.5px] disabled:opacity-30 disabled:pointer-events-none"
             >
               ✏️ [ EDITAR ROTA ]
             </button>
             <button
               onClick={() => setIsManagerOpen(true)}
-              className="h-10 px-5 flex items-center font-black tracking-wide uppercase transition-all bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-500/10 cursor-pointer rounded-lg text-[10.5px] border-0"
+              className="h-10 px-5 flex items-center font-black tracking-wide uppercase transition-all bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 hover:scale-[1.02] active:scale-[0.98] text-white shadow-lg shadow-indigo-500/10 cursor-pointer rounded-lg text-[10.5px] border-0"
             >
               🎛️ [ GERENCIAR VIAGENS ]
             </button>
@@ -121,10 +121,10 @@ export default function TripSelector({
               <div>
                 <h2 className="text-[#f59e0b] font-black uppercase tracking-wider text-xs flex items-center gap-2">
                   <span>🎛️ GERENCIADOR CENTRAL DE ROTAS</span>
-                  <span className="text-slate-500 font-mono-tech font-normal text-[10px]">|</span>
-                  <span className="text-slate-250 font-mono-tech font-semibold uppercase">{viagens.length} VIAGENS CADASTRADAS</span>
+                  <span className="text-slate-500 font-mono font-normal text-[10px]">|</span>
+                  <span className="text-slate-250 font-mono font-semibold uppercase">{viagens.length} VIAGENS CADASTRADAS</span>
                 </h2>
-                <p className="text-[9.5px] text-slate-400 uppercase font-semibold tracking-wide mt-0.5 font-mono-tech">
+                <p className="text-[9.5px] text-slate-400 uppercase font-semibold tracking-wide mt-0.5 font-mono">
                   SELECIONE, EDITE OU EXCLUA OPERAÇÕES DO BANCO DE DADOS
                 </p>
               </div>
@@ -166,7 +166,7 @@ export default function TripSelector({
                             </span>
                           )}
                         </div>
-                        <div className="text-[9.5px] font-mono-tech text-slate-500 mt-1 select-none flex items-center gap-2">
+                        <div className="text-[9.5px] font-mono text-slate-500 mt-1 select-none flex items-center gap-2">
                           <span>PERÍODO: <span className="text-slate-400 font-semibold">{v.data_inicio} a {v.data_fim}</span></span>
                           <span>|</span>
                           <span>TETO: <span className="text-[#f59e0b] font-bold">R$ {v.orcamento_maximo.toLocaleString("pt-BR")}</span></span>
@@ -201,7 +201,7 @@ export default function TripSelector({
 
             {/* Rodapé - Criar Nova Operação */}
             <div className="p-3 bg-slate-950/40 border-t border-slate-850 flex justify-between items-center gap-3 select-none">
-              <span className="text-[9px] text-slate-500 font-mono-tech uppercase">
+              <span className="text-[9px] text-slate-500 font-mono uppercase">
                 VINCULADO: FIRESTORE LIVE
               </span>
               <button

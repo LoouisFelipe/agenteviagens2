@@ -82,13 +82,13 @@ export default function TimelineCompact({
         <div className="flex items-center gap-3">
           <div className="text-xl">🛰️</div>
           <div>
-            <div className="text-[9px] font-mono-tech text-slate-500 uppercase tracking-widest leading-none">Grade Operacional</div>
+            <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest leading-none">Grade Operacional</div>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className="text-slate-105 font-black text-xs uppercase font-sans">
                 {noAtivo ? `DIA ${String(noAtivo.diaNumero).padStart(2, "0")}` : "NENHUM DIA SELECIONADO"}
               </span>
               <span className="text-slate-750 font-normal">|</span>
-              <span className="text-blue-400 font-bold font-mono-tech text-[10.5px]">
+              <span className="text-blue-400 font-bold font-mono text-[10.5px]">
                 {noAtivo ? noAtivo.labelData : ""}
               </span>
               {noAtivo && (
@@ -114,7 +114,7 @@ export default function TimelineCompact({
         {/* Lado Direito - Status de Gastos do Dia & Botão de Expandir */}
         <div className="flex items-center gap-4 flex-wrap">
           {noAtivo && (
-            <div className="flex items-center gap-3 font-mono-tech text-[10px] bg-slate-950/40 px-3 py-1.5 border border-slate-850 rounded-lg shadow-inner select-none">
+            <div className="flex items-center gap-3 font-mono text-[10px] bg-slate-950/40 px-3 py-1.5 border border-slate-850 rounded-lg shadow-inner select-none">
               <span className="text-slate-500">DIA: R$ {noAtivo.totalDia}</span>
               <span className="text-slate-750">|</span>
               <span className={`${noAtivo.estourouOrcamento ? "text-rose-400 font-black" : "text-[#10b981]"} font-bold`}>
@@ -138,7 +138,7 @@ export default function TimelineCompact({
             <span className="text-slate-500 uppercase tracking-wider font-black select-none">
               SELECIONE O DIA DA OPERAÇÃO:
             </span>
-            <span className="text-slate-500 font-mono-tech font-normal text-[8.5px] lowercase italic hidden sm:inline">
+            <span className="text-slate-500 font-mono font-normal text-[8.5px] lowercase italic hidden sm:inline">
               clique em um card para fechar e carregar os dados no workspace
             </span>
           </div>
@@ -177,7 +177,7 @@ export default function TimelineCompact({
                     <span className={`font-black ${isFocado ? "text-blue-400" : "text-slate-400"}`}>
                       DIA {String(no.diaNumero).padStart(2, "0")}
                     </span>
-                    <span className="text-slate-500 font-bold font-mono-tech text-[9px]">{no.labelData}</span>
+                    <span className="text-slate-500 font-bold font-mono text-[9px]">{no.labelData}</span>
                   </div>
 
                   {/* Linha 2: Marcadores Rápidos */}
@@ -201,7 +201,7 @@ export default function TimelineCompact({
                   </div>
 
                   {/* Linha 3: Orçamentos */}
-                  <div className="flex items-center justify-between text-[9px] font-mono-tech leading-none">
+                  <div className="flex items-center justify-between text-[9px] font-mono leading-none">
                     <span className="text-slate-500 font-semibold" title="Total do dia">
                       R$ {no.totalDia}
                     </span>

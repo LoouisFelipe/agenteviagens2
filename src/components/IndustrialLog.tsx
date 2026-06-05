@@ -40,7 +40,7 @@ export default function IndustrialLog() {
   };
 
   return (
-    <div className="w-full glass-panel shadow-2xl text-slate-300 font-mono-tech text-xs overflow-hidden rounded-2xl border border-slate-800/80 shadow-lg select-none">
+    <div className="w-full glass-panel shadow-2xl text-slate-300 font-mono text-xs overflow-hidden rounded-2xl border border-slate-800/80 shadow-lg select-none">
       {/* Cabeçalho do Terminal */}
       <div className="bg-slate-950/40 border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">

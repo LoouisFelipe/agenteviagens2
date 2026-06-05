@@ -329,7 +329,7 @@ export default function SideAList({
             )}
           </div>
 
-          <div className="flex items-center justify-between text-[10px] font-mono-tech select-none">
+          <div className="flex items-center justify-between text-[10px] font-mono select-none">
             <div className="text-slate-500">
               {isAISearchActive ? (
                 <span className="text-purple-400 font-bold uppercase">✨ Modo IA Ativo</span>
@@ -341,7 +341,7 @@ export default function SideAList({
               <button
                 onClick={() => carregarCotacoes(true, filtro)}
                 disabled={isLoading}
-                className="text-cyan-400 hover:text-cyan-300 font-bold bg-transparent border-0 cursor-pointer p-0 text-[9.5px] uppercase font-mono-tech flex items-center gap-1"
+                className="text-cyan-400 hover:text-cyan-300 font-bold bg-transparent border-0 cursor-pointer p-0 text-[9.5px] uppercase font-mono flex items-center gap-1"
               >
                 <span>🔄 Atualizar Preços via IA</span>
               </button>
@@ -392,7 +392,7 @@ export default function SideAList({
                     placeholder="Ex: 300"
                     value={customPreco}
                     onChange={(e) => setCustomPreco(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-blue-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
+                    className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-blue-500 focus:outline-none text-[10px] rounded-lg shadow-inner font-mono"
                   />
                 </div>
               </div>
@@ -452,7 +452,7 @@ export default function SideAList({
               </div>
 
               {customFormError && (
-                <div className="text-[9.5px] text-rose-450 font-mono-tech leading-none">
+                <div className="text-[9.5px] text-rose-450 font-mono leading-none">
                   ⚠️ {customFormError}
                 </div>
               )}
@@ -560,7 +560,7 @@ export default function SideAList({
                   placeholder="Ex: 1500"
                   value={despesaPreco}
                   onChange={(e) => setDespesaPreco(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-mono-tech"
+                  className="bg-slate-900 border border-slate-800 text-slate-200 px-2.5 py-1.5 focus:border-[#f59e0b] focus:outline-none text-[10px] rounded-lg shadow-inner font-mono"
                 />
               </div>
               <div className="flex flex-col">
@@ -580,7 +580,7 @@ export default function SideAList({
 
             {/* Display de conversão BRL */}
             {despesaMoeda !== "BRL" && despesaPreco && !isNaN(Number(despesaPreco)) && (
-              <div className="bg-slate-950/40 border border-slate-850 px-3 py-2 rounded-lg text-[9.5px] font-mono-tech text-slate-400 flex justify-between items-center select-none leading-none">
+              <div className="bg-slate-950/40 border border-slate-850 px-3 py-2 rounded-lg text-[9.5px] font-mono text-slate-400 flex justify-between items-center select-none leading-none">
                 <span>Convertido para BRL:</span>
                 <span className="text-[#10b981] font-bold">
                   R$ {(() => {
@@ -709,7 +709,7 @@ export default function SideAList({
             )}
 
             {despesaFormError && (
-              <div className="text-[9.5px] text-rose-455 font-mono-tech leading-none">
+              <div className="text-[9.5px] text-rose-455 font-mono leading-none">
                 ⚠️ {despesaFormError}
               </div>
             )}
@@ -782,7 +782,7 @@ export default function SideAList({
             <div className="text-sm font-black tracking-wider">
               {isAISearchActive ? "✨ IA Processando Dados" : "⚙️ Coleta & Scraping via IA"}
             </div>
-            <div className="text-[10px] text-slate-500 font-mono-tech tracking-widest leading-relaxed">
+            <div className="text-[10px] text-slate-500 font-mono tracking-widest leading-relaxed">
               {isAISearchActive 
                 ? "Executando varredura semântica na web..." 
                 : "Acessando robô de scraping e cotações..."}
@@ -814,11 +814,11 @@ export default function SideAList({
                     <span className="font-bold text-slate-200 group-hover:text-blue-400 transition-colors text-[11px] font-sans tracking-wide">
                       {item.nome}
                     </span>
-                    <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded border font-mono-tech select-none leading-none ${badge.style}`}>
+                    <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded border font-mono select-none leading-none ${badge.style}`}>
                       {badge.label}
                     </span>
                   </div>
-                  <div className="flex items-center space-x-3 text-[10px] font-mono-tech select-none">
+                  <div className="flex items-center space-x-3 text-[10px] font-mono select-none">
                     <span className="text-slate-400">
                       Custo: <span className="text-slate-100 font-semibold">{valorExibido}</span>
                     </span>
@@ -942,7 +942,7 @@ export default function SideAList({
                               min="1"
                               value={pessoasAtividade}
                               onChange={(e) => setPessoasAtividade(Math.max(1, Number(e.target.value)))}
-                              className="bg-slate-950 border border-slate-800 text-slate-100 px-2.5 py-1 focus:border-emerald-500 focus:outline-none rounded-md text-[10.5px] font-mono-tech"
+                              className="bg-slate-950 border border-slate-800 text-slate-100 px-2.5 py-1 focus:border-emerald-500 focus:outline-none rounded-md text-[10.5px] font-mono"
                             />
                           </div>
                           <div className="flex flex-col">
@@ -952,7 +952,7 @@ export default function SideAList({
                               min="1"
                               value={duracaoAtividade}
                               onChange={(e) => setDuracaoAtividade(Math.max(1, Number(e.target.value)))}
-                              className="bg-slate-950 border border-slate-800 text-slate-100 px-2.5 py-1 focus:border-emerald-500 focus:outline-none rounded-md text-[10.5px] font-mono-tech"
+                              className="bg-slate-950 border border-slate-800 text-slate-100 px-2.5 py-1 focus:border-emerald-500 focus:outline-none rounded-md text-[10.5px] font-mono"
                             />
                           </div>
                         </div>
@@ -976,7 +976,7 @@ export default function SideAList({
                           </select>
                         </div>
 
-                        <div className="bg-slate-950/40 border border-slate-850 p-2.5 rounded-lg space-y-1 font-mono-tech text-[10px]">
+                        <div className="bg-slate-950/40 border border-slate-850 p-2.5 rounded-lg space-y-1 font-mono text-[10px]">
                           <div className="text-slate-400">
                             Custo base: <span className="text-slate-200">R$ {(item as Atividade).valor}/px</span>
                           </div>
@@ -1015,7 +1015,7 @@ export default function SideAList({
       </div>
 
       {/* Rodapé Informativo */}
-      <div className="bg-slate-950/40 border-t border-slate-800/80 p-2 flex items-center justify-between text-[10px] text-slate-500 rounded-b-2xl font-mono-tech select-none">
+      <div className="bg-slate-950/40 border-t border-slate-800/80 p-2 flex items-center justify-between text-[10px] text-slate-500 rounded-b-2xl font-mono select-none">
         <span>Estado: Seleção Ativa</span>
         <span>Scraper API: Ativa</span>
       </div>

@@ -1094,3 +1094,144 @@ export async function atualizarViajantesViagem(viagemId: string, viajantes: stri
     }
   }
 }
+
+export interface ChecklistItem {
+  id: string;
+  categoria: string;
+  nome: string;
+  marcado: boolean;
+}
+
+/**
+ * Adiciona um item no checklist da viagem.
+ */
+export async function adicionarChecklistItem(viagemId: string, item: Omit<ChecklistItem, "id">): Promise<string> {
+  emitLog(`REQUEST: Adicionando item [${item.nome}] ao checklist...`);
+  const tempId = "item_" + Math.random().toString(36).substring(2, 9);
+  
+  if (isFirebaseConfigured && db) {
+    try {
+      const docRef = doc(collection(db, "viagens", viagemId, "checklist"));
+      await withTimeout(
+        setDoc(docRef, {
+          categoria: item.categoria,
+          nome: item.nome,
+          marcado: item.marcado,
+          criado_em: Timestamp.now(),
+        }),
+        15000,
+        "Erro ao adicionar item ao checklist no Firestore."
+      );
+      emitLog(`FIRESTORE: Item [${item.nome}] adicionado ao checklist.`);
+      return docRef.id;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  
+  if (typeof window !== "undefined") {
+    const key = `chilinho_checklist_${viagemId}`;
+    const raw = localStorage.getItem(key);
+    const itens: ChecklistItem[] = raw ? JSON.parse(raw) : [];
+    itens.push({ id: tempId, ...item });
+    localStorage.setItem(key, JSON.stringify(itens));
+    emitLog(`SIMULATOR: Item [${item.nome}] adicionado localmente.`);
+  }
+  
+  return tempId;
+}
+
+/**
+ * Alterna o estado marcado/desmarcado de um item do checklist.
+ */
+export async function alternarChecklistItem(viagemId: string, itemId: string, marcado: boolean): Promise<void> {
+  emitLog(`REQUEST: Alterando marcação do item ID ${itemId} para ${marcado}...`);
+  
+  if (isFirebaseConfigured && db && !itemId.startsWith("item_def_") && !itemId.startsWith("item_")) {
+    try {
+      const docRef = doc(db, "viagens", viagemId, "checklist", itemId);
+      await withTimeout(
+        updateDoc(docRef, { marcado }),
+        15000,
+        "Erro ao alternar item do checklist."
+      );
+      emitLog(`FIRESTORE: Item ID ${itemId} marcado como ${marcado}.`);
+      return;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  
+  if (typeof window !== "undefined") {
+    const key = `chilinho_checklist_${viagemId}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const itens: ChecklistItem[] = JSON.parse(raw);
+      const novos = itens.map(it => it.id === itemId ? { ...it, marcado } : it);
+      localStorage.setItem(key, JSON.stringify(novos));
+      emitLog(`SIMULATOR: Item ID ${itemId} marcado como ${marcado} localmente.`);
+    }
+  }
+}
+
+/**
+ * Remove um item do checklist.
+ */
+export async function removerChecklistItem(viagemId: string, itemId: string): Promise<void> {
+  emitLog(`REQUEST: Removendo item ID ${itemId} do checklist...`);
+  
+  if (isFirebaseConfigured && db && !itemId.startsWith("item_def_") && !itemId.startsWith("item_")) {
+    try {
+      const docRef = doc(db, "viagens", viagemId, "checklist", itemId);
+      await withTimeout(
+        deleteDoc(docRef),
+        15000,
+        "Erro ao remover item do checklist."
+      );
+      emitLog(`FIRESTORE: Item ID ${itemId} removido do checklist.`);
+      return;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  
+  if (typeof window !== "undefined") {
+    const key = `chilinho_checklist_${viagemId}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const itens: ChecklistItem[] = JSON.parse(raw);
+      const filtrados = itens.filter(it => it.id !== itemId);
+      localStorage.setItem(key, JSON.stringify(filtrados));
+      emitLog(`SIMULATOR: Item ID ${itemId} removido localmente.`);
+    }
+  }
+}
+
+/**
+ * Desmarca todos os itens do checklist.
+ */
+export async function desmarcarTodosChecklist(viagemId: string, itens: ChecklistItem[]): Promise<void> {
+  emitLog(`REQUEST: Desmarcando todos os itens do checklist...`);
+  
+  if (isFirebaseConfigured && db) {
+    try {
+      const promises = itens
+        .filter(it => !it.id.startsWith("item_def_") && !it.id.startsWith("item_"))
+        .map(it => {
+          const docRef = doc(db, "viagens", viagemId, "checklist", it.id);
+          return updateDoc(docRef, { marcado: false });
+        });
+      await Promise.all(promises);
+      emitLog(`FIRESTORE: Todos os itens do checklist desmarcados.`);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  
+  if (typeof window !== "undefined") {
+    const key = `chilinho_checklist_${viagemId}`;
+    const desmarcados = itens.map(it => ({ ...it, marcado: false }));
+    localStorage.setItem(key, JSON.stringify(desmarcados));
+    emitLog(`SIMULATOR: Todos os itens do checklist desmarcados localmente.`);
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { RoteiroDiario, Viagem } from "@/services/travelService";
+import { RoteiroDiario, Viagem, Hospedagem, Atividade, emitLog } from "@/services/travelService";
 
 interface InlineAddExpenseFormProps {
   onAddExpense: (nome: string, valor: number, categoria: string) => Promise<void>;
@@ -81,7 +81,7 @@ function InlineAddExpenseForm({
           placeholder="Valor (R$)"
           value={valor}
           onChange={(e) => setValor(e.target.value)}
-          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#007aff] font-mono-tech w-full"
+          className="bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-750 text-[10px] rounded focus:outline-none focus:border-[#007aff] font-mono w-full"
         />
       </div>
       
@@ -136,7 +136,7 @@ function InlineAddExpenseForm({
           ✕
         </button>
       </div>
-      {erro && <div className="text-[8.5px] text-rose-400 font-mono-tech leading-none">⚠️ {erro}</div>}
+      {erro && <div className="text-[8.5px] text-rose-400 font-mono leading-none">⚠️ {erro}</div>}
     </form>
   );
 }
@@ -156,6 +156,8 @@ interface SideBItineraryProps {
     valorOriginal?: number;
   }) => Promise<void>;
   onRemoverDespesa: (dataDia: string, despesaId: string) => Promise<void>;
+  onInjetarHospedagem: (dataDia: string, hospedagem: Hospedagem) => Promise<void>;
+  onInjetarAtividade: (dataDia: string, atividade: Atividade) => Promise<void>;
   destino: string;
   viagemAtiva: Viagem | null;
   diaAtivoWorkspace?: string | null;
@@ -172,6 +174,8 @@ export default function SideBItinerary({
   onRemoverAtividade,
   onAdicionarDespesa,
   onRemoverDespesa,
+  onInjetarHospedagem,
+  onInjetarAtividade,
   destino,
   viagemAtiva,
   diaAtivoWorkspace,
@@ -182,6 +186,66 @@ export default function SideBItinerary({
   const [diasAbertos, setDiasAbertos] = React.useState<Record<string, boolean>>({});
   const [cronogramaLocal, setCronogramaLocal] = React.useState<Record<string, Record<string, string>>>({});
   const [salvandoDia, setSalvandoDia] = React.useState<Record<string, boolean>>({});
+  const [isAiGenerating, setIsAiGenerating] = React.useState(false);
+
+  const handleGerarItinerarioIA = async () => {
+    if (!viagemAtiva) return;
+    setIsAiGenerating(true);
+    emitLog(`REQUEST: Solicitando itinerário inteligente para a rota [${destino}] via Genkit...`);
+
+    try {
+      const res = await fetch("/api/itinerary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          destination: destino,
+          origin: viagemAtiva.origem,
+          data_inicio: viagemAtiva.data_inicio,
+          data_fim: viagemAtiva.data_fim,
+          orcamento: viagemAtiva.orcamento_maximo,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Erro na resposta do Itinerary API.");
+      const data = await res.json();
+
+      // 1. Injetar Hospedagem para todos os dias da viagem
+      if (data.hospedagem) {
+        emitLog(`SYSTEM: Sincronizando hospedagem sugerida [${data.hospedagem.nome}]...`);
+        await Promise.all(
+          datasViagem.map((dia) =>
+            onInjetarHospedagem(dia, {
+              nome: `${data.hospedagem.nome} [Sugerido via IA]`,
+              preco_diario: data.hospedagem.preco_diario,
+              link: data.hospedagem.link || "",
+            })
+          )
+        );
+      }
+
+      // 2. Injetar atividades do dia correspondente
+      if (data.atividades && Array.isArray(data.atividades)) {
+        emitLog(`SYSTEM: Sincronizando ${data.atividades.length} atividades sugeridas via IA...`);
+        for (const atv of data.atividades) {
+          if (datasViagem.includes(atv.dia)) {
+            await onInjetarAtividade(atv.dia, {
+              nome: `${atv.nome} [IA]`,
+              valor: atv.valor,
+              link: atv.link || "",
+            });
+          }
+        }
+      }
+
+      emitLog(`SYSTEM: Hidratação de itinerário inteligente concluída com sucesso!`);
+    } catch (err) {
+      console.error(err);
+      emitLog("SYSTEM ERROR: Falha crítica na geração do itinerário com IA.");
+      alert("Houve uma falha na geração do itinerário.");
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   // Abre o dia focado no Workspace por padrão
   React.useEffect(() => {
@@ -354,8 +418,27 @@ export default function SideBItinerary({
           <span className="text-slate-650 font-normal">|</span>
           <span className="text-slate-300 font-bold uppercase tracking-wide">{destino}</span>
         </div>
-        <div className="bg-blue-600/10 border border-blue-500/30 px-3.5 py-1.5 rounded-lg font-bold text-blue-400 font-mono-tech shadow-md">
-          Custo Estimado Total: <span className="font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleGerarItinerarioIA}
+            disabled={isAiGenerating || datasViagem.length === 0}
+            className="px-3.5 py-1.5 bg-gradient-to-r from-purple-800 to-indigo-800 hover:from-purple-700 hover:to-indigo-700 text-white border border-indigo-500/40 hover:border-indigo-400 font-bold text-[9.5px] rounded-lg transition-all active:scale-95 disabled:opacity-40 flex items-center gap-1.5 cursor-pointer uppercase shadow-md"
+          >
+            {isAiGenerating ? (
+              <>
+                <span className="w-1.5 h-1.5 bg-white led-blue rounded-full animate-ping" />
+                Gerando Roteiro IA...
+              </>
+            ) : (
+              <>
+                <span>✨</span>
+                <span>Gerar Roteiro IA</span>
+              </>
+            )}
+          </button>
+          <div className="bg-blue-600/10 border border-blue-500/30 px-3.5 py-1.5 rounded-lg font-bold text-blue-400 font-mono shadow-md whitespace-nowrap">
+            Custo Estimado: <span className="font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+          </div>
         </div>
       </div>
 
@@ -365,9 +448,9 @@ export default function SideBItinerary({
           <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 tracking-wider">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span>📊 Consumo da Verba:</span>
-              <span className="text-slate-200 font-mono-tech font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+              <span className="text-slate-200 font-mono font-bold">R$ {custoTotal.toLocaleString("pt-BR")}</span>
               <span className="text-slate-650 font-normal">/</span>
-              <span className="text-slate-400 font-mono-tech">R$ {orcamento.toLocaleString("pt-BR")}</span>
+              <span className="text-slate-400 font-mono">R$ {orcamento.toLocaleString("pt-BR")}</span>
             </div>
             
             <div className="flex items-center gap-2">
@@ -429,7 +512,7 @@ export default function SideBItinerary({
                   <span className="text-slate-200 font-sans tracking-wide">Custos Globais (Passagens, Seguros, etc.)</span>
                 </div>
                 
-                <div className="text-[10.5px] font-mono-tech text-slate-400 font-semibold select-none">
+                <div className="text-[10.5px] font-mono text-slate-400 font-semibold select-none">
                   <span className="text-amber-500 font-bold">
                     Total: R$ {roteiroDiario["global"]?.despesas?.reduce((acc, exp) => acc + exp.valor, 0).toLocaleString("pt-BR") || 0}
                   </span>
@@ -450,7 +533,7 @@ export default function SideBItinerary({
                               <span className="font-bold text-slate-300 text-[10px] tracking-wide truncate">
                                 {exp.nome}
                               </span>
-                              <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono-tech select-none leading-none rounded">
+                              <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono select-none leading-none rounded">
                                 {exp.categoria}
                               </span>
                               {exp.moedaOriginal && exp.moedaOriginal !== "BRL" && (
@@ -459,7 +542,7 @@ export default function SideBItinerary({
                                 </span>
                               )}
                             </div>
-                            <div className="text-[9px] text-[#10b981] font-mono-tech mt-0.5 font-bold">
+                            <div className="text-[9px] text-[#10b981] font-mono mt-0.5 font-bold">
                               R$ {exp.valor.toLocaleString("pt-BR")}
                             </div>
                             {exp.pagoPor && (
@@ -579,7 +662,7 @@ export default function SideBItinerary({
                     </div>
                     
                     {/* Custo Subtotal & Cumulativo */}
-                    <div className="flex items-center space-x-3 text-[10.5px] font-mono-tech text-slate-400 font-semibold select-none flex-wrap">
+                    <div className="flex items-center space-x-3 text-[10.5px] font-mono text-slate-400 font-semibold select-none flex-wrap">
                       <span className="text-[#10b981] font-bold">
                         Subtotal: R$ {subtotalDia.toLocaleString("pt-BR")}
                       </span>
@@ -609,7 +692,7 @@ export default function SideBItinerary({
                                   <div className="font-bold text-slate-200 truncate text-[10.5px] tracking-wide">
                                     {diario.hospedagem.nome}
                                   </div>
-                                  <div className="flex items-center space-x-2 mt-0.5 text-[9.5px] font-mono-tech select-none">
+                                  <div className="flex items-center space-x-2 mt-0.5 text-[9.5px] font-mono select-none">
                                     <span className="text-[#10b981] font-bold">
                                       R$ {diario.hospedagem.preco_diario}/dia
                                     </span>
@@ -651,14 +734,14 @@ export default function SideBItinerary({
                                     className="p-2.5 flex items-center justify-between gap-3 hover:bg-slate-900/20 transition-colors"
                                   >
                                     <div className="flex-1 min-w-0 flex items-start space-x-1.5">
-                                      <span className="text-slate-500 text-[10px] font-bold mt-0.5 font-mono-tech">
+                                      <span className="text-slate-500 text-[10px] font-bold mt-0.5 font-mono">
                                         #{String(aIdx + 1).padStart(2, "0")}
                                       </span>
                                       <div className="min-w-0">
                                         <div className="font-bold text-slate-300 truncate text-[10px] tracking-wide">
                                           {atv.nome}
                                         </div>
-                                        <div className="flex items-center space-x-2 text-[9px] mt-0.5 font-mono-tech">
+                                        <div className="flex items-center space-x-2 text-[9px] mt-0.5 font-mono">
                                           <span className="text-[#10b981] font-bold">
                                             R$ {atv.valor}
                                           </span>
@@ -694,7 +777,7 @@ export default function SideBItinerary({
                           <div className="space-y-1.5 pt-1.5">
                             <div className="text-[9.5px] font-bold text-slate-400 tracking-wider flex items-center justify-between">
                               <span>🛍️ Despesas e Gastos Diários</span>
-                              <span className="text-amber-500 font-mono-tech text-[8.5px] font-black bg-amber-500/10 px-1.5 py-0.5 rounded leading-none">
+                              <span className="text-amber-500 font-mono text-[8.5px] font-black bg-amber-500/10 px-1.5 py-0.5 rounded leading-none">
                                 R$ {diario.despesas?.reduce((acc, exp) => acc + exp.valor, 0).toLocaleString("pt-BR") || 0}
                               </span>
                             </div>
@@ -711,7 +794,7 @@ export default function SideBItinerary({
                                         <span className="font-bold text-slate-300 text-[10px] tracking-wide truncate">
                                           {exp.nome}
                                         </span>
-                                        <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono-tech select-none leading-none rounded">
+                                        <span className="text-[8px] font-black px-1.5 py-0.2 bg-slate-900 border border-slate-850/85 text-slate-400 font-mono select-none leading-none rounded">
                                           {exp.categoria}
                                         </span>
                                         {exp.moedaOriginal && exp.moedaOriginal !== "BRL" && (
@@ -720,7 +803,7 @@ export default function SideBItinerary({
                                           </span>
                                         )}
                                       </div>
-                                      <div className="text-[9px] text-[#10b981] font-mono-tech mt-0.5 font-bold">
+                                      <div className="text-[9px] text-[#10b981] font-mono mt-0.5 font-bold">
                                         R$ {exp.valor.toLocaleString("pt-BR")}
                                       </div>
                                       {exp.pagoPor && (
@@ -771,7 +854,7 @@ export default function SideBItinerary({
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[175px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                             {Object.keys(agendaDia).sort().map((hora) => (
                               <div key={hora} className="flex items-center gap-2 group/hour">
-                                <span className="w-12 text-center py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold font-mono-tech text-[9.5px] rounded-lg shadow-sm select-none">
+                                <span className="w-12 text-center py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold font-mono text-[9.5px] rounded-lg shadow-sm select-none">
                                   {hora}
                                 </span>
                                 <input
@@ -800,7 +883,7 @@ export default function SideBItinerary({
                             <input
                               type="time"
                               id={`new-time-${dataDia}`}
-                              className="bg-slate-950 border border-slate-850 text-blue-400 px-2.5 py-1 text-[10px] font-mono-tech font-bold rounded-lg focus:outline-none focus:border-blue-500 cursor-pointer shadow-inner"
+                              className="bg-slate-950 border border-slate-850 text-blue-400 px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg focus:outline-none focus:border-blue-500 cursor-pointer shadow-inner"
                             />
                             <button
                               type="button"
@@ -843,7 +926,7 @@ export default function SideBItinerary({
       </div>
 
       {/* Rodapé Informativo */}
-      <div className="bg-slate-950/40 border-t border-slate-800/80 p-2 flex items-center justify-between text-[10px] text-slate-500 rounded-b-2xl font-mono-tech select-none">
+      <div className="bg-slate-950/40 border-t border-slate-800/80 p-2 flex items-center justify-between text-[10px] text-slate-500 rounded-b-2xl font-mono select-none">
         <span>Estado: {isModoFoco ? "Foco Diário Ativo" : "Roteiro Operacional Completo"}</span>
         <span>Métricas: Em Conformidade</span>
       </div>
