@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { genkit, z } from "genkit";
-import { googleAI } from "@genkit-ai/googleai";
+import { googleAI } from "@genkit-ai/google-genai";
 
 // Ensure GEMINI_API_KEY is populated from GOOGLE_GENAI_API_KEY
 if (!process.env.GEMINI_API_KEY && process.env.GOOGLE_GENAI_API_KEY) {
