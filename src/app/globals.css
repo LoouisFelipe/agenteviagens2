@@ -3,23 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #0e0817;      /* Fundo profundo escuro */
+  --bg-primary: #0f1415;      /* Fundo profundo escuro - Obsidian de Stitch */
   --bg-secondary: #130d20;    /* Card nível 1 */
-  --bg-tertiary: #1a1230;     /* Card nível 2, inputs e dcards */
-  --border-primary: rgba(255, 255, 255, 0.07);
-  --border-active: rgba(196, 158, 255, 0.4); /* Roxo neon */
+  --bg-tertiary: #1b2121;     /* Card nível 2, inputs e dcards - Surface-container de Stitch */
+  --border-primary: rgba(110, 232, 248, 0.1); /* border-glow de Stitch */
+  --border-active: rgba(110, 232, 248, 0.45); /* Cyan neon ativo */
   
-  --accent-amber: #fbbf24;
-  --accent-green: #6ee8f8; /* Verde Menta/Teal Neon */
-  --accent-red: #f43f5e;
-  --accent-blue: #007aff;  /* Azul Elétrico */
-  --accent-indigo: #c49eff; /* Lilás Neon */
+  --accent-amber: #F97316;    /* Neon Orange de Stitch */
+  --accent-green: #6ee8f8;    /* Neon Cyan de Stitch */
+  --accent-red: #ffb4ab;      /* Error de Stitch */
+  --accent-blue: #007aff;     /* Azul Elétrico */
+  --accent-indigo: #A855F7;   /* Neon Purple de Stitch */
   --accent-purple: #8b5cf6;
   --accent-teal: #14b8a6;
 
-  --text-primary: #eeeaf6;
-  --text-secondary: #8a82a8;
-  --text-muted: #4a4468;
+  --text-primary: #dee3e4;    /* on-background de Stitch */
+  --text-secondary: #bcc9cb;  /* on-surface-variant de Stitch */
+  --text-muted: #869395;      /* outline de Stitch */
   --text-mono: #6ee8f8;
 }
 
@@ -81,9 +81,9 @@ body {
   position: relative;
 }
 
-/* Títulos usando a fonte Fraunces para um toque elegante e sofisticado */
+/* Títulos usando a fonte DM Sans para o visual cyber-terminal do Stitch */
 h1, h2, h3, h4, h5, h6, .font-heading {
-  font-family: var(--font-fraunces), serif;
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
 }
 
@@ -302,12 +302,12 @@ body::after {
   border-color: rgba(0, 122, 255, 0.4) !important;
 }
 
-/* Estado de Dia Focado (Neon Electric Blue Glow) */
+/* Estado de Dia Focado (Neon Cyan Glow do Stitch) */
 .active-focused-day-card {
-  border-color: rgba(0, 122, 255, 0.7) !important;
-  background: rgba(0, 122, 255, 0.05) !important;
-  box-shadow: 0 0 15px rgba(0, 122, 255, 0.2), 
-              inset 0 0 8px rgba(0, 122, 255, 0.08) !important;
+  border-color: rgba(110, 232, 248, 0.7) !important;
+  background: rgba(110, 232, 248, 0.05) !important;
+  box-shadow: 0 0 15px rgba(110, 232, 248, 0.2), 
+              inset 0 0 8px rgba(110, 232, 248, 0.08) !important;
 }
 
 /* Transição de Workspace */
@@ -338,19 +338,19 @@ body::after {
   background: rgba(255, 255, 255, 0.15);
 }
 
-/* Redesign Premium Highlights (SaaS Active States) */
+/* Redesign Premium Highlights (SaaS Active States) - Alinhado com o Neon Cyan do Stitch */
 .active-sidebar-capsule {
-  background: #007aff !important;
-  border-color: #007aff !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 18px rgba(0, 122, 255, 0.45);
+  background: #6ee8f8 !important;
+  border-color: #6ee8f8 !important;
+  color: #00363c !important; /* on-primary-fixed / text-dark para melhor contraste */
+  box-shadow: 0 4px 18px rgba(110, 232, 248, 0.45);
   transform: scale(1.01);
 }
 
 .active-bottom-tab-capsule {
-  border: 1px solid #007aff !important;
-  background: rgba(0, 122, 255, 0.15) !important;
-  box-shadow: 0 0 12px rgba(0, 122, 255, 0.3);
+  border: 1px solid #6ee8f8 !important;
+  background: rgba(110, 232, 248, 0.15) !important;
+  box-shadow: 0 0 12px rgba(110, 232, 248, 0.3);
 }
 
 .active-dropdown-item {

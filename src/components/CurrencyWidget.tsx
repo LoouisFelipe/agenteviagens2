@@ -17,9 +17,25 @@ export default function CurrencyWidget({ destino }: CurrencyWidgetProps) {
   const [error, setError] = useState("");
 
   const quotes = [
-    { code: "USD", name: "Dólar", rate: 5.25, icon: "💵" },
-    { code: "EUR", name: "Euro", rate: 5.65, icon: "💶" },
-    { code: "CLP", name: "Peso Chileno", rate: 0.0054, icon: "🇨🇱", detail: "1 BRL = 185 CLP" },
+    {
+      code: "USD",
+      name: "Dólar",
+      rate: 5.25,
+      flagUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBP92oHDVklxu-BtJReig85iAlv55cY0YFqp_GLPMZ7W0pM4sRFfMUFCSkkq_0BwVlhmn9sdyVR_PTFAImuOo0cN5zg95e3joe98F-Un4l7PlFm5YNBKpDdmVxONNbTnlCPlgPaTVJodVflmR36WHFzvTM08q-ByfDR1B19ocSPcSUPDnN3QwjJvOS5FwUmnXrhD_HF_XUzFKvOgpEgEjVRgF0A3DchdWQxjsidk68YZBxYjBM5bCBkBzb2fR9O9xLQxedR7O86F_Q"
+    },
+    {
+      code: "EUR",
+      name: "Euro",
+      rate: 5.65,
+      flagUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuATmFz3KDkWoCYJjdqu71_NZ5YfgKXmAWd9m8OI2zLIjxuRrEC75TSQVGYb_5fWDSF0H90uckla-uVupdQgioA3nIYFUk8E20sOyYNNyyYqNl8EPScxGXT0N1sz-KXNOWsNZuFpBmWQr-Lnf4cCX0DuYzwnuc6p88lpPDyYKjZtJ0N2lZ1upFlhee2nunJ5jeSbvrhaaRBQUzzUeaAmTV0ZeNlrtliYpqlxY4gHb8IJ4-a4Y_tCceBVdQSnskwxrlj-Xd4wiRPiG04"
+    },
+    {
+      code: "CLP",
+      name: "Peso Chileno",
+      rate: 0.0054,
+      flagUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCqFDcQVT-XXPEPFrbYBumko53Q_-t-JDeTgj80lTa7WEthHymFvKUfPCnGNiC8BYvxdc-O1PvDyhOIAJvyi2ujNgszA3eGLYB0Kap1WM9cu96xFJq8B1c4lZq8Ad76DigYyPdSI1xvXHVFZJdBNfhLBwosN6LcNznFGlhq00rTshiaXPckTXCB8uw2rgoo1VRiIONG9YgTpofjBizzPCdcDq0nb-NEN2rVS0-hOq9qkg8KqIwET5yXlJv2xZkUUR2FKfSQfAEGYbw",
+      detail: "1 BRL = 185 CLP"
+    },
   ];
 
   const handlePredict = async (e: React.FormEvent) => {
@@ -84,9 +100,13 @@ export default function CurrencyWidget({ destino }: CurrencyWidgetProps) {
                 key={q.code}
                 className="bg-slate-950/50 border border-slate-850 p-2.5 rounded-xl flex flex-col items-center justify-center text-center shadow-inner relative hover:border-cyan-500/30 transition-colors group"
               >
-                <span className="text-base mb-1">{q.icon}</span>
+                <img
+                  src={q.flagUrl}
+                  alt={`${q.code} flag`}
+                  className="w-8 h-5 rounded shadow-sm mb-3 opacity-80 group-hover:opacity-100 transition-opacity object-cover"
+                />
                 <span className="text-[9px] font-black text-slate-200 font-mono">{q.code}</span>
-                <span className="text-[11px] font-black text-emerald-400 font-mono mt-0.5">
+                <span className="text-[11px] font-black text-[#6ee8f8] font-mono mt-0.5">
                   R$ {q.rate.toFixed(4)}
                 </span>
                 {q.detail && (

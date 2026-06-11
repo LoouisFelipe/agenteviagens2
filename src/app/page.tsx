@@ -634,38 +634,51 @@ export default function Home() {
                 Verificando Conta...
               </div>
             ) : user ? (
-              <div className="bg-[#1a1230]/40 border border-white/5 p-3 rounded-xl flex items-center justify-between gap-2.5 shadow-inner">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  {user.photoURL ? (
-                    <img src={user.photoURL} alt="Foto" className="w-6 h-6 rounded-full border border-purple-500/40" />
-                  ) : (
-                    <span className="w-6 h-6 flex items-center justify-center bg-purple-500/10 border border-purple-500/20 text-[#c49eff] rounded-full font-bold text-[9px]">👤</span>
-                  )}
-                  <div className="min-w-0 flex flex-col">
-                    <span className="text-[#eeeaf6] font-bold text-[9.5px] uppercase truncate tracking-wide leading-tight">
-                      {user.displayName || "Usuário"}
+              <div className="bg-[#1a1230]/40 border border-white/5 p-2 rounded-xl flex items-center gap-3 shadow-inner">
+                <img 
+                  src={user.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuBc5LVbYB2pjj5edgeXP_cdjFEGehxxOxfOtBtbd8Oj9LPatRwoA-37JVIwjL3I7y7Bsb5W7_Qx_i9gwgmWaWfOz5vcp_lxVFXhNSB5HJe50CpRC3W90ldU9bfI5g0dimdcT1YfemWXKDtxl00igUjkmjxB44jfVuS5mk44rgjMAPPXprJ_-3P4OSZIw5y6NimUIT5XdhaIa0lrO9zaP9Ow2nVWO_zq0B7jVtzZ1lWxxerOI_9BNMYNvoFvMZ6jafwd8KYBJxKCkIg"} 
+                  alt="Avatar" 
+                  className="w-10 h-10 rounded-full border border-[#6ee8f8]/30 object-cover shrink-0" 
+                />
+                <div className="flex-1 overflow-hidden flex flex-col min-w-0">
+                  <span className="text-white font-bold text-xs truncate leading-tight uppercase">
+                    {user.displayName || "Comandante"}
+                  </span>
+                  <span className="text-[#869395] font-mono text-[9px] truncate leading-none mt-0.5">
+                    {user.email}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="bg-transparent text-[#869395] hover:text-[#6ee8f8] cursor-pointer border-0 p-1 flex items-center justify-center shrink-0 transition-colors"
+                  title="Sair da Conta"
+                >
+                  <span className="material-symbols-outlined text-[20px]">logout</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {/* Default Stitch profile card */}
+                <div className="bg-[#1a1230]/40 border border-white/5 p-2 rounded-xl flex items-center gap-3 shadow-inner">
+                  <img 
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc5LVbYB2pjj5edgeXP_cdjFEGehxxOxfOtBtbd8Oj9LPatRwoA-37JVIwjL3I7y7Bsb5W7_Qx_i9gwgmWaWfOz5vcp_lxVFXhNSB5HJe50CpRC3W90ldU9bfI5g0dimdcT1YfemWXKDtxl00igUjkmjxB44jfVuS5mk44rgjMAPPXprJ_-3P4OSZIw5y6NimUIT5XdhaIa0lrO9zaP9Ow2nVWO_zq0B7jVtzZ1lWxxerOI_9BNMYNvoFvMZ6jafwd8KYBJxKCkIg" 
+                    alt="Luis Felipe Cabral" 
+                    className="w-10 h-10 rounded-full border border-[#6ee8f8]/30 object-cover shrink-0" 
+                  />
+                  <div className="flex-1 overflow-hidden flex flex-col min-w-0">
+                    <span className="text-white font-bold text-xs truncate leading-tight">
+                      Luis Felipe Cabral
                     </span>
-                    <span className="text-[#8a82a8] font-mono text-[8px] truncate leading-none mt-0.5">
-                      {user.email}
+                    <span className="text-[#869395] font-mono text-[9px] truncate leading-none mt-0.5">
+                      luisfelipecabral@gmail.com
                     </span>
                   </div>
                 </div>
                 <button
-                  onClick={handleLogout}
-                  className="bg-transparent hover:text-rose-400 text-[#8a82a8] font-bold text-[9px] uppercase border-0 cursor-pointer transition-colors"
-                  title="Sair da Conta"
-                >
-                  Sair
-                </button>
-              </div>
-            ) : (
-              <div className="bg-[#1a1230]/40 border border-white/5 p-3 rounded-xl flex flex-col gap-2 text-center shadow-inner">
-                <span className="text-[8.5px] font-mono text-[#8a82a8] uppercase tracking-wider font-bold">Acesso Restrito</span>
-                <button
                   onClick={handleLoginGoogle}
-                  className="w-full py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer border-0 shadow-md active:scale-95"
+                  className="w-full py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-[9.5px] uppercase transition-all rounded-lg cursor-pointer border-0 shadow-md active:scale-95 flex items-center justify-center gap-1.5"
                 >
-                  🔑 Entrar com Google
+                  <span>🔑</span> Entrar com Google
                 </button>
               </div>
             )}
@@ -676,7 +689,7 @@ export default function Home() {
                 onClick={() => setActiveTab("visao-geral")}
                 className={`h-11 px-4 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
                   activeTab === "visao-geral"
-                    ? "bg-[#007aff] border-[#007aff] text-white shadow-[0_4px_18px_rgba(0,122,255,0.45)] scale-[1.01]"
+                    ? "active-sidebar-capsule"
                     : "bg-[#1a1230]/40 border-white/5 hover:border-white/10 text-[#8a82a8] hover:text-[#eeeaf6] hover:bg-[#1a1230]/60"
                 }`}
               >
@@ -702,7 +715,7 @@ export default function Home() {
                       isDisabled
                         ? "bg-[#1a1230]/10 border-white/5 text-[#4a4468] cursor-not-allowed opacity-40"
                         : isSelected
-                        ? "bg-[#007aff] border-[#007aff] text-white shadow-[0_4px_18px_rgba(0,122,255,0.45)] scale-[1.01]"
+                        ? "active-sidebar-capsule"
                         : "bg-[#1a1230]/40 border-white/5 hover:border-white/10 text-[#8a82a8] hover:text-[#eeeaf6] hover:bg-[#1a1230]/60 cursor-pointer"
                     }`}
                   >
