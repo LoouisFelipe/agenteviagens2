@@ -38,7 +38,7 @@ test-firestore.js
 next-env.d.ts
 
 # agents
-.agents/
+.agents/*
 !.agents/skills/
 skills-lock.json
 
