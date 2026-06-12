@@ -588,7 +588,7 @@ const financialGlowClass = ultrapassou
                 {viagemAtiva.destino.replace(/ \(.*\)/, "")}
               </h2>
               <p className="text-[9.5px] font-mono text-[#8a82a8] font-semibold">
-                {viagemAtiva.data_inicio} at├® {viagemAtiva.data_fim}
+                {viagemAtiva.data_inicio} até {viagemAtiva.data_fim}
               </p>
             </>
           ) : (
@@ -777,7 +777,7 @@ const financialGlowClass = ultrapassou
       <main className="md:ml-[280px] pt-24 min-h-screen p-gutter max-w-container-max mx-auto pb-24 md:pb-gutter flex flex-col flex-1 w-full">
         
         {/* =======================================
-            ABA 1: Vis├úo Geral
+            ABA 1: Visão Geral
             ======================================= */}
         {activeTab === "visao-geral" && (
           viagemAtiva ? (
@@ -800,10 +800,10 @@ const financialGlowClass = ultrapassou
               </section>
 
               <div className="grid grid-cols-12 gap-gutter w-full">
-                {/* FINANCIAL ALLOCATION (Bento Card, col-span-12 lg:col-span-8) */}
+                {/* FINANCIAL ALLOCATION (Bento Card, col-span-12 md:col-span-8) */}
                 <div 
                   onClick={() => setActiveTab("financas")}
-                  className={`col-span-12 lg:col-span-8 glass-card p-6 flex flex-col justify-between group overflow-hidden relative cursor-pointer hover:border-neon-cyan/50 transition-colors ${financialGlowClass}`}
+                  className={`col-span-12 md:col-span-8 glass-card p-6 flex flex-col justify-between group overflow-hidden relative cursor-pointer hover:border-neon-cyan/50 transition-colors ${financialGlowClass}`}
                 >
                   <div className="scan-line absolute top-0 left-0 w-full opacity-10 pointer-events-none"></div>
                   <div className="flex justify-between items-start mb-8">
@@ -842,13 +842,13 @@ const financialGlowClass = ultrapassou
                   </div>
                 </div>
 
-                {/* PREDICTIVE EXCHANGE (Bento Card, col-span-12 lg:col-span-4) */}
-                <div className="col-span-12 lg:col-span-4">
+                {/* PREDICTIVE EXCHANGE (Bento Card, col-span-12 md:col-span-4) */}
+                <div className="col-span-12 md:col-span-4">
                   <CurrencyWidget destino={viagemAtiva.destino} />
                 </div>
 
-                {/* DAILY TIMELINE (col-span-12 lg:col-span-9) */}
-                <div className="col-span-12 lg:col-span-9 glass-card p-6">
+                {/* DAILY TIMELINE (col-span-12 md:col-span-9) */}
+                <div className="col-span-12 md:col-span-9 glass-card p-6">
                   <div className="flex justify-between items-end mb-8 flex-wrap gap-4">
                     <div>
                       <div onClick={() => setActiveTab("cronograma")} className="cursor-pointer group/timeline">
@@ -940,8 +940,8 @@ const financialGlowClass = ultrapassou
                   </div>
                 </div>
 
-                {/* QUICK ACTIONS & SYSTEM (Bento Card, col-span-12 lg:col-span-3) */}
-                <div className="col-span-12 lg:col-span-3 space-y-gutter">
+                {/* QUICK ACTIONS & SYSTEM (Bento Card, col-span-12 md:col-span-3) */}
+                <div className="col-span-12 md:col-span-3 space-y-gutter">
                   <div className="glass-card p-6 border-l-2 border-neon-purple">
                     <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-4 uppercase">Utilitários da Missão</h3>
                     <div className="space-y-3">
@@ -1012,7 +1012,7 @@ const financialGlowClass = ultrapassou
             </div>
           ) : (
             <div className="space-y-6 select-none w-full">
-              {/* Introdu├º├úo / Subtitle */}
+              {/* Introdução / Subtitle */}
               <div className="text-center py-4 max-w-2xl mx-auto space-y-1">
                 <h2 className="text-sm font-black text-[#eeeaf6] tracking-wider uppercase font-sans">
                   Selecione uma Viagem
@@ -1057,17 +1057,17 @@ const financialGlowClass = ultrapassou
                           {v.destino.replace(/ \(.*\)/, "")}
                         </h3>
                         <p className="text-[9px] text-[#8a82a8] font-bold uppercase tracking-wider font-mono mt-0.5">
-                          Sa├¡da: <span className="text-[#eeeaf6]/85">{v.origem.replace(/ \(.*\)/, "")}</span>
+                          Saída: <span className="text-[#eeeaf6]/85">{v.origem.replace(/ \(.*\)/, "")}</span>
                         </p>
                       </div>
 
                       <div className="pt-4 border-t border-white/5 space-y-2.5">
                         <div className="flex justify-between items-center text-[9px]">
-                          <span className="text-[#8a82a8] font-bold uppercase">Per├¡odo</span>
+                          <span className="text-[#8a82a8] font-bold uppercase">Período</span>
                           <span className="font-mono text-[#eeeaf6] font-semibold">{v.data_inicio} a {v.data_fim}</span>
                         </div>
                         <div className="flex justify-between items-center text-[9px]">
-                          <span className="text-[#8a82a8] font-bold uppercase">Or├ºamento Teto</span>
+                          <span className="text-[#8a82a8] font-bold uppercase">Orçamento Teto</span>
                           <span className="font-mono text-[#fbbf24] font-bold">R$ {v.orcamento_maximo.toLocaleString("pt-BR")}</span>
                         </div>
                       </div>
@@ -1096,21 +1096,21 @@ const financialGlowClass = ultrapassou
         )}
 
         {/* =======================================
-            ABA 1.2: Finan├ºas e Relat├│rios
+            ABA 1.2: Finanças e Relatórios
             ======================================= */}
         {activeTab === "financas" && (
           <div className="space-y-5 flex-1 flex flex-col min-h-0 w-full">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 flex-1 min-h-0 items-start w-full">
-              {/* COLUNA ESQUERDA (md:col-span-5) - Lan├ºamento & Categorias */}
+              {/* COLUNA ESQUERDA (md:col-span-5) - Lançamento & Categorias */}
               <div className="md:col-span-5 space-y-5 flex flex-col w-full">
                 
-                {/* Formul├írio Premium de Registro de Despesa */}
+                {/* Formulário Premium de Registro de Despesa */}
                 <div className="glass-panel p-5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-xl border border-slate-800/80 select-none">
                   <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-amber-500 to-orange-500" />
                   <h3 className="text-[10px] font-black uppercase text-slate-355 tracking-wider flex items-center justify-between">
                     <span>­ƒÆ© Registrar Nova Despesa</span>
                     <span className="text-[8px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-mono font-bold leading-none">
-                      lan├ºamento direto
+                      lançamento direto
                     </span>
                   </h3>
                   <form onSubmit={handleSubmeterFinDespesa} className="space-y-3 text-[10px]">
@@ -1122,7 +1122,7 @@ const financialGlowClass = ultrapassou
                           onChange={(e) => setFinAddVinculo(e.target.value)}
                           className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
                         >
-                          <option value="global">Geral (Sem conex├úo)</option>
+                          <option value="global">Geral (Sem conexão)</option>
                           {datasViagem.map((dia, idx) => (
                             <option key={dia} value={dia}>
                               Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
@@ -1145,7 +1145,7 @@ const financialGlowClass = ultrapassou
                           }}
                           className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
                         >
-                          <option value="Alimenta├º├úo">Alimenta├º├úo ­ƒì¢´©Å</option>
+                          <option value="Alimentação">Alimentação ­ƒì¢´©Å</option>
                           <option value="Transporte">Transporte ­ƒÜù</option>
                           <option value="Lazer">Lazer ­ƒ¬ü</option>
                           <option value="Compras">Compras ­ƒøì´©Å</option>
@@ -1170,10 +1170,10 @@ const financialGlowClass = ultrapassou
 
                     <div className="grid grid-cols-2 gap-2.5">
                       <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Item/Descri├º├úo:</label>
+                        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Item/Descrição:</label>
                         <input
                           type="text"
-                          placeholder="ex: Passagem A├®rea"
+                          placeholder="ex: Passagem Aérea"
                           value={finAddNome}
                           onChange={(e) => setFinAddNome(e.target.value)}
                           className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-755 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] uppercase font-semibold"
@@ -1209,12 +1209,12 @@ const financialGlowClass = ultrapassou
                   </form>
                 </div>
 
-                {/* Distribui├º├úo por Categoria */}
+                {/* Distribuição por Categoria */}
                 <div className="glass-panel p-5 rounded-2xl space-y-4 shadow-xl border border-slate-800/80 select-none relative">
                   <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-indigo-500 to-blue-500" />
                   <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
-                    <span>­ƒÅÀ´©Å Distribui├º├úo por Categoria</span>
-                    <span className="text-[8px] text-slate-550 lowercase italic">divis├úo percentual</span>
+                    <span>­ƒÅÀ´©Å Distribuição por Categoria</span>
+                    <span className="text-[8px] text-slate-550 lowercase italic">divisão percentual</span>
                   </h3>
 
                   {/* Single Combined Segmented Bar */}
@@ -1252,7 +1252,7 @@ const financialGlowClass = ultrapassou
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1 text-indigo-455 font-bold">
                         <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                        <span>Acomoda├º├úo</span>
+                        <span>Acomodação</span>
                       </div>
                       <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
                       <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualHospedagem}%</span>
@@ -1285,7 +1285,7 @@ const financialGlowClass = ultrapassou
                 />
               </div>
 
-              {/* COLUNA DIREITA (md:col-span-7) - Extrato & Gr├ífico Acumulativo */}
+              {/* COLUNA DIREITA (md:col-span-7) - Extrato & Gráfico Acumulativo */}
               <div className="md:col-span-7 space-y-5 flex flex-col h-full w-full">
                 {/* BillSplitter Component */}
                 <BillSplitter
@@ -1309,7 +1309,7 @@ const financialGlowClass = ultrapassou
                   <div className="space-y-2">
                     {/* Connection filter pills */}
                     <div className="flex items-center gap-2 pb-1 border-b border-slate-850/60 overflow-x-auto select-none scrollbar-none">
-                      <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Conex├úo:</span>
+                      <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Conexão:</span>
                       <button
                         type="button"
                         onClick={() => setFiltroVinculo("todos")}
@@ -1368,7 +1368,7 @@ const financialGlowClass = ultrapassou
                   <div className="flex-1 overflow-y-auto max-h-[340px] pr-1.5 space-y-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
                     {filteredStatementItems.length === 0 ? (
                       <div className="py-16 text-center text-slate-650 font-bold uppercase tracking-wider text-[9px] select-none">
-                        Nenhum lan├ºamento corresponde aos filtros
+                        Nenhum lançamento corresponde aos filtros
                       </div>
                     ) : (
                       Object.keys(groupedItems).map((categoria) => {
@@ -1405,7 +1405,7 @@ const financialGlowClass = ultrapassou
 
                                       <div className="grid grid-cols-2 gap-2 text-[10px]">
                                         <div className="space-y-1">
-                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Descri├º├úo:</label>
+                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Descrição:</label>
                                           <input
                                             type="text"
                                             value={editNome}
@@ -1426,13 +1426,13 @@ const financialGlowClass = ultrapassou
 
                                       <div className="grid grid-cols-2 gap-2 text-[10px]">
                                         <div className="space-y-1">
-                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">V├¡nculo:</label>
+                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Vínculo:</label>
                                           <select
                                             value={editVinculo}
                                             onChange={(e) => setEditVinculo(e.target.value)}
                                             className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
                                           >
-                                            <option value="global">Geral (Sem conex├úo)</option>
+                                            <option value="global">Geral (Sem conexão)</option>
                                             {datasViagem.map((dia, idx) => (
                                               <option key={dia} value={dia}>
                                                 Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
@@ -1456,7 +1456,7 @@ const financialGlowClass = ultrapassou
                                               }}
                                               className="w-full bg-slate-900 border border-slate-800 text-slate-355 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
                                             >
-                                              <option value="Alimenta├º├úo">Alimenta├º├úo ­ƒì¢´©Å</option>
+                                              <option value="Alimentação">Alimentação ­ƒì¢´©Å</option>
                                               <option value="Transporte">Transporte ­ƒÜù</option>
                                               <option value="Lazer">Lazer ­ƒ¬ü</option>
                                               <option value="Compras">Compras ­ƒøì´©Å</option>
@@ -1558,23 +1558,23 @@ const financialGlowClass = ultrapassou
                                           setEditValor(item.valor.toString());
                                           setEditVinculo(item.diaData);
                                           setEditCategoria(item.categoria);
-                                          setEditIsCustom(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
-                                          setEditCustomCategoria(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
+                                          setEditIsCustom(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
+                                          setEditCustomCategoria(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
                                           setEditErro("");
                                         }}
                                         className="w-5 h-5 flex items-center justify-center border-0 bg-indigo-500/10 hover:bg-indigo-500/25 text-indigo-400 rounded-lg transition-all text-[9.5px] cursor-pointer"
-                                        title="Editar Lan├ºamento"
+                                        title="Editar Lançamento"
                                       >
                                         Ô£Å´©Å
                                       </button>
                                       <button
                                         onClick={async () => {
-                                          if (confirm(`Deseja excluir o lan├ºamento "${item.nome}" definitivamente?`)) {
+                                          if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
                                             await item.onDelete();
                                           }
                                         }}
                                         className="w-5 h-5 flex items-center justify-center border-none bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[9.5px] cursor-pointer"
-                                        title="Excluir Lan├ºamento"
+                                        title="Excluir Lançamento"
                                       >
                                         Ô£ò
                                       </button>
@@ -1601,7 +1601,7 @@ const financialGlowClass = ultrapassou
                   <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-emerald-500 to-teal-500" />
                   <div className="flex items-center justify-between select-none">
                     <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                      <span>­ƒôê Progress├úo de Gastos (Somente no Dia)</span>
+                      <span>­ƒôê Progressão de Gastos (Somente no Dia)</span>
                     </h3>
                     <span className="text-[8px] text-slate-550 lowercase italic">clique nas barras para detalhar os itens</span>
                   </div>
@@ -1708,23 +1708,23 @@ const financialGlowClass = ultrapassou
                                       setEditValor(item.valor.toString());
                                       setEditVinculo(item.diaData);
                                       setEditCategoria(item.categoria);
-                                      setEditIsCustom(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
-                                      setEditCustomCategoria(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
+                                      setEditIsCustom(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
+                                      setEditCustomCategoria(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
                                       setEditErro("");
                                     }}
                                     className="text-indigo-400 hover:text-indigo-350 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
-                                    title="Editar Lan├ºamento"
+                                    title="Editar Lançamento"
                                   >
                                     Ô£Å´©Å
                                   </button>
                                   <button
                                     onClick={async () => {
-                                      if (confirm(`Deseja excluir o lan├ºamento "${item.nome}" definitivamente?`)) {
+                                      if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
                                         await item.onDelete();
                                       }
                                     }}
                                     className="text-rose-500 hover:text-rose-455 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
-                                    title="Excluir Lan├ºamento"
+                                    title="Excluir Lançamento"
                                   >
                                     Ô£ò
                                   </button>
@@ -1888,7 +1888,7 @@ const financialGlowClass = ultrapassou
 
       {/* Mobile Bottom Navigation (inspired by Image 5) */}
       {viagemAtiva && (
-        <div className="lg:hidden fixed bottom-5 left-4 right-4 z-[999] glass-panel rounded-2xl p-2.5 flex justify-between items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-slate-800/80 gap-0.5">
+        <div className="md:hidden fixed bottom-5 left-4 right-4 z-[999] glass-panel rounded-2xl p-2.5 flex justify-between items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-slate-800/80 gap-0.5">
           <button
             onClick={() => setActiveTab("visao-geral")}
             className={`flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all duration-200 cursor-pointer ${

@@ -677,10 +677,10 @@ export default function SideBItinerary({
                     <div className="p-4 flex-1 flex flex-col space-y-4 font-sans animate-fade-in">
                       
                       {/* Grid Principal do Dia - 2 Colunas */}
-                      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
                         
                         {/* Coluna 1: Hospedagem e Passeios */}
-                        <div className="xl:col-span-5 space-y-4">
+                        <div className="lg:col-span-5 space-y-4">
                           {/* Seção 1: Hospedagem */}
                           <div className="space-y-1.5">
                             <div className="text-[9.5px] font-bold text-slate-400 tracking-wider">
@@ -844,7 +844,7 @@ export default function SideBItinerary({
                         </div>
 
                         {/* Coluna 2: Cronograma Horário Editável Inline (Sem Modais) */}
-                        <div className="xl:col-span-7 border border-slate-850/60 bg-slate-950/30 p-3.5 rounded-xl flex flex-col space-y-3.5 relative">
+                        <div className="lg:col-span-7 border border-slate-850/60 bg-slate-950/30 p-3.5 rounded-xl flex flex-col space-y-3.5 relative">
                           <div className="text-[9.5px] font-bold text-blue-400 tracking-wider flex items-center justify-between border-b border-slate-850 pb-1.5 select-none font-sans">
                             <span className="flex items-center gap-1">🕒 Agenda do Dia</span>
                             <span className="text-slate-500 text-[8.5px] lowercase font-normal italic">campos editáveis</span>
