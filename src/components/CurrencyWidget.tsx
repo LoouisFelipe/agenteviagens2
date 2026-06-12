@@ -86,7 +86,7 @@ export default function CurrencyWidget({ destino }: CurrencyWidgetProps) {
       <div>
         <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-6 flex items-center gap-2">
           <span className="material-symbols-outlined text-sm">currency_exchange</span>
-          EXCHANGE_MODULE.v2
+          MÓDULO DE CÂMBIO v2
         </h3>
         
         {/* Exchange rates display */}
@@ -109,7 +109,7 @@ export default function CurrencyWidget({ destino }: CurrencyWidgetProps) {
         
         {/* Interactive Converter Form */}
         <form onSubmit={handlePredict} className="space-y-3">
-          <label className="font-label-caps text-[9px] text-on-surface-variant uppercase">CONVERSION CALCULATOR</label>
+          <label className="font-label-caps text-[9px] text-on-surface-variant uppercase">CALCULADORA DE CONVERSÃO</label>
           <div className="flex gap-2">
             <input
               type="number"
@@ -135,7 +135,7 @@ export default function CurrencyWidget({ destino }: CurrencyWidgetProps) {
             disabled={isLoading}
             className="w-full py-2 bg-surface-container-highest text-on-surface font-label-caps text-label-caps hover:bg-surface-variant transition-all cursor-pointer disabled:opacity-40 uppercase border-none font-bold"
           >
-            {isLoading ? "CALCULATING..." : "CALCULATE_ESTIMATE"}
+            {isLoading ? "CALCULANDO..." : "CALCULAR ESTIMATIVA"}
           </button>
         </form>
       </div>

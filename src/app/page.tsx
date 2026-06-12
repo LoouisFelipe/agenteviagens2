@@ -617,15 +617,15 @@ const financialGlowClass = ultrapassou
             }`}
           >
             <span className="material-symbols-outlined" style={activeTab === "visao-geral" ? { fontVariationSettings: "'FILL' 1" } : undefined}>dashboard</span>
-            <span className="font-label-caps text-label-caps uppercase tracking-widest">Mission Control</span>
+            <span className="font-label-caps text-label-caps uppercase tracking-widest">Painel de Controle</span>
           </button>
 
           {[
-            { id: "financas" as const, label: "Finances", icon: "payments" },
-            { id: "cronograma" as const, label: "Daily Ops", icon: "event_repeat" },
-            { id: "banco" as const, label: "Allocation", icon: "pie_chart" },
-            { id: "checklist" as const, label: "Cargo", icon: "inventory_2" },
-            { id: "logs" as const, label: "System Logs", icon: "terminal" }
+            { id: "financas" as const, label: "Finanças", icon: "payments" },
+            { id: "cronograma" as const, label: "Cronograma Diário", icon: "event_repeat" },
+            { id: "banco" as const, label: "Alocações", icon: "pie_chart" },
+            { id: "checklist" as const, label: "Manifesto de Carga", icon: "inventory_2" },
+            { id: "logs" as const, label: "Logs do Terminal", icon: "terminal" }
           ].map((t) => {
             const isDisabled = !viagemAtiva;
             const isSelected = activeTab === t.id;
@@ -745,16 +745,16 @@ const financialGlowClass = ultrapassou
         <div className="flex items-center gap-8">
           <span className="font-label-caps text-label-caps font-black text-on-surface">AETHER TERMINAL</span>
           <div className="hidden md:flex items-center gap-6">
-            <span className="font-data-sm text-data-sm text-on-surface-variant">Uptime: <span className="text-neon-cyan">99.9%</span></span>
-            <span className="font-data-sm text-data-sm text-on-surface-variant">Sync: <span className="text-neon-cyan">0.4ms</span></span>
-            <span className="font-data-sm text-data-sm text-on-surface-variant">Coord: <span className="text-neon-cyan">33.4S 70.6W</span></span>
+            <span className="font-data-sm text-data-sm text-on-surface-variant">Atividade: <span className="text-neon-cyan">99.9%</span></span>
+            <span className="font-data-sm text-data-sm text-on-surface-variant">Latência: <span className="text-neon-cyan">0.4ms</span></span>
+            <span className="font-data-sm text-data-sm text-on-surface-variant">Coordenadas: <span className="text-neon-cyan">33.4S 70.6W</span></span>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative group">
             <input
               className="bg-surface-container-high/50 border-none focus:ring-1 focus:ring-neon-cyan text-data-sm font-data-sm text-on-surface placeholder:text-on-surface-variant/40 rounded-none w-48 md:w-64 h-9 pl-3 pr-8 focus:outline-none"
-              placeholder="QUERY DATABASE..."
+              placeholder="CONSULTAR DADOS..."
               type="text"
             />
             <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
@@ -786,27 +786,30 @@ const financialGlowClass = ultrapassou
               <section className="mb-8 relative select-none">
                 <div className="absolute -left-gutter top-0 w-1 h-16 md:h-20 bg-neon-cyan/50"></div>
                 <div className="space-y-1 pl-4 md:pl-6">
-                  <span className="font-label-caps text-label-caps text-neon-cyan tracking-[0.2em] block">CURRENT MISSION PARAMETERS</span>
+                  <span className="font-label-caps text-label-caps text-neon-cyan tracking-[0.2em] block">PARÂMETROS DA MISSÃO ATUAL</span>
                   <h2 className="font-display-lg text-2xl md:text-display-lg font-black text-on-surface tracking-tighter leading-none uppercase">
                     {viagemAtiva.destino.replace(/ \(.*\)/, "")}
                   </h2>
                   <div className="flex items-center gap-4 mt-2">
                     <span className="font-data-lg text-data-lg text-on-surface-variant/60 uppercase">
-                      {new Date(viagemAtiva.data_inicio + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" })} ÔÇö {new Date(viagemAtiva.data_fim + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" })}
+                      {new Date(viagemAtiva.data_inicio + "T12:00:00").toLocaleDateString("pt-BR", { month: "short", day: "2-digit" })} — {new Date(viagemAtiva.data_fim + "T12:00:00").toLocaleDateString("pt-BR", { month: "short", day: "2-digit" })}
                     </span>
-                    <div className="px-2 py-0.5 bg-neon-cyan/10 border border-neon-cyan/30 rounded text-[10px] font-bold text-neon-cyan">ACTIVE OPS</div>
+                    <div className="px-2 py-0.5 bg-neon-cyan/10 border border-neon-cyan/30 rounded text-[10px] font-bold text-neon-cyan">OPERAÇÕES ATIVAS</div>
                   </div>
                 </div>
               </section>
 
               <div className="grid grid-cols-12 gap-gutter w-full">
                 {/* FINANCIAL ALLOCATION (Bento Card, col-span-12 lg:col-span-8) */}
-                <div className={`col-span-12 lg:col-span-8 glass-card p-6 flex flex-col justify-between group overflow-hidden relative ${financialGlowClass}`}>
+                <div 
+                  onClick={() => setActiveTab("financas")}
+                  className={`col-span-12 lg:col-span-8 glass-card p-6 flex flex-col justify-between group overflow-hidden relative cursor-pointer hover:border-neon-cyan/50 transition-colors ${financialGlowClass}`}
+                >
                   <div className="scan-line absolute top-0 left-0 w-full opacity-10 pointer-events-none"></div>
                   <div className="flex justify-between items-start mb-8">
                     <div>
-                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-1">FINANCIAL ALLOCATION</h3>
-                      <p className="font-data-sm text-data-sm text-neon-cyan/80">TOTAL CAMPAIGN BUDGET</p>
+                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-1">ALOCAÇÃO FINANCEIRA</h3>
+                      <p className="font-data-sm text-data-sm text-neon-cyan/80">ORÇAMENTO TOTAL DE VIAGEM</p>
                     </div>
                     <div className="text-right">
                       <span className="font-display-lg text-[40px] font-bold text-on-surface neon-glow-text">
@@ -816,11 +819,11 @@ const financialGlowClass = ultrapassou
                   </div>
                   <div className="grid grid-cols-2 gap-8 mb-8">
                     <div className="p-4 bg-surface-variant/20 border-l-2 border-neon-orange/50">
-                      <p className="font-label-caps text-[9px] text-on-surface-variant uppercase">Burn Rate (Spent)</p>
+                      <p className="font-label-caps text-[9px] text-on-surface-variant uppercase">Gasto Acumulado</p>
                       <p className="font-data-lg text-data-lg text-on-surface">R$ {custoTotal.toLocaleString("pt-BR")}</p>
                     </div>
                     <div className="p-4 bg-surface-variant/20 border-l-2 border-neon-cyan/50">
-                      <p className="font-label-caps text-[9px] text-on-surface-variant uppercase">Available Liquidity</p>
+                      <p className="font-label-caps text-[9px] text-on-surface-variant uppercase">Saldo Disponível</p>
                       <p className={`font-data-lg text-data-lg ${saldo < 0 ? "text-error" : "text-on-surface"}`}>
                         R$ {saldo.toLocaleString("pt-BR")}
                       </p>
@@ -828,7 +831,7 @@ const financialGlowClass = ultrapassou
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between font-data-sm text-[10px] text-on-surface-variant">
-                      <span>CAPACITY UTILIZATION</span>
+                      <span>UTILIZAÇÃO DO ORÇAMENTO</span>
                       <span>{percentualConsumido}%</span>
                     </div>
                     <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
@@ -848,10 +851,12 @@ const financialGlowClass = ultrapassou
                 <div className="col-span-12 lg:col-span-9 glass-card p-6">
                   <div className="flex justify-between items-end mb-8 flex-wrap gap-4">
                     <div>
-                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-1">CHRONOLOGICAL FLOW</h3>
-                      <p className="font-headline-md text-headline-md font-bold text-on-surface uppercase tracking-tight">
-                        Timeline: {diaAtivoWorkspace ? new Date(diaAtivoWorkspace + "T12:00:00").toLocaleDateString("en-US", { day: "2-digit", month: "short" }) : "N/A"}
-                      </p>
+                      <div onClick={() => setActiveTab("cronograma")} className="cursor-pointer group/timeline">
+                        <h3 className="font-label-caps text-label-caps text-on-surface-variant group-hover/timeline:text-neon-cyan transition-colors mb-1">FLUXO CRONOLÓGICO</h3>
+                        <p className="font-headline-md text-headline-md font-bold text-on-surface uppercase tracking-tight group-hover/timeline:text-neon-cyan/90 transition-colors">
+                          Cronograma: {diaAtivoWorkspace ? new Date(diaAtivoWorkspace + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "N/D"}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex gap-2 select-none">
                       <button
@@ -896,7 +901,7 @@ const financialGlowClass = ultrapassou
                               onClick={() => setActiveTab("cronograma")}
                               className="block mx-auto mt-4 px-4 py-2 bg-surface-container-high border border-border-glow hover:border-neon-cyan hover:text-neon-cyan text-on-surface font-label-caps text-label-caps transition-all cursor-pointer border-none font-bold"
                             >
-                              CONFIG_OPS_TIMELINE
+                              CONFIGURAR CRONOGRAMA
                             </button>
                           </div>
                         );
@@ -905,18 +910,18 @@ const financialGlowClass = ultrapassou
                       return keys.map((hora, idx) => {
                         const text = agenda[hora];
                         const states = [
-                          { badge: "COMPLETED", icon: "check", style: "border-border-glow hover:border-neon-cyan" },
-                          { badge: "IN_PROGRESS", icon: "sensors", style: "border-neon-cyan bg-neon-cyan/5 text-neon-cyan" },
-                          { badge: "PENDING", icon: "schedule", style: "border-border-glow text-on-surface-variant" }
+                          { badge: "CONCLUÍDO", icon: "check", style: "border-border-glow hover:border-neon-cyan" },
+                          { badge: "EM ANDAMENTO", icon: "sensors", style: "border-neon-cyan bg-neon-cyan/5 text-neon-cyan" },
+                          { badge: "PENDENTE", icon: "schedule", style: "border-border-glow text-on-surface-variant" }
                         ];
                         const state = idx === 0 ? states[0] : idx === 1 && keys.length > 2 ? states[1] : states[2];
 
                         return (
                           <div key={hora} className="relative pl-8 group transition-opacity">
-                            <div className={`absolute left-[-4px] top-1 w-2 h-2 rounded-full border ${state.badge === "COMPLETED" ? "bg-neon-cyan border-neon-cyan shadow-[0_0_8px_rgba(110,232,248,0.8)]" : state.badge === "IN_PROGRESS" ? "border-neon-cyan bg-background" : "border-on-surface-variant bg-background"}`}></div>
+                            <div className={`absolute left-[-4px] top-1 w-2 h-2 rounded-full border ${state.badge === "CONCLUÍDO" ? "bg-neon-cyan border-neon-cyan shadow-[0_0_8px_rgba(110,232,248,0.8)]" : state.badge === "EM ANDAMENTO" ? "border-neon-cyan bg-background" : "border-on-surface-variant bg-background"}`}></div>
                             <div className="flex justify-between items-start">
                               <div>
-                                <span className={`font-data-sm text-[10px] ${state.badge === "COMPLETED" || state.badge === "IN_PROGRESS" ? "text-neon-cyan" : "text-on-surface-variant"}`}>
+                                <span className={`font-data-sm text-[10px] ${state.badge === "CONCLUÍDO" || state.badge === "EM ANDAMENTO" ? "text-neon-cyan" : "text-on-surface-variant"}`}>
                                   {hora}
                                 </span>
                                 <h4 className="font-body-base text-body-base font-bold text-on-surface group-hover:text-neon-cyan transition-colors uppercase">
@@ -938,7 +943,7 @@ const financialGlowClass = ultrapassou
                 {/* QUICK ACTIONS & SYSTEM (Bento Card, col-span-12 lg:col-span-3) */}
                 <div className="col-span-12 lg:col-span-3 space-y-gutter">
                   <div className="glass-card p-6 border-l-2 border-neon-purple">
-                    <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-4 uppercase">Neural Utilities</h3>
+                    <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-4 uppercase">Utilitários da Missão</h3>
                     <div className="space-y-3">
                       <button
                         onClick={handleAtualizarCotacoes}
@@ -947,7 +952,7 @@ const financialGlowClass = ultrapassou
                       >
                         <div className="text-left">
                           <span className="block font-label-caps text-[10px] text-neon-purple">AI_ENGINE</span>
-                          <span className="font-data-sm text-on-surface">Update Prices</span>
+                          <span className="font-data-sm text-on-surface">Atualizar Cotações</span>
                         </div>
                         <span className={`material-symbols-outlined text-neon-purple group-hover:translate-x-1 transition-transform ${isUpdatingPrices ? "animate-spin" : ""}`}>
                           bolt
@@ -964,7 +969,7 @@ const financialGlowClass = ultrapassou
                       >
                         <div className="text-left">
                           <span className="block font-label-caps text-[10px] text-neon-cyan">CLOUD_SYNC</span>
-                          <span className="font-data-sm text-on-surface">Sync System</span>
+                          <span className="font-data-sm text-on-surface">Sincronizar Banco</span>
                         </div>
                         <span className="material-symbols-outlined text-neon-cyan group-hover:rotate-180 transition-transform duration-500">
                           sync
@@ -973,15 +978,18 @@ const financialGlowClass = ultrapassou
                     </div>
                   </div>
 
-                  <div className="glass-card p-6 bg-gradient-to-br from-surface-glass to-transparent relative overflow-hidden group">
+                  <div 
+                    onClick={() => setActiveTab("logs")}
+                    className="glass-card p-6 bg-gradient-to-br from-surface-glass to-transparent relative overflow-hidden group cursor-pointer hover:border-neon-cyan/50 transition-colors"
+                  >
                     <div className="relative z-10">
-                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-2">SYSTEM INTEGRITY</h3>
+                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-2">INTEGRIDADE DO SISTEMA</h3>
                       <div className="flex items-end gap-2">
-                        <span className="font-data-lg text-[32px] font-black text-neon-cyan">OPTIMAL</span>
+                        <span className="font-data-lg text-[32px] font-black text-neon-cyan">EXCELENTE</span>
                         <span className="material-symbols-outlined text-neon-cyan animate-pulse pb-2">shield_lock</span>
                       </div>
                       <p className="font-data-sm text-[10px] text-on-surface-variant mt-2 leading-tight">
-                        All subsystems report green. Neural link stable. Encryption layers active.
+                        Subsistemas operacionais estáveis. Link neural ativo. Camadas de criptografia ativas.
                       </p>
                     </div>
                   </div>
