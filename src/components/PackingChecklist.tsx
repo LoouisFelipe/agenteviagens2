@@ -132,23 +132,24 @@ export default function PackingChecklist({
     <div className="w-full space-y-6 select-none font-sans">
       {/* Header Section with Linear Progress */}
       <section className="relative rounded-2xl overflow-hidden glass-panel p-6 md:p-8 min-h-[160px] flex flex-col justify-end shadow-xl border border-white/5 bg-[#130D20]">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#6ee8f8]/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
         <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-[#6ee8f8] to-[#A855F7]" />
         
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <span className="font-mono text-[10px] font-black uppercase text-[#6ee8f8] tracking-[0.2em]">Módulo de Preparação</span>
-              <h2 className="text-xl md:text-3xl font-black text-white leading-tight mt-1">Checklist de Bagagem</h2>
-              <p className="text-slate-400 text-xs max-w-md mt-2 font-medium">Otimize sua carga para a próxima missão inter-estelar ou transcontinental.</p>
+              <span className="font-mono text-[10px] font-black uppercase text-[#6ee8f8] tracking-[0.3em] block mb-3">Módulo de Preparação</span>
+              <h2 className="text-xl md:text-3xl lg:text-[44px] font-black text-white leading-tight mb-2">Checklist de Bagagem</h2>
+              <p className="text-slate-400 text-xs max-w-lg mt-2 font-medium">Otimize sua carga para a próxima missão inter-estelar ou transcontinental com protocolos de segurança.</p>
             </div>
             
-            <div className="flex flex-col items-end shrink-0">
-              <div className="font-mono text-[9px] font-bold text-slate-400 mb-2 uppercase tracking-wider">
-                Status da Carga: <span className="text-[#6ee8f8] font-black">{percentual}%</span>
+            <div className="flex flex-col items-end shrink-0 min-w-[200px]">
+              <div className="font-mono text-[9px] font-bold text-slate-400 mb-3 uppercase tracking-widest flex items-center gap-2">
+                Prontidão Operacional: <span className="text-[#6ee8f8] font-black">{percentual}%</span>
               </div>
-              <div className="w-48 h-2 bg-slate-950/80 rounded-full overflow-hidden border border-white/10 relative">
+              <div className="w-full md:w-56 h-2 bg-slate-950/80 rounded-full overflow-hidden border border-white/10 p-[1px] relative">
                 <div 
-                  className="h-full bg-gradient-to-r from-[#6ee8f8] to-[#A855F7] transition-all duration-700 ease-out" 
+                  className="h-full bg-gradient-to-r from-[#6ee8f8] via-[#6ee8f8] to-[#A855F7] transition-all duration-1000 ease-out" 
                   style={{ width: `${percentual}%` }}
                 />
               </div>
@@ -210,34 +211,33 @@ export default function PackingChecklist({
             const details = getCategoryDetails(categoria);
 
             return (
-              <div key={categoria} className="space-y-3">
+              <div key={categoria} className="space-y-4 mb-6">
                 {/* Category Header */}
-                <div className="flex items-center gap-3 py-1 select-none">
-                  <div className="h-[1px] flex-1 bg-white/5" />
-                  <span className="font-mono text-[9px] text-slate-500 font-black tracking-widest uppercase">
+                <div className="flex items-center gap-4 mb-4 select-none">
+                  <span className="font-mono text-[10px] text-[#6ee8f8]/60 font-bold tracking-[0.3em] uppercase">
                     {details.display}
                   </span>
-                  <div className="h-[1px] flex-1 bg-white/5" />
+                  <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                 </div>
 
                 {/* Items in this Category */}
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {items.map((item) => (
                     <div 
                       key={item.id}
                       onClick={() => handleToggle(item.id, item.marcado)}
-                      className={`glass-panel rounded-xl group flex items-center justify-between p-3.5 border hover:border-[#6ee8f8]/40 hover:shadow-[0_0_15px_rgba(110,232,248,0.1)] transition-all cursor-pointer ${
+                      className={`rounded-xl group flex items-center justify-between p-5 border hover:border-[#6ee8f8]/40 hover:shadow-[0_0_15px_rgba(110,232,248,0.1)] transition-all cursor-pointer relative overflow-hidden ${
                         item.marcado 
-                          ? "border-slate-900 bg-slate-900/20" 
-                          : "border-white/5"
+                          ? "border-[#6ee8f8] bg-[#6ee8f8]/10" 
+                          : "border-white/5 bg-[#1a1230]/40"
                       }`}
                     >
-                      <div className="flex items-center gap-4 min-w-0">
+                      <div className="flex items-center gap-6 min-w-0">
                         {/* Custom Checkbox */}
                         <div 
                           className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0 ${
                             item.marcado 
-                              ? "border-[#6ee8f8] bg-[#6ee8f8]/25 text-[#6ee8f8]" 
+                              ? "border-[#6ee8f8] bg-[#6ee8f8]/25 text-[#6ee8f8] shadow-[0_0_10px_rgba(110,232,248,0.8)]" 
                               : "border-white/20 group-hover:border-[#6ee8f8]/50"
                           }`}
                         >
@@ -247,15 +247,15 @@ export default function PackingChecklist({
                         </div>
                         
                         <div className="min-w-0">
-                          <h4 className={`text-xs font-bold transition-all uppercase tracking-wide truncate ${
+                          <h4 className={`text-[15px] font-bold transition-all truncate leading-tight ${
                             item.marcado 
-                              ? "text-slate-500 line-through" 
-                              : "text-slate-200 group-hover:text-white"
+                              ? "text-slate-500/60 line-through" 
+                              : "text-white"
                           }`}>
                             {item.nome}
                           </h4>
-                          <p className={`font-mono text-[8.5px] mt-0.5 ${
-                            item.marcado ? "text-slate-600 opacity-60" : "text-slate-400"
+                          <p className={`font-mono text-[8.5px] mt-0.5 uppercase tracking-wider ${
+                            item.marcado ? "text-slate-600 opacity-50" : "text-slate-400"
                           }`}>
                             {item.marcado ? "Carga verificada e alocada" : "Pendente de alocação"}
                           </p>

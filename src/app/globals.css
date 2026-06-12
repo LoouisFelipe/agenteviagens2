@@ -349,6 +349,12 @@ body::after {
   transform: scale(1.01);
 }
 
+.sidebar-active {
+  background: rgba(138, 130, 168, 0.08) !important;
+  border-left: 4px solid #6ee8f8 !important;
+  box-shadow: inset 10px 0 20px -10px rgba(110, 232, 248, 0.2) !important;
+}
+
 .active-bottom-tab-capsule {
   border: 1px solid #6ee8f8 !important;
   background: rgba(110, 232, 248, 0.15) !important;
