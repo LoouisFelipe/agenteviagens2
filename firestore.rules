@@ -142,6 +142,15 @@ service cloud.firestore {
              (!data.keys().hasAll(['valorOriginal']) || (data.valorOriginal is number && data.valorOriginal >= 0));
     }
 
+    function isValidChecklistItem(data) {
+      return hasRequiredFields(['categoria', 'nome', 'marcado', 'criado_em']) &&
+             hasOnlyAllowedFields(['categoria', 'nome', 'marcado', 'criado_em']) &&
+             data.categoria is string && data.categoria.size() >= 1 && data.categoria.size() <= 50 &&
+             data.nome is string && data.nome.size() >= 1 && data.nome.size() <= 100 &&
+             data.marcado is bool &&
+             data.criado_em is timestamp;
+    }
+
     // ===============================================================
     // Collection Paths & Rules
     // ===============================================================
@@ -183,6 +192,12 @@ service cloud.firestore {
       match /despesas/{despesaId} {
         allow read: if isViagemOwner(viagemId);
         allow create, update: if isViagemOwner(viagemId) && isValidDespesa(request.resource.data);
+        allow delete: if isViagemOwner(viagemId);
+      }
+
+      match /checklist/{itemId} {
+        allow read: if isViagemOwner(viagemId);
+        allow create, update: if isViagemOwner(viagemId) && isValidChecklistItem(request.resource.data);
         allow delete: if isViagemOwner(viagemId);
       }
     }
