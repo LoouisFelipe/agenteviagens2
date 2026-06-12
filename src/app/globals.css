@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 :root {
+  --background: #0f1415;
+  --foreground: #dee3e4;
   --bg-primary: #0f1415;      /* Fundo profundo escuro - Obsidian de Stitch */
   --bg-secondary: #130d20;    /* Card nível 1 */
   --bg-tertiary: #1b2121;     /* Card nível 2, inputs e dcards - Surface-container de Stitch */
