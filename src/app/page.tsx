@@ -5,7 +5,6 @@ import {
   atualizarCotacoesOnDemand,
   Despesa,
   emitLog,
-  subscribeToLogs,
 } from "@/services/travelService";
 
 import TripForm from "@/components/TripForm";
@@ -79,20 +78,7 @@ export default function Home() {
   const [finAddErro, setFinAddErro] = useState("");
   const [finAddSalvando, setFinAddSalvando] = useState(false);
 
-  // Estados para mini logs preview na aba Visão Geral
-  const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
 
-  useEffect(() => {
-    setConsoleLogs([
-      `[SYSTEM] BOOT INITIALIZED...`,
-      `[SYSTEM] CONSOLE PREVIEW READY.`
-    ]);
-
-    const unsubscribe = subscribeToLogs((newLog) => {
-      setConsoleLogs((prev) => [...prev, newLog].slice(-3)); // Manteem as últimas 3 mensagens
-    });
-    return () => unsubscribe();
-  }, []);
 
   // Estados para edição e filtros de Extrato Consolidado
   const [editingItemKey, setEditingItemKey] = useState<string | null>(null);
@@ -563,85 +549,133 @@ export default function Home() {
     }
     groupedItems[cat].push(item);
   });
-
-  const financialGlowClass = ultrapassou
+const financialGlowClass = ultrapassou
     ? "border-rose-500/50 shadow-lg shadow-rose-500/10"
     : percentualConsumido > 80
       ? "border-amber-500/50 shadow-lg shadow-amber-500/10"
       : "border-indigo-500/35 shadow-lg shadow-indigo-500/5";
 
   return (
-    <div className="w-full max-w-7xl mx-auto flex flex-col min-h-screen p-4 md:p-6 space-y-4 relative selection:bg-indigo-500/30 overflow-x-hidden">
+    <div className="w-full min-h-screen bg-background grid-bg text-on-surface select-none relative overflow-x-hidden">
       {/* Pulsating Gradient Mesh BG */}
       <div className="gradient-mesh-bg" />
 
-      {/* Grid Principal Dividida: Sidebar e Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch flex-1">
-        
-        {/* COLUNA 1: SIDEBAR LATERAL DE CONTROLE */}
-        <aside className="hidden lg:flex lg:col-span-3 flex-col justify-between glass-panel p-5 rounded-2xl relative overflow-hidden h-fit lg:h-[calc(100vh-3rem)] sticky lg:top-6 select-none bg-[#130d20] border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
-          <div className="absolute top-0 left-0 w-full h-[3px] hazard-stripes" />
-          
-          <div className="space-y-5">
-            {/* Botão de Retorno Central */}
-            {viagemAtiva && (
+      {/* SIDEBAR */}
+      <aside className="fixed left-0 top-0 h-full w-[280px] bg-surface-glass backdrop-blur-xl border-r border-border-glow shadow-2xl flex flex-col py-gutter px-4 z-50 hidden md:flex">
+        <div className="mb-10">
+          <h1 className="font-display-lg text-display-lg font-bold text-neon-cyan drop-shadow-[0_0_8px_rgba(110,232,248,0.5)]">AETHER</h1>
+          <p className="font-label-caps text-label-caps uppercase tracking-widest text-on-surface-variant mt-1">TERMINAL // PROTOCOL 7.4</p>
+        </div>
+
+        {/* Back to central control if trip is active */}
+        {viagemAtiva && (
+          <button
+            onClick={() => setViagemAtiva(null)}
+            className="w-full h-10 px-4 mb-4 flex items-center justify-center font-bold tracking-widest uppercase transition-all bg-[#1a1230] border border-white/10 hover:border-white/20 text-[#8a82a8] hover:text-[#eeeaf6] cursor-pointer rounded-xl text-[9px] hover:scale-[1.01] active:scale-[0.99] shadow-inner font-mono shrink-0"
+          >
+            Voltar para a Central
+          </button>
+        )}
+
+        {/* Active trip stats inside sidebar */}
+        <div className="bg-[#1a1230]/60 border border-white/5 p-4 rounded-xl text-center space-y-2 shadow-inner mb-6 shrink-0">
+          {viagemAtiva ? (
+            <>
+              <span className="text-[8px] font-bold font-mono text-[#c49eff] bg-[#c49eff]/10 border border-[#c49eff]/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                Workspace Ativo
+              </span>
+              <h2 className="text-xs font-black text-[#eeeaf6] uppercase tracking-wide truncate pt-1 font-heading">
+                {viagemAtiva.destino.replace(/ \(.*\)/, "")}
+              </h2>
+              <p className="text-[9.5px] font-mono text-[#8a82a8] font-semibold">
+                {viagemAtiva.data_inicio} at├® {viagemAtiva.data_fim}
+              </p>
+            </>
+          ) : (
+            <>
+              <span className="text-[8px] font-bold font-mono text-[#8a82a8] bg-[#8a82a8]/10 border border-[#8a82a8]/20 px-2 py-0.5 rounded uppercase tracking-wider">
+                Workspace Inativo
+              </span>
+              <h2 className="text-xs font-black text-[#8a82a8] uppercase tracking-wide truncate pt-1 font-heading">
+                Nenhuma Viagem Ativa
+              </h2>
+              <p className="text-[9.5px] font-mono text-[#4a4468] font-semibold">
+                Selecione uma rota
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* Tab Navigation */}
+        <nav className="flex-1 space-y-2 overflow-y-auto pr-1 scrollbar-thin">
+          <button
+            onClick={() => setActiveTab("visao-geral")}
+            className={`w-full flex items-center gap-4 px-4 py-3 transition-all active:scale-95 text-left border-0 rounded-none cursor-pointer ${
+              activeTab === "visao-geral"
+                ? "text-neon-cyan font-bold bg-secondary-container/20 border-l-2 border-neon-cyan shadow-[0_0_15px_rgba(110,232,248,0.15)]"
+                : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 hover:backdrop-blur-md"
+            }`}
+          >
+            <span className="material-symbols-outlined" style={activeTab === "visao-geral" ? { fontVariationSettings: "'FILL' 1" } : undefined}>dashboard</span>
+            <span className="font-label-caps text-label-caps uppercase tracking-widest">Mission Control</span>
+          </button>
+
+          {[
+            { id: "financas" as const, label: "Finances", icon: "payments" },
+            { id: "cronograma" as const, label: "Daily Ops", icon: "event_repeat" },
+            { id: "banco" as const, label: "Allocation", icon: "pie_chart" },
+            { id: "checklist" as const, label: "Cargo", icon: "inventory_2" },
+            { id: "logs" as const, label: "System Logs", icon: "terminal" }
+          ].map((t) => {
+            const isDisabled = !viagemAtiva;
+            const isSelected = activeTab === t.id;
+            return (
               <button
-                onClick={() => setViagemAtiva(null)}
-                className="w-full h-10 px-4 flex items-center justify-center font-bold tracking-widest uppercase transition-all bg-[#1a1230] border border-white/10 hover:border-white/20 text-[#8a82a8] hover:text-[#eeeaf6] cursor-pointer rounded-xl text-[9px] hover:scale-[1.01] active:scale-[0.99] shadow-inner font-mono"
+                key={t.id}
+                onClick={() => !isDisabled && setActiveTab(t.id)}
+                disabled={isDisabled}
+                className={`w-full flex items-center gap-4 px-4 py-3 transition-all active:scale-95 text-left border-0 rounded-none ${
+                  isDisabled
+                    ? "bg-transparent text-on-surface-variant/20 cursor-not-allowed opacity-30"
+                    : isSelected
+                    ? "text-neon-cyan font-bold bg-secondary-container/20 border-l-2 border-neon-cyan shadow-[0_0_15px_rgba(110,232,248,0.15)] cursor-pointer"
+                    : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/30 hover:backdrop-blur-md cursor-pointer"
+                }`}
               >
-                Voltar para a Central
+                <span className="material-symbols-outlined" style={isSelected ? { fontVariationSettings: "'FILL' 1" } : undefined}>{t.icon}</span>
+                <span className="font-label-caps text-label-caps uppercase tracking-widest">{t.label}</span>
               </button>
-            )}
+            );
+          })}
+        </nav>
 
-            {/* Info Rota Compact Box */}
-            <div className="bg-[#1a1230]/60 border border-white/5 p-4 rounded-xl text-center space-y-2 shadow-inner">
-              {viagemAtiva ? (
-                <>
-                  <span className="text-[8px] font-bold font-mono text-[#c49eff] bg-[#c49eff]/10 border border-[#c49eff]/20 px-2 py-0.5 rounded uppercase tracking-wider">
-                    Workspace Ativo
-                  </span>
-                  <h2 className="text-xs font-black text-[#eeeaf6] uppercase tracking-wide truncate pt-1 font-heading">
-                    {viagemAtiva.destino.replace(/ \(.*\)/, "")}
-                  </h2>
-                  <p className="text-[9.5px] font-mono text-[#8a82a8] font-semibold">
-                    {viagemAtiva.data_inicio} até {viagemAtiva.data_fim}
-                  </p>
-                  <div className="text-[8.5px] font-mono text-[#4a4468] bg-black/40 px-2 py-0.5 rounded border border-[#1a1230] truncate shadow-inner">
-                    REG: {viagemAtiva.id}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <span className="text-[8px] font-bold font-mono text-[#8a82a8] bg-[#8a82a8]/10 border border-[#8a82a8]/20 px-2 py-0.5 rounded uppercase tracking-wider">
-                    Workspace Inativo
-                  </span>
-                  <h2 className="text-xs font-black text-[#8a82a8] uppercase tracking-wide truncate pt-1 font-heading">
-                    Nenhuma Viagem Ativa
-                  </h2>
-                  <p className="text-[9.5px] font-mono text-[#4a4468] font-semibold">
-                    Selecione uma rota para carregar
-                  </p>
-                  <div className="text-[8.5px] font-mono text-[#4a4468] bg-black/40 px-2 py-0.5 rounded border border-[#1a1230] truncate shadow-inner">
-                    REG: N/A
-                  </div>
-                </>
-              )}
-            </div>
+        {/* Sidebar bottom profile & sync */}
+        <div className="mt-auto pt-6 border-t border-border-glow space-y-2 shrink-0">
+          {viagemAtiva && (
+            <button
+              onClick={handleAtualizarCotacoes}
+              disabled={isUpdatingPrices}
+              className="w-full bg-neon-cyan text-on-primary py-4 font-label-caps text-label-caps uppercase tracking-widest font-black shadow-[0_0_15px_rgba(110,232,248,0.3)] hover:brightness-110 active:scale-95 transition-all cursor-pointer border-none"
+            >
+              {isUpdatingPrices ? "SYNCING PRICES..." : "INITIATE SYSTEM SYNC"}
+            </button>
+          )}
 
-            {/* Bloco de Auth no Sidebar */}
+          {/* User Auth Profile inside sidebar */}
+          <div className="pt-2 select-none">
             {isAuthLoading ? (
-              <div className="bg-[#1a1230]/40 border border-white/5 p-3 rounded-xl text-center text-[8.5px] font-mono text-[#8a82a8] font-bold uppercase tracking-wider">
-                Verificando Conta...
+              <div className="bg-[#1a1230]/45 border border-white/5 p-2 rounded-xl text-center text-[9px] font-mono text-on-surface-variant uppercase">
+                Verificando...
               </div>
             ) : user ? (
-              <div className="bg-[#1a1230]/40 border border-white/5 p-2 rounded-xl flex items-center gap-3 shadow-inner">
+              <div className="bg-[#1a1230]/45 border border-white/5 p-2 rounded-xl flex items-center gap-3 shadow-inner">
                 <img 
                   src={user.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuBc5LVbYB2pjj5edgeXP_cdjFEGehxxOxfOtBtbd8Oj9LPatRwoA-37JVIwjL3I7y7Bsb5W7_Qx_i9gwgmWaWfOz5vcp_lxVFXhNSB5HJe50CpRC3W90ldU9bfI5g0dimdcT1YfemWXKDtxl00igUjkmjxB44jfVuS5mk44rgjMAPPXprJ_-3P4OSZIw5y6NimUIT5XdhaIa0lrO9zaP9Ow2nVWO_zq0B7jVtzZ1lWxxerOI_9BNMYNvoFvMZ6jafwd8KYBJxKCkIg"} 
                   alt="Avatar" 
-                  className="w-10 h-10 rounded-full border border-[#6ee8f8]/30 object-cover shrink-0" 
+                  className="w-10 h-10 rounded-full border border-neon-cyan/30 object-cover shrink-0" 
                 />
                 <div className="flex-1 overflow-hidden flex flex-col min-w-0">
-                  <span className="text-white font-bold text-xs truncate leading-tight uppercase">
+                  <span className="text-white font-bold text-xs truncate leading-tight uppercase font-heading">
                     {user.displayName || "Comandante"}
                   </span>
                   <span className="text-[#869395] font-mono text-[9px] truncate leading-none mt-0.5">
@@ -650,23 +684,22 @@ export default function Home() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="bg-transparent text-[#869395] hover:text-[#6ee8f8] cursor-pointer border-0 p-1 flex items-center justify-center shrink-0 transition-colors"
+                  className="bg-transparent text-[#869395] hover:text-neon-cyan cursor-pointer border-0 p-1 flex items-center justify-center shrink-0 transition-colors"
                   title="Sair da Conta"
                 >
                   <span className="material-symbols-outlined text-[20px]">logout</span>
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {/* Default Stitch profile card */}
-                <div className="bg-[#1a1230]/40 border border-white/5 p-2 rounded-xl flex items-center gap-3 shadow-inner">
+              <div className="flex flex-col gap-2">
+                <div className="bg-[#1a1230]/45 border border-white/5 p-2 rounded-xl flex items-center gap-3 shadow-inner">
                   <img 
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuBc5LVbYB2pjj5edgeXP_cdjFEGehxxOxfOtBtbd8Oj9LPatRwoA-37JVIwjL3I7y7Bsb5W7_Qx_i9gwgmWaWfOz5vcp_lxVFXhNSB5HJe50CpRC3W90ldU9bfI5g0dimdcT1YfemWXKDtxl00igUjkmjxB44jfVuS5mk44rgjMAPPXprJ_-3P4OSZIw5y6NimUIT5XdhaIa0lrO9zaP9Ow2nVWO_zq0B7jVtzZ1lWxxerOI_9BNMYNvoFvMZ6jafwd8KYBJxKCkIg" 
                     alt="Luis Felipe Cabral" 
-                    className="w-10 h-10 rounded-full border border-[#6ee8f8]/30 object-cover shrink-0" 
+                    className="w-10 h-10 rounded-full border border-neon-cyan/30 object-cover shrink-0" 
                   />
-                  <div className="flex-1 overflow-hidden flex flex-col min-w-0">
-                    <span className="text-white font-bold text-xs truncate leading-tight">
+                  <div className="flex-1 overflow-hidden flex flex-col min-w-0 text-left">
+                    <span className="text-white font-bold text-xs truncate leading-tight font-heading font-semibold">
                       Luis Felipe Cabral
                     </span>
                     <span className="text-[#869395] font-mono text-[9px] truncate leading-none mt-0.5">
@@ -682,1268 +715,1021 @@ export default function Home() {
                 </button>
               </div>
             )}
-
-            {/* Navegador de Abas */}
-            <nav className="flex flex-col space-y-2.5">
-              <button
-                onClick={() => setActiveTab("visao-geral")}
-                className={`h-11 px-4 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl cursor-pointer ${
-                  activeTab === "visao-geral"
-                    ? "active-sidebar-capsule"
-                    : "bg-[#1a1230]/40 border-white/5 hover:border-white/10 text-[#8a82a8] hover:text-[#eeeaf6] hover:bg-[#1a1230]/60"
-                }`}
-              >
-                <span>📊 Visão Geral</span>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "visao-geral" ? "bg-white led-blue animate-pulse" : "bg-[#4a4468]"}`} />
-              </button>
-
-              {[
-                { id: "financas" as const, label: "Finanças", icon: "💸" },
-                { id: "cronograma" as const, label: "Cronograma Diário", icon: "📅" },
-                { id: "banco" as const, label: "Banco de Alocações", icon: "🛍️" },
-                { id: "checklist" as const, label: "Checklist de Bagagem", icon: "🎒" },
-                { id: "logs" as const, label: "Logs do Terminal", icon: "📋" }
-              ].map((t) => {
-                const isDisabled = !viagemAtiva;
-                const isSelected = activeTab === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => !isDisabled && setActiveTab(t.id)}
-                    disabled={isDisabled}
-                    className={`h-11 px-4 flex items-center justify-between font-bold text-[10px] uppercase transition-all border rounded-xl ${
-                      isDisabled
-                        ? "bg-[#1a1230]/10 border-white/5 text-[#4a4468] cursor-not-allowed opacity-40"
-                        : isSelected
-                        ? "active-sidebar-capsule"
-                        : "bg-[#1a1230]/40 border-white/5 hover:border-white/10 text-[#8a82a8] hover:text-[#eeeaf6] hover:bg-[#1a1230]/60 cursor-pointer"
-                    }`}
-                  >
-                    <span>{t.icon} {t.label}</span>
-                    {!isDisabled && (
-                      <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white led-blue animate-pulse" : "bg-[#4a4468]"}`} />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
           </div>
 
-          {/* Rodapé da Sidebar - Configurações */}
-          <div className="pt-4 border-t border-white/5 space-y-3.5 select-none mt-6">
-            {/* Botão Re-Cotar */}
+          <div className="flex gap-2 mt-4 select-none">
             {viagemAtiva && (
-              <button
-                onClick={handleAtualizarCotacoes}
-                disabled={isUpdatingPrices}
-                className="w-full py-2.5 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 hover:from-purple-800/60 hover:to-indigo-800/60 border border-purple-500/35 hover:border-purple-400 text-purple-300 hover:text-white text-[9.5px] font-bold uppercase transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:hover:bg-transparent rounded-lg font-mono shadow-md hover:shadow-purple-500/10 hover:scale-[1.01]"
-              >
-                {isUpdatingPrices ? (
-                  <>
-                    <span className="w-1.5 h-1.5 bg-purple-400 led-purple rounded-full animate-ping" />
-                    Analisando Tarifas IA...
-                  </>
-                ) : (
-                  <>
-                    <span>✨</span>
-                    <span>Atualizar Preços via IA</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Ações Auxiliares */}
-            {viagemAtiva && (
-              <div className="flex gap-2">
+              <>
                 <button
                   onClick={() => setIsFormEdicaoAberto(true)}
-                  className="flex-1 py-2 bg-[#1a1230] hover:bg-[#1a1230]/80 border border-white/10 hover:border-white/20 text-[#8a82a8] hover:text-[#eeeaf6] transition-colors uppercase font-bold text-[9px] rounded-lg cursor-pointer shadow-sm active:scale-95"
+                  className="p-2 text-on-surface-variant hover:text-neon-cyan transition-colors bg-transparent border-none cursor-pointer flex items-center"
+                  title="Editar Viagem"
                 >
-                  Editar
+                  <span className="material-symbols-outlined">settings</span>
                 </button>
                 <button
                   onClick={(e) => handleDeletarViagem(e, viagemAtiva.id, viagemAtiva.destino)}
-                  className="py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-500 transition-colors rounded-lg cursor-pointer flex items-center justify-center"
-                  title="Excluir Viagem definitivamente"
+                  className="p-2 text-on-surface-variant hover:text-error transition-colors bg-transparent border-none cursor-pointer flex items-center"
+                  title="Deletar Viagem"
                 >
-                  🗑️
+                  <span className="material-symbols-outlined">delete</span>
                 </button>
-              </div>
+              </>
             )}
-
-            {/* Time/Status indicator */}
-            <div className="bg-[#1a1230]/50 border border-white/5 rounded-xl p-2.5 flex items-center justify-between font-mono text-[8px] select-none shadow-inner">
-              <div className="flex items-center gap-1.5 font-bold">
-                <span className="w-1.5 h-1.5 bg-[#6ee8f8] rounded-full led-green animate-pulse" />
-                <span className="text-[#6ee8f8]">ONLINE</span>
-              </div>
-              <span className="text-[#4a4468]">|</span>
-              <span className="text-[#8a82a8] font-bold uppercase tracking-wider">STABLE</span>
-              <span className="text-[#4a4468]">|</span>
-              <span className="text-[#4a4468]">SYS: 2026-06-03</span>
-            </div>
           </div>
-        </aside>
+        </div>
+      </aside>
 
-        {/* COLUNA 2: WORKSPACE DE CONTEÚDO ATIVO */}
-        <main className="lg:col-span-9 flex flex-col space-y-4 min-h-0 workspace-fade-in pb-24 lg:pb-0">
+      {/* TOP BAR */}
+      <header className="fixed top-0 right-0 w-full md:w-[calc(100%-280px)] h-16 bg-surface/60 backdrop-blur-md border-b border-border-glow flex justify-between items-center px-gutter z-40">
+        <div className="flex items-center gap-8">
+          <span className="font-label-caps text-label-caps font-black text-on-surface">AETHER TERMINAL</span>
+          <div className="hidden md:flex items-center gap-6">
+            <span className="font-data-sm text-data-sm text-on-surface-variant">Uptime: <span className="text-neon-cyan">99.9%</span></span>
+            <span className="font-data-sm text-data-sm text-on-surface-variant">Sync: <span className="text-neon-cyan">0.4ms</span></span>
+            <span className="font-data-sm text-data-sm text-on-surface-variant">Coord: <span className="text-neon-cyan">33.4S 70.6W</span></span>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="relative group">
+            <input
+              className="bg-surface-container-high/50 border-none focus:ring-1 focus:ring-neon-cyan text-data-sm font-data-sm text-on-surface placeholder:text-on-surface-variant/40 rounded-none w-48 md:w-64 h-9 pl-3 pr-8 focus:outline-none"
+              placeholder="QUERY DATABASE..."
+              type="text"
+            />
+            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+          </div>
+          <button className="p-2 text-on-surface-variant hover:text-neon-cyan transition-all bg-transparent border-none cursor-pointer flex items-center">
+            <span className="material-symbols-outlined">notifications</span>
+          </button>
           
-          {/* Header de Acompanhamento no Workspace - Premium Status Node */}
-          <header className="w-full glass-panel p-4 flex items-center justify-between gap-4 relative overflow-hidden rounded-2xl select-none shadow-xl border border-white/5 bg-[#130d20]">
-            <div className="absolute top-0 left-0 w-full h-[2.5px] hazard-stripes" />
-            <div className="flex items-center space-x-3.5">
-              {viagemAtiva && (
-                <button
-                  onClick={() => setViagemAtiva(null)}
-                  className="lg:hidden w-8 h-8 flex items-center justify-center bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-355 hover:text-slate-100 rounded-xl text-xs transition-colors cursor-pointer shadow-inner"
-                  title="Voltar para a Central"
-                >
-                  ◀
-                </button>
-              )}
-              <div>
-                <h1 className="text-xs font-black tracking-wider text-[#eeeaf6] uppercase font-heading leading-tight pt-0.5">
-                  {viagemAtiva ? viagemAtiva.destino.replace(/ \(.*\)/, "") : "Evolução de Viagens"}
-                </h1>
-                <p className="text-[8px] text-[#8a82a8] font-bold uppercase tracking-wider font-mono mt-0.5">
-                  {viagemAtiva ? "ROTA DE PLANEJAMENTO ATIVA" : "SELECIONE OU CRIE UMA ROTA ABAIXO"}
-                </p>
-              </div>
-            </div>
+          <div className="h-8 w-8 rounded-full border border-neon-cyan overflow-hidden">
+            <img 
+              alt="Commander Profile" 
+              className="w-full h-full object-cover" 
+              src={user ? (user.photoURL || "https://lh3.googleusercontent.com/aida-public/AB6AXuDqb--MivNOSNoKf9vkvEE6ftQYIKsUJaZM56iLP5eb8jNCJggk5isp2HJLk-avIyKl9Wz2PVU8cOMR5JdZ9l__8BPnbU5UkSLAt0mfn3BDdccKN5p4zPutCeYwydLc7mvJxP9W7ArVSKxiUS4x7XtVCXoMiyiQ3s6g8K5DPMEAdP0cSxzB6LhdfN84XKjiifwihAhymBgE73hD7qUuQTIkx8b7b0ZHo9WYRor8nh0rVflLqaX8J0GIHmBVYhKQf1I-o2QYegtNChU") : "https://lh3.googleusercontent.com/aida-public/AB6AXuDqb--MivNOSNoKf9vkvEE6ftQYIKsUJaZM56iLP5eb8jNCJggk5isp2HJLk-avIyKl9Wz2PVU8cOMR5JdZ9l__8BPnbU5UkSLAt0mfn3BDdccKN5p4zPutCeYwydLc7mvJxP9W7ArVSKxiUS4x7XtVCXoMiyiQ3s6g8K5DPMEAdP0cSxzB6LhdfN84XKjiifwihAhymBgE73hD7qUuQTIkx8b7b0ZHo9WYRor8nh0rVflLqaX8J0GIHmBVYhKQf1I-o2QYegtNChU"}
+            />
+          </div>
+        </div>
+      </header>
 
-            <div className="flex items-center gap-2.5 font-mono text-[8px] select-none">
-              <div className="flex items-center space-x-1.5 bg-black/40 px-3 py-1.5 border border-white/5 rounded-xl shadow-inner font-bold">
-                <span className="w-1.5 h-1.5 bg-[#6ee8f8] rounded-full led-green animate-pulse" />
-                <span className="text-[#6ee8f8]">ONLINE</span>
-                <span className="text-[#4a4468]">|</span>
-                <span className="text-[#8a82a8]">STABLE</span>
-              </div>
-            </div>
-          </header>
+      {/* MAIN CONTENT AREA */}
+      <main className="md:ml-[280px] pt-24 min-h-screen p-gutter max-w-container-max mx-auto pb-24 md:pb-gutter flex flex-col flex-1 w-full">
+        
+        {/* =======================================
+            ABA 1: Vis├úo Geral
+            ======================================= */}
+        {activeTab === "visao-geral" && (
+          viagemAtiva ? (
+            <div className="space-y-5 flex-1 flex flex-col min-h-0 w-full">
+              {/* MISSION STATUS HEADER */}
+              <section className="mb-8 relative select-none">
+                <div className="absolute -left-gutter top-0 w-1 h-16 md:h-20 bg-neon-cyan/50"></div>
+                <div className="space-y-1 pl-4 md:pl-6">
+                  <span className="font-label-caps text-label-caps text-neon-cyan tracking-[0.2em] block">CURRENT MISSION PARAMETERS</span>
+                  <h2 className="font-display-lg text-2xl md:text-display-lg font-black text-on-surface tracking-tighter leading-none uppercase">
+                    {viagemAtiva.destino.replace(/ \(.*\)/, "")}
+                  </h2>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="font-data-lg text-data-lg text-on-surface-variant/60 uppercase">
+                      {new Date(viagemAtiva.data_inicio + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" })} ÔÇö {new Date(viagemAtiva.data_fim + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit" })}
+                    </span>
+                    <div className="px-2 py-0.5 bg-neon-cyan/10 border border-neon-cyan/30 rounded text-[10px] font-bold text-neon-cyan">ACTIVE OPS</div>
+                  </div>
+                </div>
+              </section>
 
-              {/* =======================================
-              ABA 1: Visão Geral
-              ======================================= */}
-          {activeTab === "visao-geral" && (
-            viagemAtiva ? (
-              <div className="space-y-5 flex-1 flex flex-col min-h-0">
-                {/* KPIs de Orçamento Redesenhados de forma Ultra Premium e Acessíveis */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full select-none">
-                  {/* KPI Orçamento Máximo */}
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveKpiModal("teto")}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setActiveKpiModal("teto");
-                      }
-                    }}
-                    aria-label="Ver resumo e detalhamento do Teto Orçamentário"
-                    className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:border-indigo-500/40 border border-slate-800/80 shadow-md flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                  >
+              <div className="grid grid-cols-12 gap-gutter w-full">
+                {/* FINANCIAL ALLOCATION (Bento Card, col-span-12 lg:col-span-8) */}
+                <div className={`col-span-12 lg:col-span-8 glass-card p-6 flex flex-col justify-between group overflow-hidden relative ${financialGlowClass}`}>
+                  <div className="scan-line absolute top-0 left-0 w-full opacity-10 pointer-events-none"></div>
+                  <div className="flex justify-between items-start mb-8">
                     <div>
-                      <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Teto Orçamentário</div>
-                      <div className="text-sm font-black text-slate-100 mt-1 font-sans">
+                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-1">FINANCIAL ALLOCATION</h3>
+                      <p className="font-data-sm text-data-sm text-neon-cyan/80">TOTAL CAMPAIGN BUDGET</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-display-lg text-[40px] font-bold text-on-surface neon-glow-text">
                         R$ {orcamento.toLocaleString("pt-BR")}
-                      </div>
-                      <div className="text-[8.5px] text-[#8a82a8] font-semibold mt-1.5 uppercase font-mono leading-none">
-                        definido pelo planejamento
-                      </div>
-                    </div>
-                    <div className="text-2xl text-slate-600 bg-slate-950/45 p-2.5 rounded-xl border border-slate-850 shadow-inner select-none">
-                      🔑
+                      </span>
                     </div>
                   </div>
-
-                  {/* KPI Consumido */}
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveKpiModal("consumo")}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setActiveKpiModal("consumo");
-                      }
-                    }}
-                    aria-label="Ver resumo e detalhamento do Consumo Consolidado"
-                    className={`glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] border ${financialGlowClass} flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50`}
-                  >
-                    <div>
-                      <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Consumo Consolidado</div>
-                      <div className={`text-sm font-black mt-1 font-sans ${ultrapassou ? "text-rose-455" : "text-[#6ee8f8]"}`}>
-                        R$ {custoTotal.toLocaleString("pt-BR")}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-1.5 select-none leading-none">
-                        <span className={`text-[8.5px] font-bold uppercase tracking-wider ${ultrapassou ? "text-rose-455 animate-pulse" : "text-[#6ee8f8]"}`}>
-                          {percentualConsumido}% CONSUMIDO
-                        </span>
-                        {ultrapassou && (
-                          <span className="text-[7px] bg-rose-500/20 text-rose-500 font-bold px-1.5 py-0.5 rounded uppercase led-red font-sans">
-                            EXCEDIDO
-                          </span>
-                        )}
-                      </div>
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div className="p-4 bg-surface-variant/20 border-l-2 border-neon-orange/50">
+                      <p className="font-label-caps text-[9px] text-on-surface-variant uppercase">Burn Rate (Spent)</p>
+                      <p className="font-data-lg text-data-lg text-on-surface">R$ {custoTotal.toLocaleString("pt-BR")}</p>
                     </div>
-                    <div className="text-2xl animate-pulse-lightning text-amber-500 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 shadow-inner select-none">
-                      ⚡
-                    </div>
-                  </div>
-
-                  {/* KPI Saldo Restante */}
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setActiveKpiModal("saldo")}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setActiveKpiModal("saldo");
-                      }
-                    }}
-                    aria-label="Ver resumo e detalhamento do Saldo Financeiro"
-                    className="glass-panel p-5 rounded-2xl relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:border-indigo-500/40 border border-slate-800/80 shadow-md flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                  >
-                    <div>
-                      <div className="text-[9px] font-mono text-[#8a82a8] uppercase tracking-widest">Saldo Financeiro</div>
-                      <div className={`text-sm font-black mt-1 font-sans ${saldo < 0 ? "text-rose-400" : "text-emerald-450"}`}>
+                    <div className="p-4 bg-surface-variant/20 border-l-2 border-neon-cyan/50">
+                      <p className="font-label-caps text-[9px] text-on-surface-variant uppercase">Available Liquidity</p>
+                      <p className={`font-data-lg text-data-lg ${saldo < 0 ? "text-error" : "text-on-surface"}`}>
                         R$ {saldo.toLocaleString("pt-BR")}
-                      </div>
-                      <div className="text-[8.5px] text-[#8a82a8] font-semibold mt-1.5 uppercase font-mono leading-none">
-                        {saldo < 0 ? "saldo devedor da rota" : "saldo livre disponível"}
-                      </div>
+                      </p>
                     </div>
-                    <div className={`text-2xl animate-pulse-heartbeat p-2.5 rounded-xl border shadow-inner select-none ${
-                      saldo < 0 
-                        ? "text-rose-500 bg-rose-500/10 border-rose-500/20" 
-                        : "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
-                    }`}>
-                      ❤️
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between font-data-sm text-[10px] text-on-surface-variant">
+                      <span>CAPACITY UTILIZATION</span>
+                      <span>{percentualConsumido}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-neon-purple to-neon-cyan relative" style={{ width: `${percentualConsumido}%` }}>
+                        <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Linha do Tempo de Custos Diários */}
+                {/* PREDICTIVE EXCHANGE (Bento Card, col-span-12 lg:col-span-4) */}
+                <div className="col-span-12 lg:col-span-4">
+                  <CurrencyWidget destino={viagemAtiva.destino} />
+                </div>
+
+                {/* DAILY TIMELINE (col-span-12 lg:col-span-9) */}
+                <div className="col-span-12 lg:col-span-9 glass-card p-6">
+                  <div className="flex justify-between items-end mb-8 flex-wrap gap-4">
+                    <div>
+                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-1">CHRONOLOGICAL FLOW</h3>
+                      <p className="font-headline-md text-headline-md font-bold text-on-surface uppercase tracking-tight">
+                        Timeline: {diaAtivoWorkspace ? new Date(diaAtivoWorkspace + "T12:00:00").toLocaleDateString("en-US", { day: "2-digit", month: "short" }) : "N/A"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 select-none">
+                      <button
+                        onClick={() => {
+                          if (!diaAtivoWorkspace) return;
+                          const idx = datasViagem.indexOf(diaAtivoWorkspace);
+                          if (idx > 0) setDiaAtivoWorkspace(datasViagem[idx - 1]);
+                        }}
+                        disabled={!diaAtivoWorkspace || datasViagem.indexOf(diaAtivoWorkspace) === 0}
+                        className="p-2 border border-border-glow bg-transparent text-on-surface-variant hover:text-neon-cyan transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        <span className="material-symbols-outlined text-sm">chevron_left</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!diaAtivoWorkspace) return;
+                          const idx = datasViagem.indexOf(diaAtivoWorkspace);
+                          if (idx < datasViagem.length - 1) setDiaAtivoWorkspace(datasViagem[idx + 1]);
+                        }}
+                        disabled={!diaAtivoWorkspace || datasViagem.indexOf(diaAtivoWorkspace) === datasViagem.length - 1}
+                        className="p-2 border border-border-glow bg-transparent text-on-surface-variant hover:text-neon-cyan transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        <span className="material-symbols-outlined text-sm">chevron_right</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 relative ml-4">
+                    <div className="absolute left-0 top-0 w-[1px] h-full bg-border-glow"></div>
+                    
+                    {/* Render real daily activities and items */}
+                    {diaAtivoWorkspace && (() => {
+                      const diario = roteiroDiario[diaAtivoWorkspace] || { hospedagem: null, atividades: [], despesas: [], cronograma_horario: {} };
+                      const agenda = diario.cronograma_horario || {};
+                      const keys = Object.keys(agenda).filter(k => agenda[k].trim() !== "").sort();
+
+                      if (keys.length === 0) {
+                        return (
+                          <div className="py-12 text-center text-on-surface-variant/40 font-bold uppercase tracking-wider font-mono">
+                            No operational schedule planned for this day.
+                            <button 
+                              onClick={() => setActiveTab("cronograma")}
+                              className="block mx-auto mt-4 px-4 py-2 bg-surface-container-high border border-border-glow hover:border-neon-cyan hover:text-neon-cyan text-on-surface font-label-caps text-label-caps transition-all cursor-pointer border-none font-bold"
+                            >
+                              CONFIG_OPS_TIMELINE
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return keys.map((hora, idx) => {
+                        const text = agenda[hora];
+                        const states = [
+                          { badge: "COMPLETED", icon: "check", style: "border-border-glow hover:border-neon-cyan" },
+                          { badge: "IN_PROGRESS", icon: "sensors", style: "border-neon-cyan bg-neon-cyan/5 text-neon-cyan" },
+                          { badge: "PENDING", icon: "schedule", style: "border-border-glow text-on-surface-variant" }
+                        ];
+                        const state = idx === 0 ? states[0] : idx === 1 && keys.length > 2 ? states[1] : states[2];
+
+                        return (
+                          <div key={hora} className="relative pl-8 group transition-opacity">
+                            <div className={`absolute left-[-4px] top-1 w-2 h-2 rounded-full border ${state.badge === "COMPLETED" ? "bg-neon-cyan border-neon-cyan shadow-[0_0_8px_rgba(110,232,248,0.8)]" : state.badge === "IN_PROGRESS" ? "border-neon-cyan bg-background" : "border-on-surface-variant bg-background"}`}></div>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className={`font-data-sm text-[10px] ${state.badge === "COMPLETED" || state.badge === "IN_PROGRESS" ? "text-neon-cyan" : "text-on-surface-variant"}`}>
+                                  {hora}
+                                </span>
+                                <h4 className="font-body-base text-body-base font-bold text-on-surface group-hover:text-neon-cyan transition-colors uppercase">
+                                  {text}
+                                </h4>
+                              </div>
+                              <div className={`flex items-center gap-2 px-3 py-1 border text-[10px] font-bold uppercase ${state.style}`}>
+                                <span className="material-symbols-outlined text-xs">{state.icon}</span>
+                                {state.badge}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* QUICK ACTIONS & SYSTEM (Bento Card, col-span-12 lg:col-span-3) */}
+                <div className="col-span-12 lg:col-span-3 space-y-gutter">
+                  <div className="glass-card p-6 border-l-2 border-neon-purple">
+                    <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-4 uppercase">Neural Utilities</h3>
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleAtualizarCotacoes}
+                        disabled={isUpdatingPrices}
+                        className="w-full group flex items-center justify-between p-4 bg-surface-container-high/40 border border-border-glow hover:border-neon-purple transition-all cursor-pointer disabled:opacity-40 border-none text-left"
+                      >
+                        <div className="text-left">
+                          <span className="block font-label-caps text-[10px] text-neon-purple">AI_ENGINE</span>
+                          <span className="font-data-sm text-on-surface">Update Prices</span>
+                        </div>
+                        <span className={`material-symbols-outlined text-neon-purple group-hover:translate-x-1 transition-transform ${isUpdatingPrices ? "animate-spin" : ""}`}>
+                          bolt
+                        </span>
+                      </button>
+                      
+                      <button
+                        onClick={async () => {
+                          emitLog("SYSTEM: Initiating cloud sync...");
+                          await carregarDadosViagens(viagemAtiva.id);
+                          emitLog("SYSTEM: Cloud sync completed.");
+                        }}
+                        className="w-full group flex items-center justify-between p-4 bg-surface-container-high/40 border border-border-glow hover:border-neon-cyan transition-all cursor-pointer border-none text-left"
+                      >
+                        <div className="text-left">
+                          <span className="block font-label-caps text-[10px] text-neon-cyan">CLOUD_SYNC</span>
+                          <span className="font-data-sm text-on-surface">Sync System</span>
+                        </div>
+                        <span className="material-symbols-outlined text-neon-cyan group-hover:rotate-180 transition-transform duration-500">
+                          sync
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="glass-card p-6 bg-gradient-to-br from-surface-glass to-transparent relative overflow-hidden group">
+                    <div className="relative z-10">
+                      <h3 className="font-label-caps text-label-caps text-on-surface-variant mb-2">SYSTEM INTEGRITY</h3>
+                      <div className="flex items-end gap-2">
+                        <span className="font-data-lg text-[32px] font-black text-neon-cyan">OPTIMAL</span>
+                        <span className="material-symbols-outlined text-neon-cyan animate-pulse pb-2">shield_lock</span>
+                      </div>
+                      <p className="font-data-sm text-[10px] text-on-surface-variant mt-2 leading-tight">
+                        All subsystems report green. Neural link stable. Encryption layers active.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Day Selector Line (Tactical Operations Grade) */}
+              <div className="w-full pt-4">
                 <TimelineCompact
                   datasViagem={datasViagem}
                   roteiroDiario={roteiroDiario}
                   orcamentoMaximo={viagemAtiva.orcamento_maximo}
                   onSelecionarDia={(dia) => {
                     setDiaAtivoWorkspace(dia);
-                    setActiveTab("cronograma"); // Redireciona para focar no cronograma
+                    setActiveTab("cronograma");
                   }}
                   diaAtivoWorkspace={diaAtivoWorkspace}
                 />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6 select-none w-full">
+              {/* Introdu├º├úo / Subtitle */}
+              <div className="text-center py-4 max-w-2xl mx-auto space-y-1">
+                <h2 className="text-sm font-black text-[#eeeaf6] tracking-wider uppercase font-sans">
+                  Selecione uma Viagem
+                </h2>
+                <p className="text-[9px] text-[#8a82a8] uppercase tracking-widest font-bold font-mono">
+                  Acesse o workspace de planejamento focado ou crie uma nova rota
+                </p>
+              </div>
 
-                {/* Currency Rate Widget */}
-                <CurrencyWidget destino={viagemAtiva?.destino || ""} />
+              {/* Grid de Viagens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full pb-12">
+                {viagens.map((v, index) => {
+                  const colors = [
+                    { border: "hover:border-[#c49eff]/60", badge: "text-[#c49eff] bg-[#c49eff]/10 border-[#c49eff]/20", glow: "glow-card-indigo" },
+                    { border: "hover:border-[#6ee8f8]/60", badge: "text-[#6ee8f8] bg-[#6ee8f8]/10 border-[#6ee8f8]/20", glow: "glow-card-emerald" },
+                    { border: "hover:border-[#fbbf24]/60", badge: "text-[#fbbf24] bg-[#fbbf24]/10 border-[#fbbf24]/20", glow: "glow-card-amber" }
+                  ];
+                  const theme = colors[index % colors.length];
 
-                {/* Painel de Resumo das Abas (Dashboard Integrado) */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 w-full select-none">
-                  
-                  {/* 2. Resumo de Finanças */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-8">
-                    <div className="space-y-4">
-                      {/* Card Title & Header */}
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-[10.5px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
-                          <span>💸</span>
-                          <span>Resumo de Finanças</span>
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => handleSelecionarViagem(v.id)}
+                      className={`bg-[#1a1230]/40 p-5 rounded-2xl border border-white/5 cursor-pointer flex flex-col justify-between min-h-[200px] relative overflow-hidden group transition-all duration-300 hover:scale-[1.01] ${theme.border}`}
+                    >
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-transparent blur-md rounded-bl-full pointer-events-none" />
+
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-[8px] font-bold font-mono uppercase border px-2 py-0.5 rounded ${theme.badge}`}>
+                            ROTA ATIVA
+                          </span>
+                          <button
+                            onClick={(e) => handleDeletarViagem(e, v.id, v.destino)}
+                            className="w-6 h-6 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/25 border-0 text-rose-500 rounded-lg transition-colors cursor-pointer z-10 scale-90"
+                            title="Excluir Rota definitivamente"
+                          >
+                            ­ƒùæ´©Å
+                          </button>
+                        </div>
+                        <h3 className="text-sm font-black text-[#eeeaf6] uppercase tracking-wide truncate pt-2 font-heading">
+                          {v.destino.replace(/ \(.*\)/, "")}
                         </h3>
-                        <span className="text-[7.5px] font-mono font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded uppercase tracking-wider">
-                          Consolidado
-                        </span>
+                        <p className="text-[9px] text-[#8a82a8] font-bold uppercase tracking-wider font-mono mt-0.5">
+                          Sa├¡da: <span className="text-[#eeeaf6]/85">{v.origem.replace(/ \(.*\)/, "")}</span>
+                        </p>
                       </div>
 
-                      {/* Content Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                        {/* Left Side: Category Breakdown */}
-                        <div className="space-y-4">
-                          <h4 className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-900 pb-1">
-                            Distribuição das Categorias
-                          </h4>
-
-                          {/* Segmented linear bar representing distribution */}
-                          <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden flex border border-slate-900 shadow-inner">
-                            {totalHospedagem > 0 && (
-                              <div style={{ width: `${percentualHospedagem}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-indigo-650" title={`Acomodação: ${percentualHospedagem}%`} />
-                            )}
-                            {totalPasseios > 0 && (
-                              <div style={{ width: `${percentualPasseios}%` }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-650 border-l border-slate-950" title={`Atividades: ${percentualPasseios}%`} />
-                            )}
-                            {totalDespesas > 0 && (
-                              <div style={{ width: `${percentualDespesas}%` }} className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950" title={`Despesas: ${percentualDespesas}%`} />
-                            )}
-                            {custoTotal === 0 && (
-                              <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[7px] text-slate-600 font-bold uppercase tracking-wider">
-                                Sem despesas registradas
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="space-y-2.5 text-[9px]">
-                            {/* Hospedagem */}
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-1.5 font-bold text-indigo-455">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                <span>Acomodação</span>
-                              </div>
-                              <span className="font-mono text-slate-300 font-bold">
-                                R$ {totalHospedagem.toLocaleString("pt-BR")} <span className="text-[7.5px] text-slate-500 font-normal">({percentualHospedagem}%)</span>
-                              </span>
-                            </div>
-
-                            {/* Passeios */}
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-1.5 font-bold text-emerald-455">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                <span>Atividades</span>
-                              </div>
-                              <span className="font-mono text-slate-300 font-bold">
-                                R$ {totalPasseios.toLocaleString("pt-BR")} <span className="text-[7.5px] text-slate-500 font-normal">({percentualPasseios}%)</span>
-                              </span>
-                            </div>
-
-                            {/* Despesas */}
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-1.5 font-bold text-amber-450">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                <span>Despesas Extras</span>
-                              </div>
-                              <span className="font-mono text-slate-300 font-bold">
-                                R$ {totalDespesas.toLocaleString("pt-BR")} <span className="text-[7.5px] text-slate-500 font-normal">({percentualDespesas}%)</span>
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Render Subcategories of Despesas Extras if totalDespesas > 0 */}
-                          {totalDespesas > 0 && (
-                            <div className="pt-2 border-t border-slate-900/60">
-                              <span className="text-[7.5px] font-bold text-slate-555 uppercase tracking-wider block mb-1.5">
-                                Subcategorias de Despesas Extras:
-                              </span>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {Object.entries(
-                                  todasDespesas.reduce<Record<string, number>>((acc, exp) => {
-                                    const cat = exp.categoria || "Outros";
-                                    acc[cat] = (acc[cat] || 0) + exp.valor;
-                                    return acc;
-                                  }, {})
-                                ).map(([cat, val]) => (
-                                  <div key={cat} className="bg-slate-950/40 border border-slate-900 p-1.5 rounded-md flex items-center justify-between text-[8px]">
-                                    <span className="text-slate-455 uppercase truncate max-w-[65px] font-semibold">{cat}</span>
-                                    <span className="font-mono text-slate-300 font-bold">R$ {Math.round(val).toLocaleString("pt-BR")}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                      <div className="pt-4 border-t border-white/5 space-y-2.5">
+                        <div className="flex justify-between items-center text-[9px]">
+                          <span className="text-[#8a82a8] font-bold uppercase">Per├¡odo</span>
+                          <span className="font-mono text-[#eeeaf6] font-semibold">{v.data_inicio} a {v.data_fim}</span>
                         </div>
-
-                        {/* Right Side: Top single expenses (Maiores Gastos) & Budget Bar */}
-                        <div className="space-y-4">
-                          <h4 className="text-[8.5px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-900 pb-1">
-                            Maiores Gastos da Viagem
-                          </h4>
-
-                          <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                            {statementItems.length === 0 ? (
-                              <div className="text-center py-6 text-[8.5px] text-slate-600 font-bold uppercase tracking-wider">
-                                Nenhum lançamento encontrado
-                              </div>
-                            ) : (
-                              [...statementItems]
-                                .sort((a, b) => b.valor - a.valor)
-                                .slice(0, 3)
-                                .map((item) => {
-                                  const icons: Record<string, string> = {
-                                    hospedagem: "🏨",
-                                    passeio: "🎟️",
-                                    despesa: "💸"
-                                  };
-                                  return (
-                                    <div key={item.key} className="flex items-center justify-between bg-slate-950/50 border border-slate-900/60 p-2 rounded-xl text-[9px] hover:border-slate-800 transition-colors">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span className="text-xs select-none">{icons[item.tipo] || "💰"}</span>
-                                        <div className="min-w-0 flex flex-col">
-                                          <span className="text-slate-200 font-bold uppercase truncate max-w-[120px] leading-tight">
-                                            {item.nome}
-                                          </span>
-                                          <span className="text-slate-500 text-[7px] uppercase tracking-wider font-semibold">
-                                            {item.tipo === "hospedagem" ? "Acomodação" : item.tipo === "passeio" ? "Atividade" : item.categoria}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <span className="font-mono text-indigo-400 font-bold ml-1.5 shrink-0">
-                                        R$ {item.valor.toLocaleString("pt-BR")}
-                                      </span>
-                                    </div>
-                                  );
-                                })
-                            )}
-                          </div>
-
-                          {/* Budget utilization status bar */}
-                          <div className="bg-slate-950/30 border border-slate-900 p-2.5 rounded-xl space-y-1.5 select-none">
-                            <div className="flex justify-between text-[7.5px] font-bold text-slate-500 uppercase">
-                              <span>Teto Consumido</span>
-                              <span className={ultrapassou ? "text-rose-455" : "text-emerald-450"}>
-                                {percentualConsumido}% ({custoTotal > 0 ? `R$ ${custoTotal.toLocaleString("pt-BR")}` : "R$ 0"} / R$ {orcamento.toLocaleString("pt-BR")})
-                              </span>
-                            </div>
-                            <div className="w-full h-1.5 bg-slate-950 border border-slate-900 rounded-full overflow-hidden">
-                              <div
-                                style={{ width: `${percentualConsumido}%` }}
-                                className={`h-full transition-all duration-300 ${
-                                  ultrapassou
-                                    ? "bg-gradient-to-r from-rose-500 to-red-600"
-                                    : percentualConsumido > 80
-                                    ? "bg-gradient-to-r from-amber-500 to-orange-500"
-                                    : "bg-gradient-to-r from-indigo-500 to-indigo-650"
-                                }`}
-                              />
-                            </div>
-                          </div>
+                        <div className="flex justify-between items-center text-[9px]">
+                          <span className="text-[#8a82a8] font-bold uppercase">Or├ºamento Teto</span>
+                          <span className="font-mono text-[#fbbf24] font-bold">R$ {v.orcamento_maximo.toLocaleString("pt-BR")}</span>
                         </div>
-
                       </div>
+
+                      <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-purple-500/40 via-blue-500/40 to-emerald-500/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
-                    <button
-                      onClick={() => setActiveTab("financas")}
-                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md mt-2"
-                    >
-                      Acessar Finanças Completa ➔
-                    </button>
-                  </div>
-                  
-                  {/* 1. Resumo da Agenda e Itinerário */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-4">
-                    <div className="space-y-3">
-                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
-                        <span>📅</span>
-                        <span>Resumo da Agenda</span>
-                      </h3>
-                      <div className="space-y-2 text-[10px] text-slate-300">
-                        <div className="flex justify-between">
-                          <span className="text-slate-550 uppercase font-bold">Duração Total:</span>
-                          <span className="font-mono font-bold">{datasViagem.length} dias</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-555 uppercase font-bold">Hospedagem reservada:</span>
-                          <span className="font-mono font-bold text-[#6ee8f8]">
-                            {datasViagem.filter(dia => roteiroDiario[dia]?.hospedagem).length} de {datasViagem.length} noites
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-555 uppercase font-bold">Passeios & Atividades:</span>
-                          <span className="font-mono font-bold text-amber-500">
-                            {datasViagem.reduce((acc, dia) => acc + (roteiroDiario[dia]?.atividades?.length || 0), 0)} itens agendados
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab("cronograma")}
-                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                    >
-                      Acessar Agenda Completa ➔
-                    </button>
-                  </div>
+                  );
+                })}
 
-                  {/* 3. Banco de Alocações (Itens Livres) */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-4">
-                    <div className="space-y-3">
-                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
-                        <span>🛍️</span>
-                        <span>Banco de Alocações</span>
-                      </h3>
-                      <div className="text-[10px] text-slate-455 leading-relaxed font-sans font-medium uppercase tracking-wide">
-                        Pesquise hotéis recomendados ou crie passeios customizados e injete-os em qualquer dia da viagem ativa.
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab("banco")}
-                      className="w-full py-2 bg-slate-950 border border-slate-850 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                    >
-                      Abrir Banco de Alocações ➔
-                    </button>
-                  </div>
-
-                  {/* 4. Console Real-Time Monitor Preview */}
-                  <div className="glass-panel p-5 rounded-2xl border border-slate-800/80 shadow-md flex flex-col justify-between space-y-4 md:col-span-8">
-                    <div className="space-y-3">
-                      <h3 className="text-[10px] font-black uppercase text-indigo-400 tracking-wider flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span>📋</span>
-                          <span>Monitor de Logs</span>
-                        </div>
-                        <span className="w-1.5 h-1.5 bg-[#6ee8f8] rounded-full led-green animate-pulse" />
-                      </h3>
-                      <div className="bg-slate-950/70 border border-slate-855 rounded-xl p-3 font-mono text-[8.5px] space-y-1.5 h-20 overflow-y-auto select-none shadow-inner leading-normal">
-                        {consoleLogs.map((log, index) => {
-                          let colorClass = "text-slate-455";
-                          if (log.includes("[SYSTEM]")) colorClass = "text-cyan-400/90 font-bold";
-                          else if (log.includes("FIRESTORE:")) colorClass = "text-[#6ee8f8] font-semibold";
-                          else if (log.includes("OPTIMISTIC:")) colorClass = "text-indigo-455 font-bold";
-                          else if (log.includes("ERROR")) colorClass = "text-rose-400 animate-pulse";
-                          return (
-                            <div key={index} className={colorClass}>
-                              {log}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab("logs")}
-                      className="w-full py-2 bg-slate-950 border border-slate-855 hover:border-slate-800 hover:text-slate-200 text-slate-400 font-bold text-[9px] rounded-xl uppercase transition-all cursor-pointer text-center border-0 shadow-md"
-                    >
-                      Abrir Console de Logs ➔
-                    </button>
-                  </div>
-
+                {/* Card Especial de Nova Rota */}
+                <div
+                  onClick={() => setIsFormCriacaoAberto(true)}
+                  className="bg-[#1a1230]/20 p-5 rounded-2xl border border-dashed border-white/10 hover:border-purple-500/60 hover:bg-[#1a1230]/40 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 min-h-[200px] group/new select-none hover:scale-[1.01]"
+                >
+                  <span className="text-2xl text-[#8a82a8] group-hover/new:text-purple-400 group-hover/new:scale-110 transition-all duration-300">Ô×ò</span>
+                  <span className="text-[9px] font-black tracking-widest text-[#8a82a8] group-hover/new:text-[#eeeaf6] mt-3 uppercase">
+                    Nova Viagem
+                  </span>
+                  <span className="text-[8px] font-mono text-[#4a4468] mt-1 uppercase">
+                    Criar nova viagem no Firestore
+                  </span>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-6 select-none w-full">
-                {/* Introdução / Subtitle */}
-                <div className="text-center py-4 max-w-2xl mx-auto space-y-1">
-                  <h2 className="text-sm font-black text-[#eeeaf6] tracking-wider uppercase font-sans">
-                    Selecione uma Viagem
-                  </h2>
-                  <p className="text-[9px] text-[#8a82a8] uppercase tracking-widest font-bold font-mono">
-                    Acesse o workspace de planejamento focado ou crie uma nova rota
-                  </p>
-                </div>
+            </div>
+          )
+        )}
 
-                {/* Grid de Viagens */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full pb-12">
-                  {viagens.map((v, index) => {
-                    const colors = [
-                      { border: "hover:border-[#c49eff]/60", badge: "text-[#c49eff] bg-[#c49eff]/10 border-[#c49eff]/20", glow: "glow-card-indigo" },
-                      { border: "hover:border-[#6ee8f8]/60", badge: "text-[#6ee8f8] bg-[#6ee8f8]/10 border-[#6ee8f8]/20", glow: "glow-card-emerald" },
-                      { border: "hover:border-[#fbbf24]/60", badge: "text-[#fbbf24] bg-[#fbbf24]/10 border-[#fbbf24]/20", glow: "glow-card-amber" }
-                    ];
-                    const theme = colors[index % colors.length];
-
-                    return (
-                      <div
-                        key={v.id}
-                        onClick={() => handleSelecionarViagem(v.id)}
-                        className={`bg-[#1a1230]/40 p-5 rounded-2xl border border-white/5 cursor-pointer flex flex-col justify-between min-h-[200px] relative overflow-hidden group transition-all duration-300 hover:scale-[1.01] ${theme.border}`}
-                      >
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-transparent blur-md rounded-bl-full pointer-events-none" />
-
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className={`text-[8px] font-bold font-mono uppercase border px-2 py-0.5 rounded ${theme.badge}`}>
-                              ROTA ATIVA
-                            </span>
-                            <button
-                              onClick={(e) => handleDeletarViagem(e, v.id, v.destino)}
-                              className="w-6 h-6 flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/25 border-0 text-rose-500 rounded-lg transition-colors cursor-pointer z-10 scale-90"
-                              title="Excluir Rota definitivamente"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                          <h3 className="text-sm font-black text-[#eeeaf6] uppercase tracking-wide truncate pt-2 font-heading">
-                            {v.destino.replace(/ \(.*\)/, "")}
-                          </h3>
-                          <p className="text-[9px] text-[#8a82a8] font-bold uppercase tracking-wider font-mono mt-0.5">
-                            Saída: <span className="text-[#eeeaf6]/85">{v.origem.replace(/ \(.*\)/, "")}</span>
-                          </p>
-                        </div>
-
-                        <div className="pt-4 border-t border-white/5 space-y-2.5">
-                          <div className="flex justify-between items-center text-[9px]">
-                            <span className="text-[#8a82a8] font-bold uppercase">Período</span>
-                            <span className="font-mono text-[#eeeaf6] font-semibold">{v.data_inicio} a {v.data_fim}</span>
-                          </div>
-                          <div className="flex justify-between items-center text-[9px]">
-                            <span className="text-[#8a82a8] font-bold uppercase">Orçamento Teto</span>
-                            <span className="font-mono text-[#fbbf24] font-bold">R$ {v.orcamento_maximo.toLocaleString("pt-BR")}</span>
-                          </div>
-                        </div>
-
-                        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-purple-500/40 via-blue-500/40 to-emerald-500/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                    );
-                  })}
-
-                  {/* Card Especial de Nova Rota */}
-                  <div
-                    onClick={() => setIsFormCriacaoAberto(true)}
-                    className="bg-[#1a1230]/20 p-5 rounded-2xl border border-dashed border-white/10 hover:border-purple-500/60 hover:bg-[#1a1230]/40 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 min-h-[200px] group/new select-none hover:scale-[1.01]"
-                  >
-                    <span className="text-2xl text-[#8a82a8] group-hover/new:text-purple-400 group-hover/new:scale-110 transition-all duration-300">➕</span>
-                    <span className="text-[9px] font-black tracking-widest text-[#8a82a8] group-hover/new:text-[#eeeaf6] mt-3 uppercase">
-                      Nova Viagem
-                    </span>
-                    <span className="text-[8px] font-mono text-[#4a4468] mt-1 uppercase">
-                      Criar nova viagem no Firestore
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )
-          )}
-
-          {/* =======================================
-              ABA 1.2: Finanças e Relatórios
-              ======================================= */}
-             {activeTab === "financas" && (
-            <div className="space-y-5 flex-1 flex flex-col min-h-0">
-              {/* Grid Central Dashboard: Duas Colunas Invertidas */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 flex-1 min-h-0 items-start w-full">
+        {/* =======================================
+            ABA 1.2: Finan├ºas e Relat├│rios
+            ======================================= */}
+        {activeTab === "financas" && (
+          <div className="space-y-5 flex-1 flex flex-col min-h-0 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 flex-1 min-h-0 items-start w-full">
+              {/* COLUNA ESQUERDA (md:col-span-5) - Lan├ºamento & Categorias */}
+              <div className="md:col-span-5 space-y-5 flex flex-col w-full">
                 
-                {/* COLUNA ESQUERDA (md:col-span-5) - Lançamento & Categorias */}
-                <div className="md:col-span-5 space-y-5 flex flex-col w-full">
-                  
-                  {/* Formulário Premium de Registro de Despesa */}
-                  <div className="glass-panel p-5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-xl border border-slate-800/80 select-none">
-                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-amber-500 to-orange-500" />
-                    <h3 className="text-[10px] font-black uppercase text-slate-350 tracking-wider flex items-center justify-between">
-                      <span>💸 Registrar Nova Despesa</span>
-                      <span className="text-[8px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-mono font-bold leading-none">
-                        lançamento direto
+                {/* Formul├írio Premium de Registro de Despesa */}
+                <div className="glass-panel p-5 rounded-2xl relative overflow-hidden space-y-3.5 shadow-xl border border-slate-800/80 select-none">
+                  <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-amber-500 to-orange-500" />
+                  <h3 className="text-[10px] font-black uppercase text-slate-355 tracking-wider flex items-center justify-between">
+                    <span>­ƒÆ© Registrar Nova Despesa</span>
+                    <span className="text-[8px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase font-mono font-bold leading-none">
+                      lan├ºamento direto
+                    </span>
+                  </h3>
+                  <form onSubmit={handleSubmeterFinDespesa} className="space-y-3 text-[10px]">
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Vincular a:</label>
+                        <select
+                          value={finAddVinculo}
+                          onChange={(e) => setFinAddVinculo(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
+                        >
+                          <option value="global">Geral (Sem conex├úo)</option>
+                          {datasViagem.map((dia, idx) => (
+                            <option key={dia} value={dia}>
+                              Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Categoria:</label>
+                        <select
+                          value={finAddCategoria}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFinAddCategoria(val);
+                            if (val === "Outros") {
+                              setFinAddIsCustom(true);
+                            } else {
+                              setFinAddIsCustom(false);
+                            }
+                          }}
+                          className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
+                        >
+                          <option value="Alimenta├º├úo">Alimenta├º├úo ­ƒì¢´©Å</option>
+                          <option value="Transporte">Transporte ­ƒÜù</option>
+                          <option value="Lazer">Lazer ­ƒ¬ü</option>
+                          <option value="Compras">Compras ­ƒøì´©Å</option>
+                          <option value="Outros">Outros ­ƒÆ░</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {finAddIsCustom && (
+                      <div className="space-y-1 animate-fade-in">
+                        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Nome da Nova Categoria:</label>
+                        <input
+                          type="text"
+                          placeholder="Nome da categoria"
+                          value={finAddCustomCategoria}
+                          onChange={(e) => setFinAddCustomCategoria(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-755 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                          autoComplete="off"
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Item/Descri├º├úo:</label>
+                        <input
+                          type="text"
+                          placeholder="ex: Passagem A├®rea"
+                          value={finAddNome}
+                          onChange={(e) => setFinAddNome(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-755 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                          autoComplete="off"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Valor (R$):</label>
+                        <input
+                          type="number"
+                          placeholder="0,00"
+                          value={finAddValor}
+                          onChange={(e) => setFinAddValor(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-755 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 pt-1 select-none">
+                      {finAddErro ? (
+                        <span className="text-[8.5px] text-rose-455 font-mono font-bold">ÔÜá´©Å {finAddErro}</span>
+                      ) : (
+                        <span />
+                      )}
+                      <button
+                        type="submit"
+                        disabled={finAddSalvando}
+                        className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold text-[9px] rounded-lg uppercase cursor-pointer border-none shadow-md transition-all active:scale-95 disabled:opacity-50"
+                      >
+                        {finAddSalvando ? "SALVANDO..." : "SALVAR DESPESA"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Distribui├º├úo por Categoria */}
+                <div className="glass-panel p-5 rounded-2xl space-y-4 shadow-xl border border-slate-800/80 select-none relative">
+                  <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-indigo-500 to-blue-500" />
+                  <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
+                    <span>­ƒÅÀ´©Å Distribui├º├úo por Categoria</span>
+                    <span className="text-[8px] text-slate-550 lowercase italic">divis├úo percentual</span>
+                  </h3>
+
+                  {/* Single Combined Segmented Bar */}
+                  <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-850 shadow-inner">
+                    {totalHospedagem > 0 && (
+                      <div
+                        style={{ width: `${percentualHospedagem}%` }}
+                        className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all"
+                        title={`Hospedagem: ${percentualHospedagem}%`}
+                      />
+                    )}
+                    {totalPasseios > 0 && (
+                      <div
+                        style={{ width: `${percentualPasseios}%` }}
+                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950 transition-all"
+                        title={`Passeios: ${percentualPasseios}%`}
+                      />
+                    )}
+                    {totalDespesas > 0 && (
+                      <div
+                        style={{ width: `${percentualDespesas}%` }}
+                        className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950 transition-all"
+                        title={`Despesas: ${percentualDespesas}%`}
+                      />
+                    )}
+                    {custoTotal === 0 && (
+                      <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[8px] text-slate-650 font-bold uppercase tracking-wider">
+                        Nenhum gasto registrado
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Grid labels */}
+                  <div className="grid grid-cols-3 gap-2.5 text-[9px] pt-1">
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1 text-indigo-455 font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                        <span>Acomoda├º├úo</span>
+                      </div>
+                      <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
+                      <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualHospedagem}%</span>
+                    </div>
+
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1 text-emerald-455 font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span>Passeios</span>
+                      </div>
+                      <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
+                      <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualPasseios}%</span>
+                    </div>
+
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1 text-amber-450 font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <span>Despesas</span>
+                      </div>
+                      <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
+                      <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualDespesas}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* TravelersManager Component */}
+                <TravelersManager
+                  viajantes={viagemAtiva?.viajantes || []}
+                  onAtualizarViajantes={handleAtualizarViajantes}
+                />
+              </div>
+
+              {/* COLUNA DIREITA (md:col-span-7) - Extrato & Gr├ífico Acumulativo */}
+              <div className="md:col-span-7 space-y-5 flex flex-col h-full w-full">
+                {/* BillSplitter Component */}
+                <BillSplitter
+                  viajantes={viagemAtiva?.viajantes || []}
+                  despesas={todasDespesas}
+                  usuarioAtualId={user?.uid || "operator-01"}
+                />
+                
+                {/* Extrato Consolidado */}
+                <div className="flex flex-col glass-panel p-5 rounded-2xl relative space-y-4 shadow-xl border border-slate-800/80 w-full">
+                  <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-indigo-500 to-purple-600" />
+                  <div className="flex items-center justify-between select-none">
+                    <h3 className="text-[10px] font-black uppercase text-slate-355 tracking-wider flex items-center gap-2">
+                      <span>­ƒº¥ Extrato Consolidado</span>
+                      <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono px-2 py-0.5 rounded text-[8px] leading-none uppercase">
+                        {filteredStatementItems.length} itens {filteredStatementItems.length !== statementItems.length && `filtrados (de ${statementItems.length})`}
                       </span>
                     </h3>
-                    <form onSubmit={handleSubmeterFinDespesa} className="space-y-3 text-[10px]">
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div className="space-y-1">
-                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Vincular a:</label>
-                          <select
-                            value={finAddVinculo}
-                            onChange={(e) => setFinAddVinculo(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
-                          >
-                            <option value="global">Geral (Sem conexão)</option>
-                            {datasViagem.map((dia, idx) => (
-                              <option key={dia} value={dia}>
-                                Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Categoria:</label>
-                          <select
-                            value={finAddCategoria}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setFinAddCategoria(val);
-                              if (val === "Outros") {
-                                setFinAddIsCustom(true);
-                              } else {
-                                setFinAddIsCustom(false);
-                              }
-                            }}
-                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-300 px-2 py-1.5 text-[9px] rounded-lg focus:outline-none cursor-pointer uppercase font-bold"
-                          >
-                            <option value="Alimentação">Alimentação 🍽️</option>
-                            <option value="Transporte">Transporte 🚗</option>
-                            <option value="Lazer">Lazer 🪁</option>
-                            <option value="Compras">Compras 🛍️</option>
-                            <option value="Outros">Outros 💰</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {finAddIsCustom && (
-                        <div className="space-y-1 animate-fade-in">
-                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Nome da Nova Categoria:</label>
-                          <input
-                            type="text"
-                            placeholder="Nome da categoria"
-                            value={finAddCustomCategoria}
-                            onChange={(e) => setFinAddCustomCategoria(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] uppercase font-semibold"
-                            autoComplete="off"
-                          />
-                        </div>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div className="space-y-1">
-                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Item/Descrição:</label>
-                          <input
-                            type="text"
-                            placeholder="ex: Passagem Aérea"
-                            value={finAddNome}
-                            onChange={(e) => setFinAddNome(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] uppercase font-semibold"
-                            autoComplete="off"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Valor (R$):</label>
-                          <input
-                            type="number"
-                            placeholder="0,00"
-                            value={finAddValor}
-                            onChange={(e) => setFinAddValor(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-850 hover:border-slate-800 text-slate-100 px-3 py-1.5 placeholder-slate-750 text-[10px] rounded-lg focus:outline-none focus:border-[#007aff] font-mono"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 pt-1 select-none">
-                        {finAddErro ? (
-                          <span className="text-[8.5px] text-rose-455 font-mono font-bold">⚠️ {finAddErro}</span>
-                        ) : (
-                          <span />
-                        )}
-                        <button
-                          type="submit"
-                          disabled={finAddSalvando}
-                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold text-[9px] rounded-lg uppercase cursor-pointer border-0 shadow-md transition-all active:scale-95 disabled:opacity-50"
-                        >
-                          {finAddSalvando ? "SALVANDO..." : "SALVAR DESPESA"}
-                        </button>
-                      </div>
-                    </form>
                   </div>
 
-                  {/* Distribuição por Categoria */}
-                  <div className="glass-panel p-5 rounded-2xl space-y-4 shadow-xl border border-slate-800/80 select-none relative">
-                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-indigo-500 to-blue-500" />
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center justify-between">
-                      <span>🏷️ Distribuição por Categoria</span>
-                      <span className="text-[8px] text-slate-550 lowercase italic">divisão percentual</span>
-                    </h3>
-
-                    {/* Single Combined Segmented Bar */}
-                    <div className="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden flex border border-slate-850 shadow-inner">
-                      {totalHospedagem > 0 && (
-                        <div
-                          style={{ width: `${percentualHospedagem}%` }}
-                          className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all"
-                          title={`Hospedagem: ${percentualHospedagem}%`}
-                        />
-                      )}
-                      {totalPasseios > 0 && (
-                        <div
-                          style={{ width: `${percentualPasseios}%` }}
-                          className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 border-l border-slate-950 transition-all"
-                          title={`Passeios: ${percentualPasseios}%`}
-                        />
-                      )}
-                      {totalDespesas > 0 && (
-                        <div
-                          style={{ width: `${percentualDespesas}%` }}
-                          className="h-full bg-gradient-to-r from-amber-500 to-rose-500 border-l border-slate-950 transition-all"
-                          title={`Despesas: ${percentualDespesas}%`}
-                        />
-                      )}
-                      {custoTotal === 0 && (
-                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-[8px] text-slate-650 font-bold uppercase tracking-wider">
-                          Nenhum gasto registrado
-                        </div>
-                      )}
+                  <div className="space-y-2">
+                    {/* Connection filter pills */}
+                    <div className="flex items-center gap-2 pb-1 border-b border-slate-850/60 overflow-x-auto select-none scrollbar-none">
+                      <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Conex├úo:</span>
+                      <button
+                        type="button"
+                        onClick={() => setFiltroVinculo("todos")}
+                        className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                          filtroVinculo === "todos"
+                            ? "bg-indigo-600/20 border-indigo-500/60 text-indigo-300 font-extrabold shadow-sm"
+                            : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
+                        }`}
+                      >
+                        ­ƒôæ Todos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFiltroVinculo("global")}
+                        className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                          filtroVinculo === "global"
+                            ? "bg-amber-600/20 border-amber-500/60 text-amber-300 font-extrabold shadow-sm"
+                            : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
+                        }`}
+                      >
+                        ­ƒîì Globais/Gerais
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFiltroVinculo("dias")}
+                        className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
+                          filtroVinculo === "dias"
+                            ? "bg-emerald-600/20 border-emerald-500/60 text-emerald-300 font-extrabold shadow-sm"
+                            : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
+                        }`}
+                      >
+                        ­ƒôà Por Dia
+                      </button>
                     </div>
 
-                    {/* Grid labels */}
-                    <div className="grid grid-cols-3 gap-2.5 text-[9px] pt-1">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1 text-indigo-455 font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                          <span>Acomodação</span>
-                        </div>
-                        <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalHospedagem.toLocaleString("pt-BR")}</span>
-                        <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualHospedagem}%</span>
-                      </div>
-
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1 text-emerald-455 font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span>Passeios</span>
-                        </div>
-                        <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalPasseios.toLocaleString("pt-BR")}</span>
-                        <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualPasseios}%</span>
-                      </div>
-
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1 text-amber-450 font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          <span>Despesas</span>
-                        </div>
-                        <span className="text-slate-400 font-mono pl-2.5 font-bold">R$ {totalDespesas.toLocaleString("pt-BR")}</span>
-                        <span className="text-slate-550 font-mono pl-2.5 text-[7.5px] font-semibold">{percentualDespesas}%</span>
-                      </div>
+                    {/* Category filter pills */}
+                    <div className="flex items-center gap-2 pb-1.5 border-b border-slate-850/40 overflow-x-auto select-none scrollbar-none">
+                      <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Categoria:</span>
+                      {["todas", "Hospedagem", "Lazer/Passeios", ...Array.from(new Set(statementItems.map((item) => item.categoria).filter(c => c && c !== "Hospedagem" && c !== "Lazer/Passeios"))).sort()].map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setFiltroCategoria(cat)}
+                          className={`px-2.5 py-1 text-[8px] uppercase font-bold rounded-full border transition-all whitespace-nowrap cursor-pointer ${
+                            filtroCategoria === cat
+                              ? "bg-indigo-500/20 border-indigo-400 text-indigo-300 shadow-sm"
+                              : "bg-slate-950/40 border-slate-850/60 text-slate-500 hover:text-slate-355"
+                          }`}
+                        >
+                          {cat === "todas" ? "­ƒôü TODAS" : cat}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* TravelersManager Component */}
-                  <TravelersManager
-                    viajantes={viagemAtiva?.viajantes || []}
-                    onAtualizarViajantes={handleAtualizarViajantes}
-                  />
-
-                </div>
-
-                {/* COLUNA DIREITA (md:col-span-7) - Extrato & Gráfico Acumulativo */}
-                <div className="md:col-span-7 space-y-5 flex flex-col h-full w-full">
-
-                  {/* BillSplitter Component */}
-                  <BillSplitter
-                    viajantes={viagemAtiva?.viajantes || []}
-                    despesas={todasDespesas}
-                    usuarioAtualId={user?.uid || "operator-01"}
-                  />
-                  
-                  {/* Extrato Consolidado */}
-                  <div className="flex flex-col glass-panel p-5 rounded-2xl relative space-y-4 shadow-xl border border-slate-800/80">
-                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-indigo-500 to-purple-600" />
-                    <div className="flex items-center justify-between select-none">
-                      <h3 className="text-[10px] font-black uppercase text-slate-355 tracking-wider flex items-center gap-2">
-                        <span>🧾 Extrato Consolidado</span>
-                        <span className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-mono px-2 py-0.5 rounded text-[8px] leading-none uppercase">
-                          {filteredStatementItems.length} itens {filteredStatementItems.length !== statementItems.length && `filtrados (de ${statementItems.length})`}
-                        </span>
-                      </h3>
-                    </div>
-
-                    {/* interactive accessible clickable filters pills */}
-                    <div className="space-y-2">
-                      {/* Connection filter pills */}
-                      <div className="flex items-center gap-2 pb-1 border-b border-slate-850/60 overflow-x-auto select-none scrollbar-none">
-                        <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Conexão:</span>
-                        <button
-                          type="button"
-                          onClick={() => setFiltroVinculo("todos")}
-                          className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
-                            filtroVinculo === "todos"
-                              ? "bg-indigo-600/20 border-indigo-500/60 text-indigo-300 font-extrabold shadow-sm"
-                              : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
-                          }`}
-                        >
-                          📑 Todos
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFiltroVinculo("global")}
-                          className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
-                            filtroVinculo === "global"
-                              ? "bg-amber-600/20 border-amber-500/60 text-amber-300 font-extrabold shadow-sm"
-                              : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
-                          }`}
-                        >
-                          🌍 Globais/Gerais
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFiltroVinculo("dias")}
-                          className={`px-3 py-1 font-mono text-[8px] uppercase font-bold rounded-lg border transition-all cursor-pointer ${
-                            filtroVinculo === "dias"
-                              ? "bg-emerald-600/20 border-emerald-500/60 text-emerald-300 font-extrabold shadow-sm"
-                              : "bg-slate-950/60 border-slate-850 text-slate-500 hover:text-slate-300"
-                          }`}
-                        >
-                          📅 Por Dia
-                        </button>
+                  <div className="flex-1 overflow-y-auto max-h-[340px] pr-1.5 space-y-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+                    {filteredStatementItems.length === 0 ? (
+                      <div className="py-16 text-center text-slate-650 font-bold uppercase tracking-wider text-[9px] select-none">
+                        Nenhum lan├ºamento corresponde aos filtros
                       </div>
+                    ) : (
+                      Object.keys(groupedItems).map((categoria) => {
+                        const items = groupedItems[categoria];
+                        const totalCategoria = items.reduce((acc, it) => acc + it.valor, 0);
 
-                      {/* Category filter pills */}
-                      <div className="flex items-center gap-2 pb-1.5 border-b border-slate-850/40 overflow-x-auto select-none scrollbar-none">
-                        <span className="text-[8px] font-black text-slate-550 uppercase mr-1 whitespace-nowrap">Categoria:</span>
-                        {["todas", "Hospedagem", "Lazer/Passeios", ...Array.from(new Set(statementItems.map((item) => item.categoria).filter(c => c && c !== "Hospedagem" && c !== "Lazer/Passeios"))).sort()].map((cat) => (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setFiltroCategoria(cat)}
-                            className={`px-2.5 py-1 text-[8px] uppercase font-bold rounded-full border transition-all whitespace-nowrap cursor-pointer ${
-                              filtroCategoria === cat
-                                ? "bg-indigo-500/20 border-indigo-400 text-indigo-300 shadow-sm"
-                                : "bg-slate-950/40 border-slate-850/60 text-slate-500 hover:text-slate-355"
-                            }`}
-                          >
-                            {cat === "todas" ? "📁 TODAS" : cat}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                        return (
+                          <div key={categoria} className="space-y-2">
+                            {/* Category Header */}
+                            <div className="flex items-center justify-between border-b border-slate-850 pb-1.5 px-1 select-none">
+                              <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
+                                ­ƒôü {categoria}
+                              </span>
+                              <span className="font-mono text-slate-555 text-[8px] font-bold uppercase">
+                                Subtotal: <span className="text-slate-400">R$ {totalCategoria.toLocaleString("pt-BR")}</span>
+                              </span>
+                            </div>
 
-                    {/* Scrollable list of statement items grouped by category */}
-                    <div className="flex-1 overflow-y-auto max-h-[340px] pr-1.5 space-y-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-                      {filteredStatementItems.length === 0 ? (
-                        <div className="py-16 text-center text-slate-650 font-bold uppercase tracking-wider text-[9px] select-none">
-                          Nenhum lançamento corresponde aos filtros
-                        </div>
-                      ) : (
-                        Object.keys(groupedItems).map((categoria) => {
-                          const items = groupedItems[categoria];
-                          const totalCategoria = items.reduce((acc, it) => acc + it.valor, 0);
+                            {/* Items under this category */}
+                            <div className="space-y-2">
+                              {items.map((item) => {
+                                const isEditing = editingItemKey === item.key;
 
-                          return (
-                            <div key={categoria} className="space-y-2">
-                              {/* Category Header */}
-                              <div className="flex items-center justify-between border-b border-slate-850 pb-1.5 px-1 select-none">
-                                <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
-                                  📁 {categoria}
-                                </span>
-                                <span className="font-mono text-slate-500 text-[8px] font-bold uppercase">
-                                  Subtotal: <span className="text-slate-400">R$ {totalCategoria.toLocaleString("pt-BR")}</span>
-                                </span>
-                              </div>
-
-                              {/* Items under this category */}
-                              <div className="space-y-2">
-                                {items.map((item) => {
-                                  const isEditing = editingItemKey === item.key;
-
-                                  if (isEditing) {
-                                    return (
-                                      <div
-                                        key={item.key}
-                                        className="bg-slate-950/90 border border-amber-500/50 p-3 rounded-xl space-y-3.5 animate-workspace-fade-in shadow-lg shadow-amber-500/5"
-                                      >
-                                        <div className="text-[8.5px] font-bold text-amber-500 uppercase tracking-widest border-b border-slate-900 pb-1 flex items-center justify-between">
-                                          <span>📝 Editando Item ({item.tipo})</span>
-                                          <span className="text-[7.5px] font-mono text-slate-500">{item.key}</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                          <div className="space-y-1">
-                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Descrição:</label>
-                                            <input
-                                              type="text"
-                                              value={editNome}
-                                              onChange={(e) => setEditNome(e.target.value)}
-                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] uppercase font-semibold"
-                                            />
-                                          </div>
-                                          <div className="space-y-1">
-                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Valor (R$):</label>
-                                            <input
-                                              type="number"
-                                              value={editValor}
-                                              onChange={(e) => setEditValor(e.target.value)}
-                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] font-mono"
-                                            />
-                                          </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                          <div className="space-y-1">
-                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Vínculo:</label>
-                                            <select
-                                              value={editVinculo}
-                                              onChange={(e) => setEditVinculo(e.target.value)}
-                                              className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
-                                            >
-                                              <option value="global">Geral (Sem conexão)</option>
-                                              {datasViagem.map((dia, idx) => (
-                                                <option key={dia} value={dia}>
-                                                  Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
-                                                </option>
-                                              ))}
-                                            </select>
-                                          </div>
-                                          {item.tipo === "despesa" && (
-                                            <div className="space-y-1">
-                                              <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Categoria:</label>
-                                              <select
-                                                value={editCategoria}
-                                                onChange={(e) => {
-                                                  const val = e.target.value;
-                                                  setEditCategoria(val);
-                                                  if (val === "Outros") {
-                                                    setEditIsCustom(true);
-                                                  } else {
-                                                    setEditIsCustom(false);
-                                                  }
-                                                }}
-                                                className="w-full bg-slate-900 border border-slate-800 text-slate-355 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
-                                              >
-                                                <option value="Alimentação">Alimentação 🍽️</option>
-                                                <option value="Transporte">Transporte 🚗</option>
-                                                <option value="Lazer">Lazer 🪁</option>
-                                                <option value="Compras">Compras 🛍️</option>
-                                                <option value="Outros">Outros 💰</option>
-                                              </select>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {editIsCustom && item.tipo === "despesa" && (
-                                          <div className="space-y-1 text-[10px] animate-fade-in">
-                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Nome da Categoria:</label>
-                                            <input
-                                              type="text"
-                                              value={editCustomCategoria}
-                                              onChange={(e) => setEditCustomCategoria(e.target.value)}
-                                              className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] uppercase font-semibold"
-                                            />
-                                          </div>
-                                        )}
-
-                                        <div className="flex items-center justify-between pt-1 select-none">
-                                          {editErro ? (
-                                            <span className="text-[8px] text-rose-400 font-mono font-bold">⚠️ {editErro}</span>
-                                          ) : (
-                                            <span />
-                                          )}
-                                          <div className="flex items-center gap-2">
-                                            <button
-                                              type="button"
-                                              onClick={() => setEditingItemKey(null)}
-                                              className="px-2.5 py-1 bg-slate-900 hover:bg-slate-850 border border-slate-850 text-slate-450 hover:text-slate-300 font-bold text-[8.5px] rounded uppercase cursor-pointer transition-colors"
-                                            >
-                                              Cancelar
-                                            </button>
-                                            <button
-                                              type="button"
-                                              disabled={editSalvando}
-                                              onClick={() => handleSalvarEdicaoItem(item)}
-                                              className="px-3 py-1 bg-[#10b981] hover:bg-emerald-500 border-0 text-slate-950 font-black text-[8.5px] rounded uppercase cursor-pointer shadow-md shadow-emerald-500/10 transition-colors disabled:opacity-40"
-                                            >
-                                              {editSalvando ? "Salvando..." : "Salvar"}
-                                            </button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-
-                                  let colorBadge = "bg-slate-900 border-slate-800 text-slate-455";
-                                  if (item.tipo === "hospedagem") {
-                                    colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
-                                  } else if (item.tipo === "passeio") {
-                                    colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-455";
-                                  } else if (item.tipo === "despesa") {
-                                    colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
-                                  }
-
+                                if (isEditing) {
                                   return (
                                     <div
                                       key={item.key}
-                                      className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
+                                      className="bg-slate-950/90 border border-amber-500/50 p-3 rounded-xl space-y-3.5 animate-workspace-fade-in shadow-lg shadow-amber-500/5 text-left"
                                     >
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                          {item.diaIdx >= 0 ? (
-                                            <span className="font-bold text-[#f59e0b] font-mono text-[8.5px] uppercase">
-                                              D{String(item.diaIdx + 1).padStart(2, "0")}
-                                            </span>
-                                          ) : (
-                                            <span className="font-bold text-amber-500 font-mono text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
-                                              GERAL
-                                            </span>
-                                          )}
-                                          <span className="text-slate-500 text-[9px]">|</span>
-                                          <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
-                                            {item.tipo}
-                                          </span>
-                                          {item.detalhe && (
-                                            <span className="text-[8px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
-                                              {item.detalhe}
-                                            </span>
-                                          )}
-                                        </div>
+                                      <div className="text-[8.5px] font-bold text-amber-500 uppercase tracking-widest border-b border-slate-900 pb-1 flex items-center justify-between">
+                                        <span>­ƒôØ Editando Item ({item.tipo})</span>
+                                        <span className="text-[7.5px] font-mono text-slate-500">{item.key}</span>
+                                      </div>
 
-                                        <div className="font-bold text-slate-200 truncate uppercase text-[10px] mt-1 tracking-wide">
-                                          {item.nome}
+                                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                        <div className="space-y-1">
+                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Descri├º├úo:</label>
+                                          <input
+                                            type="text"
+                                            value={editNome}
+                                            onChange={(e) => setEditNome(e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                                          />
+                                        </div>
+                                        <div className="space-y-1">
+                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Valor (R$):</label>
+                                          <input
+                                            type="number"
+                                            value={editValor}
+                                            onChange={(e) => setEditValor(e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] font-mono"
+                                          />
                                         </div>
                                       </div>
 
-                                      <div className="flex items-center gap-2 select-none font-sans font-semibold">
-                                        <span className="text-[#10b981] font-mono font-bold text-[10px] mr-1">
-                                          R$ {item.valor.toLocaleString("pt-BR")}
-                                        </span>
-                                        <button
-                                          onClick={() => {
-                                            setEditingItemKey(item.key);
-                                            setEditNome(item.nome);
-                                            setEditValor(item.valor.toString());
-                                            setEditVinculo(item.diaData);
-                                            setEditCategoria(item.categoria);
-                                            setEditIsCustom(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
-                                            setEditCustomCategoria(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
-                                            setEditErro("");
-                                          }}
-                                          className="w-5 h-5 flex items-center justify-center border-0 bg-indigo-500/10 hover:bg-indigo-500/25 text-indigo-400 rounded-lg transition-all text-[9.5px] cursor-pointer"
-                                          title="Editar Lançamento"
-                                        >
-                                          ✏️
-                                        </button>
-                                        <button
-                                          onClick={async () => {
-                                            if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
-                                              await item.onDelete();
-                                            }
-                                          }}
-                                          className="w-5 h-5 flex items-center justify-center border-0 bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[9.5px] cursor-pointer"
-                                          title="Excluir Lançamento"
-                                        >
-                                          ✕
-                                        </button>
+                                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                        <div className="space-y-1">
+                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">V├¡nculo:</label>
+                                          <select
+                                            value={editVinculo}
+                                            onChange={(e) => setEditVinculo(e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-800 text-slate-350 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
+                                          >
+                                            <option value="global">Geral (Sem conex├úo)</option>
+                                            {datasViagem.map((dia, idx) => (
+                                              <option key={dia} value={dia}>
+                                                Dia {String(idx + 1).padStart(2, "0")} ({dia.slice(5).replace("-", "/")})
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                        {item.tipo === "despesa" && (
+                                          <div className="space-y-1">
+                                            <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Categoria:</label>
+                                            <select
+                                              value={editCategoria}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                setEditCategoria(val);
+                                                if (val === "Outros") {
+                                                  setEditIsCustom(true);
+                                                } else {
+                                                  setEditIsCustom(false);
+                                                }
+                                              }}
+                                              className="w-full bg-slate-900 border border-slate-800 text-slate-355 px-1.5 py-1 text-[9px] rounded-md focus:outline-none cursor-pointer uppercase font-bold"
+                                            >
+                                              <option value="Alimenta├º├úo">Alimenta├º├úo ­ƒì¢´©Å</option>
+                                              <option value="Transporte">Transporte ­ƒÜù</option>
+                                              <option value="Lazer">Lazer ­ƒ¬ü</option>
+                                              <option value="Compras">Compras ­ƒøì´©Å</option>
+                                              <option value="Outros">Outros ­ƒÆ░</option>
+                                            </select>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {editIsCustom && item.tipo === "despesa" && (
+                                        <div className="space-y-1 text-[10px] animate-fade-in">
+                                          <label className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Nome da Categoria:</label>
+                                          <input
+                                            type="text"
+                                            value={editCustomCategoria}
+                                            onChange={(e) => setEditCustomCategoria(e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-800 text-slate-100 px-2 py-1 placeholder-slate-755 text-[9.5px] rounded-md focus:outline-none focus:border-[#007aff] uppercase font-semibold"
+                                          />
+                                        </div>
+                                      )}
+
+                                      <div className="flex items-center justify-between pt-1 select-none">
+                                        {editErro ? (
+                                          <span className="text-[8px] text-rose-400 font-mono font-bold">ÔÜá´©Å {editErro}</span>
+                                        ) : (
+                                          <span />
+                                        )}
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingItemKey(null)}
+                                            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-850 border border-slate-855 text-slate-450 hover:text-slate-300 font-bold text-[8.5px] rounded uppercase cursor-pointer transition-colors"
+                                          >
+                                            Cancelar
+                                          </button>
+                                          <button
+                                            type="button"
+                                            disabled={editSalvando}
+                                            onClick={() => handleSalvarEdicaoItem(item)}
+                                            className="px-3 py-1 bg-[#10b981] hover:bg-emerald-500 border-none text-slate-950 font-black text-[8.5px] rounded uppercase cursor-pointer shadow-md shadow-emerald-500/10 transition-colors disabled:opacity-40"
+                                          >
+                                            {editSalvando ? "Salvando..." : "Salvar"}
+                                          </button>
+                                        </div>
                                       </div>
                                     </div>
                                   );
-                                })}
-                              </div>
+                                }
+
+                                let colorBadge = "bg-slate-900 border-slate-800 text-slate-455";
+                                if (item.tipo === "hospedagem") {
+                                  colorBadge = "bg-indigo-500/10 border-indigo-500/20 text-indigo-400";
+                                } else if (item.tipo === "passeio") {
+                                  colorBadge = "bg-emerald-500/10 border-emerald-500/20 text-emerald-455";
+                                } else if (item.tipo === "despesa") {
+                                  colorBadge = "bg-amber-500/10 border-amber-500/20 text-amber-450";
+                                }
+
+                                return (
+                                  <div
+                                    key={item.key}
+                                    className="bg-slate-900/70 border border-slate-850 p-2.5 flex items-center justify-between gap-3 group rounded-xl hover:border-slate-750 transition-colors shadow-sm"
+                                  >
+                                    <div className="flex-1 min-w-0 text-left">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        {item.diaIdx >= 0 ? (
+                                          <span className="font-bold text-[#f59e0b] font-mono text-[8.5px] uppercase">
+                                            D{String(item.diaIdx + 1).padStart(2, "0")}
+                                          </span>
+                                        ) : (
+                                          <span className="font-bold text-amber-500 font-mono text-[8px] uppercase bg-amber-500/10 border border-amber-500/20 px-1 py-0.2 rounded">
+                                            GERAL
+                                          </span>
+                                        )}
+                                        <span className="text-slate-555 text-[9px]">|</span>
+                                        <span className={`text-[8px] font-black px-1.5 py-0.2 uppercase border leading-none rounded ${colorBadge}`}>
+                                          {item.tipo}
+                                        </span>
+                                        {item.detalhe && (
+                                          <span className="text-[8px] text-slate-400 uppercase truncate max-w-[120px]" title={item.detalhe}>
+                                            {item.detalhe}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="font-bold text-slate-200 truncate uppercase text-[10px] mt-1 tracking-wide">
+                                        {item.nome}
+                                      </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 select-none font-sans font-semibold">
+                                      <span className="text-[#10b981] font-mono font-bold text-[10px] mr-1">
+                                        R$ {item.valor.toLocaleString("pt-BR")}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          setEditingItemKey(item.key);
+                                          setEditNome(item.nome);
+                                          setEditValor(item.valor.toString());
+                                          setEditVinculo(item.diaData);
+                                          setEditCategoria(item.categoria);
+                                          setEditIsCustom(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
+                                          setEditCustomCategoria(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
+                                          setEditErro("");
+                                        }}
+                                        className="w-5 h-5 flex items-center justify-center border-0 bg-indigo-500/10 hover:bg-indigo-500/25 text-indigo-400 rounded-lg transition-all text-[9.5px] cursor-pointer"
+                                        title="Editar Lan├ºamento"
+                                      >
+                                        Ô£Å´©Å
+                                      </button>
+                                      <button
+                                        onClick={async () => {
+                                          if (confirm(`Deseja excluir o lan├ºamento "${item.nome}" definitivamente?`)) {
+                                            await item.onDelete();
+                                          }
+                                        }}
+                                        className="w-5 h-5 flex items-center justify-center border-none bg-rose-500/10 hover:bg-rose-500/25 text-rose-500 rounded-lg transition-all text-[9.5px] cursor-pointer"
+                                        title="Excluir Lan├ºamento"
+                                      >
+                                        Ô£ò
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })
-                      )}
-                    </div>
-
-                    {/* Dashboard Totalizer Footer */}
-                    <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono select-none">
-                      <span className="text-slate-455 uppercase font-sans font-bold">Total Consolidado:</span>
-                      <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
-                    </div>
-                  </div>
-
-                  {/* Progression Graph */}
-                  <div className="glass-panel p-5 rounded-2xl space-y-4 flex-1 flex flex-col justify-between relative min-h-[260px] shadow-xl border border-slate-800/80">
-                    <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-emerald-500 to-teal-500" />
-                    <div className="flex items-center justify-between select-none">
-                      <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
-                        <span>📈 Progressão de Gastos (Somente no Dia)</span>
-                      </h3>
-                      <span className="text-[8px] text-slate-550 lowercase italic">clique nas barras para detalhar os itens</span>
-                    </div>
-
-                    {/* Graph Container */}
-                    <div className="flex items-end gap-1.5 md:gap-2.5 h-36 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none flex-1 mt-4">
-                      
-                      {/* Budget Limit Line based on Adjusted Budget */}
-                      {orcamentoAjustado > 0 && (
-                        <div className="absolute left-0 right-0 border-t border-dashed border-rose-500/40 text-[7.5px] font-black text-rose-450 uppercase tracking-widest pl-2 pt-0.5 pointer-events-none z-10 select-none" style={{ bottom: "80%" }}>
-                          Teto Ajustado: R$ {orcamentoAjustado.toLocaleString("pt-BR")} ({mediaDiariaDisponivel > 0 ? `R$ ${Math.round(mediaDiariaDisponivel).toLocaleString("pt-BR")}/dia` : ""})
-                        </div>
-                      )}
-
-                      {dadosGrafico.map((d, idx) => {
-                        const targetLimit = orcamentoAjustado > 0 ? orcamentoAjustado : orcamento;
-                        const heightPercent = targetLimit > 0 ? Math.min(100, Math.round((d.acumulado / targetLimit) * 80)) : 0;
-                        const isOver = targetLimit > 0 && d.acumulado > targetLimit;
-                        const isSelected = selectedGraphDay === d.diaData;
-
-                        return (
-                          <div
-                            key={d.diaData}
-                            onClick={() => setSelectedGraphDay(isSelected ? null : d.diaData)}
-                            className="flex-1 flex flex-col items-center group/bar relative cursor-pointer"
-                          >
-                            {/* Hover tooltip */}
-                            <div className="absolute bottom-full mb-2 bg-slate-950 border border-indigo-500/50 text-[8.5px] p-2 rounded shadow-2xl hidden group-hover/bar:flex flex-col text-center w-24 pointer-events-none z-50 transition-all font-sans font-semibold">
-                              <span className="text-amber-500 uppercase tracking-wider">{d.diaLabel}</span>
-                              <span className="text-slate-400 font-mono mt-0.5 text-[8px]">{d.diaData.slice(5).replace("-", "/")}</span>
-                              <span className="text-indigo-400 font-mono mt-1">Dia: R$ {d.custoDia}</span>
-                              <span className="text-[#10b981] font-mono">Acum: R$ {d.acumulado}</span>
-                            </div>
-
-                            {/* Bar Graph */}
-                            <div className={`w-full bg-slate-950/50 rounded-t h-24 flex flex-col justify-end relative shadow-inner overflow-hidden border transition-all ${
-                              isSelected ? "border-amber-500 scale-[1.03] shadow-[0_0_8px_rgba(245,158,11,0.2)]" : "border-slate-900 hover:border-slate-700"
-                            }`}>
-                              <div
-                                style={{ height: `${heightPercent}%` }}
-                                className={`w-full rounded-t transition-all duration-300 ${isOver
-                                    ? "bg-gradient-to-t from-rose-600 to-rose-450 shadow-[0_0_6px_rgba(244,63,94,0.3)]"
-                                    : d.acumulado > targetLimit * 0.8
-                                      ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.3)]"
-                                      : "bg-gradient-to-t from-indigo-600 to-indigo-455 shadow-[0_0_6px_rgba(99,102,241,0.3)]"
-                                  }`}
-                              />
-                            </div>
-
-                            {/* Label */}
-                            <span className={`text-[8.5px] font-mono font-bold mt-1.5 uppercase select-none transition-colors ${
-                              isSelected ? "text-amber-500 font-extrabold" : "text-slate-500 group-hover/bar:text-slate-300"
-                            }`}>
-                              D{String(idx + 1).padStart(2, "0")}
-                            </span>
                           </div>
                         );
-                      })}
-                    </div>
-
-                    {/* Breakdown Panel for the Selected Graph Day */}
-                    {selectedGraphDay && (() => {
-                      const dayItems = statementItems.filter(item => item.diaData === selectedGraphDay);
-                      const dayTotal = dayItems.reduce((acc, it) => acc + it.valor, 0);
-                      const activeDiaIndex = datasViagem.indexOf(selectedGraphDay);
-
-                      return (
-                        <div className="bg-slate-950/80 border border-indigo-500/35 rounded-xl p-3.5 space-y-3 animate-workspace-fade-in shadow-lg shadow-indigo-500/5 select-none mt-2">
-                          <div className="flex items-center justify-between border-b border-slate-900 pb-1.5">
-                            <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
-                              🔍 Detalhamento: Dia {activeDiaIndex + 1} ({selectedGraphDay.slice(5).replace("-", "/")})
-                            </span>
-                            <span className="font-mono text-slate-350 text-[8.5px] font-bold">
-                              Subtotal do Dia: <span className="text-[#10b981]">R$ {dayTotal.toLocaleString("pt-BR")}</span>
-                            </span>
-                          </div>
-
-                          <div className="max-h-[140px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-slate-900 scrollbar-track-transparent">
-                            {dayItems.length === 0 ? (
-                              <div className="py-4 text-center text-slate-650 font-bold uppercase text-[7.5px] tracking-wider animate-pulse">
-                                Nenhuma despesa ou hotel vinculado a este dia.
-                              </div>
-                            ) : (
-                              dayItems.map(item => (
-                                <div
-                                  key={`detail-${item.key}`}
-                                  className="bg-slate-900/60 border border-slate-850 p-2 flex items-center justify-between gap-3.5 rounded-lg text-[9px] hover:border-slate-800 transition-colors"
-                                >
-                                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                                    <span className="px-1.5 py-0.2 uppercase border text-[7.5px] font-black leading-none rounded bg-slate-950 border-slate-850 text-slate-500">
-                                      {item.tipo}
-                                    </span>
-                                    <span className="font-bold text-slate-200 truncate uppercase mt-0.5">
-                                      {item.nome}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2 select-none shrink-0 font-sans font-semibold">
-                                    <span className="text-slate-300 font-mono font-bold text-[9.5px]">
-                                      R$ {item.valor.toLocaleString("pt-BR")}
-                                    </span>
-                                    <button
-                                      onClick={() => {
-                                        setEditingItemKey(item.key);
-                                        setEditNome(item.nome);
-                                        setEditValor(item.valor.toString());
-                                        setEditVinculo(item.diaData);
-                                        setEditCategoria(item.categoria);
-                                        setEditIsCustom(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
-                                        setEditCustomCategoria(!["Alimentação", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
-                                        setEditErro("");
-                                      }}
-                                      className="text-indigo-400 hover:text-indigo-350 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
-                                      title="Editar Lançamento"
-                                    >
-                                      ✏️
-                                    </button>
-                                    <button
-                                      onClick={async () => {
-                                        if (confirm(`Deseja excluir o lançamento "${item.nome}" definitivamente?`)) {
-                                          await item.onDelete();
-                                        }
-                                      }}
-                                      className="text-rose-500 hover:text-rose-455 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
-                                      title="Excluir Lançamento"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })()}
+                      })
+                    )}
                   </div>
 
+                  {/* Dashboard Totalizer Footer */}
+                  <div className="bg-slate-950/50 border border-slate-850 p-3.5 rounded-xl flex justify-between items-center text-[9.5px] font-mono select-none">
+                    <span className="text-slate-455 uppercase font-sans font-bold">Total Consolidado:</span>
+                    <span className="text-[#10b981] font-black text-xs">R$ {custoTotal.toLocaleString("pt-BR")}</span>
+                  </div>
                 </div>
 
+                {/* Progression Graph */}
+                <div className="glass-panel p-5 rounded-2xl space-y-4 flex-1 flex flex-col justify-between relative min-h-[260px] shadow-xl border border-slate-800/80 w-full">
+                  <div className="absolute top-0 left-0 w-full h-[2.5px] bg-gradient-to-r from-emerald-500 to-teal-500" />
+                  <div className="flex items-center justify-between select-none">
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                      <span>­ƒôê Progress├úo de Gastos (Somente no Dia)</span>
+                    </h3>
+                    <span className="text-[8px] text-slate-550 lowercase italic">clique nas barras para detalhar os itens</span>
+                  </div>
+
+                  {/* Graph Container */}
+                  <div className="flex items-end gap-1.5 md:gap-2.5 h-36 pt-6 border-b border-l border-slate-800/80 px-2 relative select-none flex-1 mt-4">
+                    {/* Budget Limit Line */}
+                    {orcamentoAjustado > 0 && (
+                      <div className="absolute left-0 right-0 border-t border-dashed border-rose-500/40 text-[7.5px] font-black text-rose-450 uppercase tracking-widest pl-2 pt-0.5 pointer-events-none z-10 select-none text-left" style={{ bottom: "80%" }}>
+                        Teto Ajustado: R$ {orcamentoAjustado.toLocaleString("pt-BR")} ({mediaDiariaDisponivel > 0 ? `R$ ${Math.round(mediaDiariaDisponivel).toLocaleString("pt-BR")}/dia` : ""})
+                      </div>
+                    )}
+
+                    {dadosGrafico.map((d, idx) => {
+                      const targetLimit = orcamentoAjustado > 0 ? orcamentoAjustado : orcamento;
+                      const heightPercent = targetLimit > 0 ? Math.min(100, Math.round((d.acumulado / targetLimit) * 80)) : 0;
+                      const isOver = targetLimit > 0 && d.acumulado > targetLimit;
+                      const isSelected = selectedGraphDay === d.diaData;
+
+                      return (
+                        <div
+                          key={d.diaData}
+                          onClick={() => setSelectedGraphDay(isSelected ? null : d.diaData)}
+                          className="flex-1 flex flex-col items-center group/bar relative cursor-pointer"
+                        >
+                          {/* Hover tooltip */}
+                          <div className="absolute bottom-full mb-2 bg-slate-950 border border-indigo-500/50 text-[8.5px] p-2 rounded shadow-2xl hidden group-hover/bar:flex flex-col text-center w-24 pointer-events-none z-50 transition-all font-sans font-semibold">
+                            <span className="text-amber-500 uppercase tracking-wider">{d.diaLabel}</span>
+                            <span className="text-slate-400 font-mono mt-0.5 text-[8px]">{d.diaData.slice(5).replace("-", "/")}</span>
+                            <span className="text-indigo-400 font-mono mt-1">Dia: R$ {d.custoDia}</span>
+                            <span className="text-[#10b981] font-mono">Acum: R$ {d.acumulado}</span>
+                          </div>
+
+                          {/* Bar Graph */}
+                          <div className={`w-full bg-slate-950/50 rounded-t h-24 flex flex-col justify-end relative shadow-inner overflow-hidden border transition-all ${
+                            isSelected ? "border-amber-500 scale-[1.03] shadow-[0_0_8px_rgba(245,158,11,0.2)]" : "border-slate-900 hover:border-slate-700"
+                          }`}>
+                            <div
+                              style={{ height: `${heightPercent}%` }}
+                              className={`w-full rounded-t transition-all duration-300 ${isOver
+                                  ? "bg-gradient-to-t from-rose-600 to-rose-450 shadow-[0_0_6px_rgba(244,63,94,0.3)]"
+                                  : d.acumulado > targetLimit * 0.8
+                                    ? "bg-gradient-to-t from-amber-600 to-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.3)]"
+                                    : "bg-gradient-to-t from-indigo-600 to-indigo-455 shadow-[0_0_6px_rgba(99,102,241,0.3)]"
+                                }`}
+                            />
+                          </div>
+
+                          {/* Label */}
+                          <span className={`text-[8.5px] font-mono font-bold mt-1.5 uppercase select-none transition-colors ${
+                            isSelected ? "text-amber-500 font-extrabold" : "text-slate-500 group-hover/bar:text-slate-300"
+                          }`}>
+                            D{String(idx + 1).padStart(2, "0")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Breakdown Panel for the Selected Graph Day */}
+                  {selectedGraphDay && (() => {
+                    const dayItems = statementItems.filter(item => item.diaData === selectedGraphDay);
+                    const dayTotal = dayItems.reduce((acc, it) => acc + it.valor, 0);
+                    const activeDiaIndex = datasViagem.indexOf(selectedGraphDay);
+
+                    return (
+                      <div className="bg-slate-950/80 border border-indigo-500/35 rounded-xl p-3.5 space-y-3 animate-workspace-fade-in shadow-lg shadow-indigo-500/5 select-none mt-2 w-full">
+                        <div className="flex items-center justify-between border-b border-slate-900 pb-1.5">
+                          <span className="text-[9px] font-black uppercase text-indigo-400 tracking-wider">
+                            ­ƒöì Detalhamento: Dia {activeDiaIndex + 1} ({selectedGraphDay.slice(5).replace("-", "/")})
+                          </span>
+                          <span className="font-mono text-slate-350 text-[8.5px] font-bold">
+                            Subtotal do Dia: <span className="text-[#10b981]">R$ {dayTotal.toLocaleString("pt-BR")}</span>
+                          </span>
+                        </div>
+
+                        <div className="max-h-[140px] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-slate-900 scrollbar-track-transparent">
+                          {dayItems.length === 0 ? (
+                            <div className="py-4 text-center text-slate-650 font-bold uppercase text-[7.5px] tracking-wider animate-pulse">
+                              Nenhuma despesa ou hotel vinculado a este dia.
+                            </div>
+                          ) : (
+                            dayItems.map(item => (
+                              <div
+                                key={`detail-${item.key}`}
+                                className="bg-slate-900/60 border border-slate-850 p-2 flex items-center justify-between gap-3.5 rounded-lg text-[9px] hover:border-slate-800 transition-colors"
+                              >
+                                <div className="flex-1 min-w-0 flex items-center gap-2 text-left">
+                                  <span className="px-1.5 py-0.2 uppercase border text-[7.5px] font-black leading-none rounded bg-slate-950 border-slate-850 text-slate-500">
+                                    {item.tipo}
+                                  </span>
+                                  <span className="font-bold text-slate-200 truncate uppercase mt-0.5">
+                                    {item.nome}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 select-none shrink-0 font-sans font-semibold">
+                                  <span className="text-slate-300 font-mono font-bold text-[9.5px]">
+                                    R$ {item.valor.toLocaleString("pt-BR")}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setEditingItemKey(item.key);
+                                      setEditNome(item.nome);
+                                      setEditValor(item.valor.toString());
+                                      setEditVinculo(item.diaData);
+                                      setEditCategoria(item.categoria);
+                                      setEditIsCustom(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria));
+                                      setEditCustomCategoria(!["Alimenta├º├úo", "Transporte", "Lazer", "Compras", "Hospedagem", "Lazer/Passeios"].includes(item.categoria) ? item.categoria : "");
+                                      setEditErro("");
+                                    }}
+                                    className="text-indigo-400 hover:text-indigo-350 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
+                                    title="Editar Lan├ºamento"
+                                  >
+                                    Ô£Å´©Å
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm(`Deseja excluir o lan├ºamento "${item.nome}" definitivamente?`)) {
+                                        await item.onDelete();
+                                      }
+                                    }}
+                                    className="text-rose-500 hover:text-rose-455 bg-transparent border-0 cursor-pointer text-[10px] px-1 py-0.5 rounded transition-all"
+                                    title="Excluir Lan├ºamento"
+                                  >
+                                    Ô£ò
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -2091,7 +1877,6 @@ export default function Home() {
             </div>
           )}
         </main>
-      </div>
 
       {/* Mobile Bottom Navigation (inspired by Image 5) */}
       {viagemAtiva && (
